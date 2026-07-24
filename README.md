@@ -20,9 +20,10 @@ fullscreen with its own icon, feels native, and works offline.
 - **iOS look & feel** — San Francisco system font, grouped inset lists, large-title
   navigation bars, a translucent bottom tab bar, iOS switches/steppers/segmented
   controls, full **light & dark mode**, and safe-area handling for notch/home-indicator.
-- **7 categories → subcategories → species** — Mammals, Birds, Reptiles, Amphibians, Fish,
-  **Trees** (conifers & broadleaf) and **Plants** (wildflowers, shrubs & berries, ferns &
-  grasses, and dangerous & invasive). e.g. Reptiles › Turtles › Blanding's Turtle.
+- **9 categories → subcategories → species** — Mammals, Birds, Reptiles, Amphibians, Fish,
+  **Trees** (conifers & broadleaf), **Plants** (wildflowers, shrubs & berries, ferns &
+  grasses, and dangerous & invasive), **Insects** and **Fungi**. e.g. Reptiles › Turtles ›
+  Blanding's Turtle.
 - **A field guide** to Ontario wildlife & flora with ID tips, habitat, best seasons,
   conservation status (Species at Risk are flagged), safety cautions (e.g. the venomous
   massasauga, poison ivy, giant hogweed), and facts.
@@ -51,7 +52,7 @@ fullscreen with its own icon, feels native, and works offline.
   safety and a licence link) or a birding version (how to birdwatch, trail etiquette & safety).
 - **🚫 Invasive species** section — categorized, with Clean·Drain·Dry and how to report.
 - **🏅 Collectible badges** (naturalist achievements, plus a secret one) and a **📊 Stats**
-  screen with honest "guide completion" progress (X of 258 species).
+  screen with honest "guide completion" progress (X of 326 species).
 - **🔒 Privacy & consent** — a first-run welcome that states data is private and on-device;
   a Privacy screen; a conservation-sharing consent toggle (off by default, asks before
   anything is shared); and **geoprivacy** that obscures Species-at-Risk locations in exports.
@@ -113,7 +114,7 @@ styles.css              iOS design system (light/dark, components)
 app.js                  SPA: hash routing, IndexedDB journal, map, all screens
 data/
   categories.js         Category & subcategory metadata (+ "coming soon")
-  species.js            The Ontario species database (258 species)
+  species.js            The Ontario species database (326 species)
   learn.js              Educational articles, curated resource links, hazard types
   trust.js              Anomaly-detection demo: synthetic data + statistical model
   badges.js             Collectible naturalist badge definitions
