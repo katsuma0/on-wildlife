@@ -9,7 +9,7 @@ It's built as a **Progressive Web App (PWA)**, so there's nothing to install fro
 store: open it in Safari on your iPhone and tap **Add to Home Screen**. It then launches
 fullscreen with its own icon, feels native, and works offline.
 
-> **Status:** 326 fact-checked Ontario species across 9 categories (mammals, birds,
+> **Status:** 382 fact-checked Ontario species across 9 categories (mammals, birds,
 > reptiles, amphibians, fish, trees, plants, **insects & fungi**). Optional **community**
 > data pooling via a deployable backend.
 
@@ -52,7 +52,7 @@ fullscreen with its own icon, feels native, and works offline.
   safety and a licence link) or a birding version (how to birdwatch, trail etiquette & safety).
 - **🚫 Invasive species** section — categorized, with Clean·Drain·Dry and how to report.
 - **🏅 Collectible badges** (naturalist achievements, plus a secret one) and a **📊 Stats**
-  screen with honest "guide completion" progress (X of 326 species).
+  screen with honest "guide completion" progress (X of 382 species).
 - **🔒 Privacy & consent** — a first-run welcome that states data is private and on-device;
   a Privacy screen; a conservation-sharing consent toggle (off by default, asks before
   anything is shared); and **geoprivacy** that obscures Species-at-Risk locations in exports.
@@ -116,7 +116,7 @@ styles.css              iOS design system (light/dark, components)
 app.js                  SPA: hash routing, IndexedDB journal, map, all screens
 data/
   categories.js         Category & subcategory metadata (+ "coming soon")
-  species.js            The Ontario species database (326 species)
+  species.js            The Ontario species database (382 species)
   learn.js              Educational articles, curated resource links, hazard types
   trust.js              Anomaly-detection demo: synthetic data + statistical model
   badges.js             Collectible naturalist badge definitions
