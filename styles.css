@@ -617,6 +617,93 @@ textarea.notes {
 .wrap-note.danger { background: rgba(255, 59, 48, 0.12); }
 .wrap-note .i { flex-shrink: 0; font-size: 18px; }
 
+/* ---- Chip variants (report actions) ---- */
+.chip-alert { background: rgba(93, 64, 55, 0.16); color: #6d4c41; }
+.chip-warn { background: rgba(255, 149, 0, 0.18); color: #b25e00; }
+@media (prefers-color-scheme: dark) {
+  .chip-alert { background: rgba(161, 136, 127, 0.26); color: #d7ccc8; }
+  .chip-warn { background: rgba(255, 159, 10, 0.24); color: #ffb340; }
+}
+
+/* ---------------------------------------------------------------- Map */
+.map-chiprow { padding-top: 8px; padding-bottom: 8px; }
+.map-wrap {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+  height: calc(100dvh - var(--sa-top) - 44px - 52px - var(--tab-h) - var(--sa-bottom) - 8px);
+  min-height: 320px;
+  background: var(--bg-secondary);
+}
+#map { position: absolute; inset: 0; background: var(--bg-secondary); }
+.map-msg { display: grid; place-items: center; height: 100%; padding: 24px; text-align: center; color: var(--label-2); }
+.map-fabs { position: absolute; right: 12px; bottom: 16px; z-index: 500; display: flex; flex-direction: column; gap: 12px; }
+.fab {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--bg-elevated); color: var(--label);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  display: grid; place-items: center; font-size: 24px;
+  transition: transform 0.08s;
+}
+.fab:active { transform: scale(0.92); }
+.fab svg { width: 24px; height: 24px; color: var(--tint); }
+.fab-bear { background: var(--tint); }
+.map-hint {
+  position: absolute; left: 12px; right: 76px; top: 12px; z-index: 500;
+  background: rgba(28, 28, 30, 0.92); color: #fff;
+  padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.35;
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  opacity: 0; transform: translateY(-6px); transition: opacity 0.2s, transform 0.2s; pointer-events: none;
+}
+.map-hint.show { opacity: 1; transform: none; }
+
+/* Leaflet teardrop pins built from divIcons */
+.pin-wrap { background: none; border: 0; }
+.pin {
+  width: 34px; height: 34px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  display: grid; place-items: center;
+}
+.pin-i { transform: rotate(45deg); font-size: 16px; line-height: 1; }
+.pin-wild { background: #2f8f5b; }
+.pin-bear { background: #5d4037; }
+.pin-hazard { background: #e68a00; }
+.leaflet-popup-content { font: 14px -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+.leaflet-popup-content b { font-weight: 600; }
+.leaflet-popup-content a { color: #14804a; }
+@media (prefers-color-scheme: dark) {
+  .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #1c1c1e; color: #fff; }
+  .leaflet-popup-content a { color: #30d158; }
+  .leaflet-container a.leaflet-popup-close-button { color: #aaa; }
+}
+
+/* ---------------------------------------------------- Learn articles */
+.article-intro { margin: 8px 20px 4px; font-size: 16px; line-height: 1.5; color: var(--label); }
+.article-sec { margin: 16px 20px; }
+.article-sec h3 { font-size: 18px; margin: 0 0 6px; letter-spacing: -0.2px; }
+.article-sec p { margin: 0 0 8px; font-size: 15.5px; line-height: 1.5; color: var(--label); }
+.article-sec ul, .article-sec ol { margin: 4px 0 8px; padding-left: 22px; }
+.article-sec li { font-size: 15.5px; line-height: 1.45; margin-bottom: 6px; color: var(--label); }
+.callout { margin: 10px 0; padding: 12px 14px; border-radius: 12px; font-size: 14.5px; line-height: 1.45; color: var(--label); }
+.callout-t { font-weight: 700; margin-bottom: 3px; }
+.callout-info { background: var(--tint-soft); }
+.callout-warn { background: rgba(255, 149, 0, 0.15); }
+.callout-danger { background: rgba(255, 59, 48, 0.14); }
+
+/* -------------------------------------------------- Hazard type grid */
+.type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 2px 0; }
+.type-opt {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-elevated); border-radius: 12px; padding: 12px 14px;
+  font-size: 15px; color: var(--label); text-align: left;
+  border: 2px solid transparent; transition: border-color 0.12s, background 0.12s;
+}
+.type-opt .te { font-size: 22px; flex-shrink: 0; }
+.type-opt.on { border-color: var(--tint); background: var(--tint-soft); }
+
 @media (min-width: 640px) {
   #app { max-width: 480px; margin: 0 auto; }
   .tabbar { max-width: 480px; left: 50%; transform: translateX(-50%); }

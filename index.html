@@ -21,6 +21,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -31,9 +32,13 @@
   <div id="sheet-root"><!-- modal sheets mount here --></div>
   <div id="toast-root"><!-- toasts mount here --></div>
 
+  <!-- Mapping library (vendored, offline-capable; tiles need a connection) -->
+  <script src="vendor/leaflet/leaflet.js"></script>
+
   <!-- Data (plain globals — no build step needed) -->
   <script src="data/categories.js"></script>
   <script src="data/species.js"></script>
+  <script src="data/learn.js"></script>
 
   <!-- App -->
   <script src="app.js"></script>

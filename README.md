@@ -26,11 +26,25 @@ fullscreen with its own icon, feels native, and works completely offline.
   - 🎣 **Fishing** — caught or seen, length, weight, bait/lure, water body, kept/released.
   - 🦅 **Birding** — count, behaviour, seen or heard.
   - 🐢 **Any wildlife** — saw / heard / signs (tracks & scat), count, date & time.
+- **🐻 Report a Bear** — a quick bear-sighting flow with black/polar type, number, cubs
+  and behaviour, and a prominent **Bear Wise** banner (911 for an immediate threat, or the
+  1-866-514-2327 line for non-emergency problems) — the real reporting channel.
+- **⚠️ Report a Hazard** — wildlife on the road, roadkill, turtle crossings, construction,
+  flooding, ice, fallen trees, tick hotspots and more.
+- **🗺 Map** — see your located sightings, bear reports and hazards as pins (built on
+  Leaflet + OpenStreetMap). Filter by wildlife / bears / hazards, and drop a pin by tapping
+  the map or using GPS.
+- **📚 Learn & Safety** — Lone-Pine-style educational articles: **Ticks & Lyme disease**
+  (identify, prevent, remove, and when to see a doctor), **Bear safety**, **Wildlife on
+  roads**, and **Help Ontario's wildlife** — each linking out to official Ontario/Canada
+  sources. Every species page links to iNaturalist (photos), eBird/Ontario resources, and
+  Species-at-Risk info.
 - **Photos** (auto-resized), **GPS location** (optional), and free-text notes per sighting.
 - **Your log** — every encounter, grouped by day, with running stats (encounters, unique
-  species, categories). Export everything to a JSON file anytime.
+  species, categories). Export everything (sightings + hazards) to a JSON file anytime.
 - **Private & offline** — all data is stored on your device (IndexedDB); nothing is sent
-  anywhere. No account, no tracking, no network required after first load.
+  anywhere. No account, no tracking. (Map tiles need a connection; everything else works
+  offline.)
 
 ---
 
@@ -66,12 +80,14 @@ and data scripts load correctly.
 ```
 index.html              App shell + iOS/PWA meta tags
 styles.css              iOS design system (light/dark, components)
-app.js                  SPA: hash routing, IndexedDB journal, all screens
+app.js                  SPA: hash routing, IndexedDB journal, map, all screens
 data/
   categories.js         Category & subcategory metadata (+ "coming soon")
   species.js            The Ontario species database
+  learn.js              Educational articles, curated resource links, hazard types
 manifest.webmanifest    PWA manifest (name, icons, theme, standalone)
 service-worker.js       Offline caching of the app shell
+vendor/leaflet/         Vendored Leaflet mapping library (offline-capable)
 icons/                  App icons (SVG master + PNGs incl. apple-touch-icon)
 ```
 
@@ -97,9 +113,23 @@ Each record in `data/species.js` follows this shape:
 Conservation statuses reflect Ontario (SARO/COSEWIC) context; anything Special
 Concern / Threatened / Endangered is flagged as **at risk** in the guide.
 
+## 🌍 Community data & conservation
+
+Consistent records of what you see, where and when are the backbone of wildlife
+monitoring. Today the app is **private and offline** — your data stays on your device.
+The vision is that the more people log wildlife, the more useful the picture becomes:
+turtle-crossing hotspots, recent bear activity, local trends.
+
+A true shared/community layer (and push "alerts") needs a secure backend server, so
+it's on the roadmap. In the meantime the app points to the channels that already reach
+conservation databases — **iNaturalist** and **eBird** for observations, **Bear Wise**
+for bear problems, and Ontario's **Species at Risk** reporting — and can export your data
+so it's never locked in.
+
 ## 🛣 Roadmap
 
+- Opt-in community layer to pool anonymized sightings (turtle hotspots, bear activity).
 - Plants & wildflowers, trees, insects & butterflies, and fungi guides.
-- Optional map view of your logged encounters.
+- Real photos and range maps on species pages.
 - iCloud/file sync and sharing a sighting.
 - A native App Store build (the PWA can be wrapped, or rebuilt in SwiftUI).

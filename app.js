@@ -18,7 +18,10 @@
     plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
     close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
     pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg>',
-    camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L18 8h2a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.2"/></svg>'
+    camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L18 8h2a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.2"/></svg>',
+    map: '<svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 5 7v16l6-2 6 2 6-2V5l-6 2-6-2Z"/><path d="M11 5v16M17 7v16"/></svg>',
+    link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5h5v5"/><path d="M19 5l-8 8"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg>',
+    crosshair: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>'
   };
 
   /* ----------------------------------------------------------- Utilities */
@@ -33,7 +36,7 @@
   }
   function haptic() { try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {} }
 
-  var app = { entries: [], settings: { units: 'metric' }, draft: null, ready: false };
+  var app = { entries: [], hazards: [], settings: { units: 'metric' }, draft: null, hdraft: null, ready: false, map: null, mapFilter: 'all', placeMode: null };
 
   /* ------------------------------------------------------------- Storage */
   var Store = {
@@ -43,44 +46,53 @@
       return new Promise(function (resolve) {
         if (!('indexedDB' in window)) return resolve(false);
         try {
-          var r = indexedDB.open('owl-db', 1);
+          var r = indexedDB.open('owl-db', 2);
           r.onupgradeneeded = function (e) {
             var db = e.target.result;
             if (!db.objectStoreNames.contains('entries')) db.createObjectStore('entries', { keyPath: 'id' });
+            if (!db.objectStoreNames.contains('hazards')) db.createObjectStore('hazards', { keyPath: 'id' });
           };
           r.onsuccess = function (e) { Store.db = e.target.result; Store.useIDB = true; resolve(true); };
           r.onerror = function () { resolve(false); };
         } catch (e) { resolve(false); }
       });
     },
-    tx: function (mode) { return Store.db.transaction('entries', mode).objectStore('entries'); },
-    load: function () {
-      return Store.openIDB().then(function (ok) {
-        if (ok) {
-          return new Promise(function (resolve) {
-            var r = Store.tx('readonly').getAll();
+    tx: function (mode, store) { return Store.db.transaction(store || 'entries', mode).objectStore(store || 'entries'); },
+    _getAll: function (store, lsKey) {
+      if (Store.useIDB) {
+        return new Promise(function (resolve) {
+          try {
+            var r = Store.tx('readonly', store).getAll();
             r.onsuccess = function () { resolve(r.result || []); };
             r.onerror = function () { resolve([]); };
-          });
-        }
-        try { return JSON.parse(localStorage.getItem('owl-entries') || '[]'); }
-        catch (e) { return []; }
-      });
+          } catch (e) { resolve([]); }
+        });
+      }
+      try { return Promise.resolve(JSON.parse(localStorage.getItem(lsKey) || '[]')); }
+      catch (e) { return Promise.resolve([]); }
     },
-    _ls: function () {
-      try { localStorage.setItem('owl-entries', JSON.stringify(app.entries)); } catch (e) {}
+    load: function () { return Store.openIDB().then(function () { return Store._getAll('entries', 'owl-entries'); }); },
+    loadHazards: function () { return Store._getAll('hazards', 'owl-hazards'); },
+    _ls: function (store) {
+      try {
+        if (store === 'hazards') localStorage.setItem('owl-hazards', JSON.stringify(app.hazards));
+        else localStorage.setItem('owl-entries', JSON.stringify(app.entries));
+      } catch (e) {}
     },
-    put: function (entry) {
-      if (Store.useIDB) { try { Store.tx('readwrite').put(entry); } catch (e) { Store._ls(); } }
-      else Store._ls();
+    put: function (v, store) {
+      store = store || 'entries';
+      if (Store.useIDB) { try { Store.tx('readwrite', store).put(v); } catch (e) { Store._ls(store); } }
+      else Store._ls(store);
     },
-    del: function (id) {
-      if (Store.useIDB) { try { Store.tx('readwrite').delete(id); } catch (e) { Store._ls(); } }
-      else Store._ls();
+    del: function (id, store) {
+      store = store || 'entries';
+      if (Store.useIDB) { try { Store.tx('readwrite', store).delete(id); } catch (e) { Store._ls(store); } }
+      else Store._ls(store);
     },
-    clear: function () {
-      if (Store.useIDB) { try { Store.tx('readwrite').clear(); } catch (e) {} }
-      Store._ls();
+    clear: function (store) {
+      store = store || 'entries';
+      if (Store.useIDB) { try { Store.tx('readwrite', store).clear(); } catch (e) {} }
+      Store._ls(store);
     }
   };
   function loadSettings() {
@@ -93,6 +105,11 @@
   var SPECIES = window.SPECIES || [];
   var CATEGORIES = window.CATEGORIES || [];
   var COMING_SOON = window.COMING_SOON || [];
+  var LEARN = window.LEARN || { topics: {}, resources: [], hazardTypes: [] };
+  var HAZARD_TYPES = LEARN.hazardTypes || [];
+  function hazardType(id) { for (var i = 0; i < HAZARD_TYPES.length; i++) if (HAZARD_TYPES[i].id === id) return HAZARD_TYPES[i]; return HAZARD_TYPES[HAZARD_TYPES.length - 1] || { id: 'other', name: 'Hazard', emoji: '⚠️' }; }
+  var BEAR_IDS = { 'american-black-bear': 1, 'polar-bear': 1 };
+  function isBearEntry(e) { return e && (BEAR_IDS[e.speciesId] || e.bearReport); }
   var byId = {};
   SPECIES.forEach(function (s) { byId[s.id] = s; });
   function catMeta(id) { for (var i = 0; i < CATEGORIES.length; i++) if (CATEGORIES[i].id === id) return CATEGORIES[i]; return null; }
@@ -184,7 +201,9 @@
   function screen(cfg) {
     var navLeft = cfg.back
       ? '<div class="nav-left"><a class="nav-btn bold" href="' + esc(cfg.back) + '">' + I.back + esc(cfg.backText || 'Back') + '</a></div>'
-      : (cfg.navLeft ? '<div class="nav-left">' + cfg.navLeft + '</div>' : '');
+      : cfg.backAction
+        ? '<div class="nav-left"><button class="nav-btn bold" data-action="nav-back">' + I.back + esc(cfg.backText || 'Back') + '</button></div>'
+        : (cfg.navLeft ? '<div class="nav-left">' + cfg.navLeft + '</div>' : '');
     var navRight = cfg.navRight ? '<div class="nav-right">' + cfg.navRight + '</div>' : '';
     var nav = '<div class="nav' + (cfg.large ? ' has-large' : '') + '" id="nav">' +
       '<div class="nav-row">' + navLeft +
@@ -194,7 +213,8 @@
       ? '<div class="large-title"><h1>' + esc(cfg.title) + '</h1>' +
         (cfg.subtitle ? '<div class="subtitle">' + esc(cfg.subtitle) + '</div>' : '') + '</div>'
       : '';
-    $('#app').innerHTML = '<div class="screen">' + nav + large + cfg.body + '<div class="spacer-lg"></div></div>';
+    var tail = cfg.bare ? '' : '<div class="spacer-lg"></div>';
+    $('#app').innerHTML = '<div class="screen">' + nav + large + cfg.body + tail + '</div>';
     window.scrollTo(0, 0);
     updateNav();
   }
@@ -222,11 +242,19 @@
       '<button class="btn btn-primary btn-block" data-action="open-log">' + I.plus + 'Log an Encounter</button></div>';
     // Quick modes
     body += '<div class="chip-row" style="margin-top:14px">' +
+      '<button class="chip chip-alert" data-action="report-bear">\u{1F43B} Report a Bear</button>' +
+      '<button class="chip chip-warn" data-action="report-hazard">⚠️ Report a Hazard</button>' +
       '<button class="chip" data-action="open-log" data-cat="fish">\u{1F3A3} Log a Fish</button>' +
       '<button class="chip" data-action="open-log" data-cat="birds">\u{1F985} Log a Bird</button>' +
       '<button class="chip" data-action="open-log" data-cat="reptiles" data-sub="turtles">\u{1F422} Log a Turtle</button>' +
-      '<a class="chip" href="#/explore">\u{1F50D} Field Guide</a>' +
       '</div>';
+
+    // Safety & learning
+    body += '<div class="group"><div class="group-header">Safety & Learning</div><div class="list">' +
+      learnCell('\u{1F577}️', 'Ticks & Lyme disease', 'What to look for and what to do', 'ticks') +
+      learnCell('\u{1F43B}', 'Bear safety', 'Prevent encounters · Bear Wise', 'bears') +
+      learnCell('\u{1F6E3}️', 'Wildlife on roads', 'Deer, moose & turtles', 'roads') +
+      '</div></div>';
 
     if (app.entries.length) {
       body += '<div class="stat-grid" style="margin-top:8px">' +
@@ -247,6 +275,19 @@
   }
   function stat(n, l) { return '<div class="stat"><div class="n">' + n + '</div><div class="l">' + esc(l) + '</div></div>'; }
   function catsSeen() { var m = {}; app.entries.forEach(function (e) { if (e.cat) m[e.cat] = 1; }); return Object.keys(m).length; }
+  function learnCell(emoji, title, sub, topicId) {
+    return '<a class="cell tap" href="#/learn/' + esc(topicId) + '">' +
+      '<span class="cell-emoji">' + emoji + '</span>' +
+      '<span class="cell-body"><span class="cell-title">' + esc(title) + '</span>' +
+      '<span class="cell-sub">' + esc(sub) + '</span></span>' +
+      '<span class="chevron">' + I.chevron + '</span></a>';
+  }
+  function linkCell(label, url, note) {
+    return '<a class="cell tap" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' +
+      '<span class="cell-emoji" style="color:var(--tint)">' + I.link + '</span>' +
+      '<span class="cell-body"><span class="cell-title">' + esc(label) + '</span>' +
+      (note ? '<span class="cell-sub">' + esc(note) + '</span>' : '') + '</span></a>';
+  }
 
   function entryCell(e) {
     var meta = e.speciesId ? byId[e.speciesId] : null;
@@ -381,8 +422,23 @@
       (count ? '<div class="cell"><span class="cell-body"><span class="cell-title">Your sightings</span></span><span class="cell-value">' + count + '</span></div>' : '') +
       '</div></div>';
 
+    // Learn more — external, reputable sources (photos, range, conservation)
+    body += '<div class="group"><div class="group-header">Learn more</div><div class="list">' +
+      speciesLinks(s) +
+      '</div><div class="group-footer">Opens external sites in your browser.</div></div>';
+
     var backHref = (c && sub) ? '#/explore/' + s.cat + '/' + s.sub : '#/explore';
     screen({ title: s.name, back: backHref, backText: sub ? sub.name : (c ? c.name : 'Back'), body: body });
+  }
+  function speciesLinks(s) {
+    var q = encodeURIComponent(s.sci || s.name);
+    var out = linkCell('See photos on iNaturalist', 'https://www.inaturalist.org/search?q=' + q, 'Photos, range map & observations');
+    if (s.cat === 'birds') out += linkCell('Look up on eBird', 'https://ebird.org/canada', 'Bird records across Ontario');
+    else if (s.cat === 'fish') out += linkCell('Ontario fishing & regulations', 'https://www.ontario.ca/page/fishing', 'Seasons, limits & licences');
+    else if (s.cat === 'reptiles' || s.cat === 'amphibians') out += linkCell('Ontario Nature', 'https://ontarionature.org', 'Reptile & amphibian conservation');
+    else out += linkCell('Hinterland Who’s Who', 'https://www.hww.ca', 'Species profiles & videos');
+    if (s.atRisk) out += linkCell('Species at risk in Ontario', 'https://www.ontario.ca/page/species-risk-ontario', 'Status, recovery & how to help');
+    return out;
   }
   function info(k, v) { return '<div class="info-row"><div class="info-k">' + esc(k) + '</div><div class="info-v">' + esc(v) + '</div></div>'; }
   function cap(x) { return x.charAt(0).toUpperCase() + x.slice(1); }
@@ -430,10 +486,25 @@
   function viewMore() {
     var body = '';
     body += '<div class="group"><div class="group-header">Ways to Log</div><div class="list">' +
-      moreCell('\u{1F3A3}', 'Fishing', 'Log fish caught or seen', "javascript:void 0", 'open-log', { cat: 'fish' }) +
-      moreCell('\u{1F985}', 'Birding', 'Track the birds you spot', "javascript:void 0", 'open-log', { cat: 'birds' }) +
-      moreCell('\u{1F422}', 'Turtles', 'Ontario turtles are Species at Risk', "javascript:void 0", 'open-log', { cat: 'reptiles', sub: 'turtles' }) +
+      moreCell('\u{1F3A3}', 'Fishing', 'Log fish caught or seen', 'open-log', { cat: 'fish' }) +
+      moreCell('\u{1F985}', 'Birding', 'Track the birds you spot', 'open-log', { cat: 'birds' }) +
+      moreCell('\u{1F422}', 'Turtles', 'Ontario turtles are Species at Risk', 'open-log', { cat: 'reptiles', sub: 'turtles' }) +
+      moreCell('\u{1F43B}', 'Report a bear', 'For your map & Bear Wise info', 'report-bear') +
+      moreCell('⚠️', 'Report a hazard', 'Wildlife on road, construction, ticks…', 'report-hazard') +
       '</div></div>';
+
+    body += '<div class="group"><div class="group-header">Learn & Safety</div><div class="list">' +
+      learnCell('\u{1F577}️', 'Ticks & Lyme disease', 'Identify, prevent, remove & when to see a doctor', 'ticks') +
+      learnCell('\u{1F43B}', 'Bear safety (Bear Wise)', 'Prevent encounters and how to report a bear', 'bears') +
+      learnCell('\u{1F6E3}️', 'Wildlife on roads', 'Deer, moose, turtles & road hazards', 'roads') +
+      learnCell('\u{1F30D}', 'Help Ontario’s wildlife', 'How your sightings support conservation', 'contribute') +
+      '</div></div>';
+
+    body += '<div class="group"><div class="group-header">Resources</div><div class="list">' +
+      '<a class="cell tap" href="#/resources"><span class="cell-emoji">\u{1F517}</span>' +
+      '<span class="cell-body"><span class="cell-title">Ontario & Canada resources</span>' +
+      '<span class="cell-sub">Trusted sites for wildlife, fishing & safety</span></span>' +
+      '<span class="chevron">' + I.chevron + '</span></a></div></div>';
     body += '<div class="group"><div class="group-header">Your Data</div><div class="list">' +
       moreCell('\u{1F4E4}', 'Export encounters', 'Download your log as a file', 'javascript:void 0', 'export-data') +
       '</div>' +
@@ -455,14 +526,259 @@
       '</div></div>';
     screen({ title: 'More', large: true, body: body });
   }
-  function moreCell(emoji, title, sub, href, action, data) {
+  function moreCell(emoji, title, sub, action, data) {
     var attrs = 'data-action="' + action + '"';
     if (data) { if (data.cat) attrs += ' data-cat="' + data.cat + '"'; if (data.sub) attrs += ' data-sub="' + data.sub + '"'; }
     return '<button class="cell tap" ' + attrs + '>' +
       '<span class="cell-emoji">' + emoji + '</span>' +
-      '<span class="cell-body" style="text-align:left"><span class="cell-title">' + esc(title) + '</span>' +
+      '<span class="cell-body"><span class="cell-title">' + esc(title) + '</span>' +
       '<span class="cell-sub">' + esc(sub) + '</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></button>';
+  }
+
+  /* =============================================================== MAP */
+  function viewMap() {
+    var body =
+      '<div class="chip-row map-chiprow" id="map-chips">' + mapChips() + '</div>' +
+      '<div class="map-wrap"><div id="map"></div>' +
+        '<div class="map-hint" id="map-hint"></div>' +
+        '<div class="map-fabs">' +
+          '<button class="fab fab-locate" data-action="map-locate" aria-label="My location">' + I.crosshair + '</button>' +
+          '<button class="fab fab-hazard" data-action="report-hazard" aria-label="Report hazard">⚠️</button>' +
+          '<button class="fab fab-bear" data-action="report-bear" aria-label="Report bear">\u{1F43B}</button>' +
+        '</div>' +
+      '</div>';
+    screen({ title: 'Map', body: body, bare: true });
+    initMap();
+  }
+  function mapChips() {
+    var f = app.mapFilter;
+    function c(id, label) { return '<button class="chip' + (f === id ? ' on' : '') + '" data-action="map-filter" data-f="' + id + '">' + label + '</button>'; }
+    return c('all', 'All') + c('wildlife', '\u{1F43E} Wildlife') + c('bear', '\u{1F43B} Bears') + c('hazard', '⚠️ Hazards');
+  }
+  function locatedRecords() {
+    var out = [];
+    app.entries.forEach(function (e) {
+      if (typeof e.lat === 'number' && typeof e.lng === 'number') { var r = clone(e); r.kind = isBearEntry(e) ? 'bear' : 'wildlife'; out.push(r); }
+    });
+    app.hazards.forEach(function (h) {
+      if (typeof h.lat === 'number' && typeof h.lng === 'number') { var r = clone(h); r.kind = 'hazard'; out.push(r); }
+    });
+    return out;
+  }
+  function clone(o) { var r = {}; for (var k in o) if (o.hasOwnProperty(k)) r[k] = o[k]; return r; }
+  function pinIcon(emoji, cls) {
+    return L.divIcon({ className: 'pin-wrap', html: '<div class="pin ' + cls + '"><span class="pin-i">' + emoji + '</span></div>', iconSize: [34, 40], iconAnchor: [17, 38], popupAnchor: [0, -36] });
+  }
+  function initMap() {
+    var el = document.getElementById('map');
+    if (!el) return;
+    if (!window.L) { el.innerHTML = '<div class="map-msg">Map couldn’t load.</div>'; return; }
+    if (app.map) { try { app.map.remove(); } catch (e) {} app.map = null; }
+    var map = L.map(el, { zoomControl: true, attributionControl: true }).setView([50.0, -85.0], 5);
+    app.map = map;
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    renderMapMarkers();
+    var located = locatedRecords();
+    if (located.length) {
+      try { map.fitBounds(L.latLngBounds(located.map(function (r) { return [r.lat, r.lng]; })).pad(0.35), { maxZoom: 13 }); } catch (e) {}
+    } else { mapLocate(true); }
+    map.on('click', function (ev) {
+      if (app.placeMode === 'bear') { app.placeMode = null; updateMapHint(); openBearReport({ lat: ev.latlng.lat, lng: ev.latlng.lng }); }
+      else if (app.placeMode === 'hazard') { app.placeMode = null; updateMapHint(); openHazardReport({ lat: ev.latlng.lat, lng: ev.latlng.lng }); }
+    });
+    setTimeout(function () { if (app.map === map) map.invalidateSize(); }, 80);
+    setTimeout(function () { if (app.map === map) map.invalidateSize(); }, 400);
+    updateMapHint();
+  }
+  function renderMapMarkers() {
+    if (!app.map) return;
+    if (app._layer) { try { app.map.removeLayer(app._layer); } catch (e) {} }
+    var group = L.layerGroup();
+    locatedRecords().filter(function (r) { return app.mapFilter === 'all' || r.kind === app.mapFilter; }).forEach(function (r) {
+      var icon, popup;
+      if (r.kind === 'hazard') {
+        var ht = hazardType(r.type);
+        icon = pinIcon(ht.emoji, 'pin-hazard');
+        popup = '<b>' + esc(ht.name) + '</b><br>' + esc(fmtDay(r.when) + ' · ' + fmtTime(r.when)) + (r.notes ? '<br>' + esc(r.notes) : '');
+      } else if (r.kind === 'bear') {
+        icon = pinIcon('\u{1F43B}', 'pin-bear');
+        popup = '<b>' + esc(r.speciesName || 'Bear') + '</b><br>' + esc(fmtDay(r.when) + ' · ' + fmtTime(r.when)) + (r.bearReport && r.bearReport.cubs ? '<br>Cubs present' : '');
+      } else {
+        icon = pinIcon(r.emoji || '\u{1F43E}', 'pin-wild');
+        popup = '<b>' + esc(r.speciesName) + '</b><br>' + esc(fmtDay(r.when) + ' · ' + fmtTime(r.when)) + (r.speciesId ? '<br><a href="#/species/' + esc(r.speciesId) + '">Field guide ›</a>' : '');
+      }
+      L.marker([r.lat, r.lng], { icon: icon }).bindPopup(popup).addTo(group);
+    });
+    group.addTo(app.map);
+    app._layer = group;
+  }
+  function updateMapHint() {
+    var el = document.getElementById('map-hint'); if (!el) return;
+    if (app.placeMode) {
+      el.textContent = app.placeMode === 'bear' ? '🐻 Tap the map where you saw the bear' : '⚠️ Tap the map to place the hazard';
+      el.classList.add('show');
+    } else if (!locatedRecords().length) {
+      el.innerHTML = 'No mapped reports yet — tap 🐻 or ⚠️, then tap the map. Sightings you log with a location show up here too.';
+      el.classList.add('show');
+    } else { el.classList.remove('show'); el.textContent = ''; }
+  }
+  function mapLocate(silent) {
+    if (!app.map || !navigator.geolocation) { if (!silent) toast('Location not available'); return; }
+    navigator.geolocation.getCurrentPosition(function (p) {
+      if (app.map) app.map.setView([p.coords.latitude, p.coords.longitude], 12);
+    }, function () { if (!silent) toast('Location permission denied'); }, { enableHighAccuracy: true, timeout: 9000, maximumAge: 60000 });
+  }
+
+  /* ===================================================== BEAR & HAZARD REPORTS */
+  function segHtml(action, current, opts) {
+    var h = '<div class="segmented">';
+    opts.forEach(function (o) { h += '<div class="seg-opt' + (current === o[0] ? ' on' : '') + '" data-action="' + action + '" data-v="' + o[0] + '">' + esc(o[1]) + '</div>'; });
+    return h + '</div>';
+  }
+  function locCell(action, lat, lng) {
+    var has = lat != null;
+    return '<button class="cell tap" data-action="' + action + '">' +
+      '<span class="cell-emoji" style="color:var(--tint)">' + I.pin + '</span>' +
+      '<span class="cell-body"><span class="cell-title" style="color:var(--tint)">' + (has ? 'Location set' : 'Use my location') + '</span>' +
+      '<span class="cell-sub">' + (has ? (lat.toFixed(4) + ', ' + lng.toFixed(4)) : 'Tap to capture GPS, or drop a pin on the map') + '</span></span></button>';
+  }
+  function mountSheet(title, body, saveAction) {
+    var html = '<div class="scrim" data-action="close-sheet"></div>' +
+      '<div class="sheet" id="sheet"><div class="sheet-grabber"></div>' +
+      '<div class="sheet-nav"><button class="nav-btn" data-action="close-sheet">Cancel</button><span class="t">' + esc(title) + '</span>' +
+      '<button class="nav-btn bold" data-action="' + saveAction + '">Save</button></div>' +
+      '<div class="sheet-body">' + body + '</div></div>';
+    $('#sheet-root').innerHTML = html;
+    requestAnimationFrame(function () { var s = $('#sheet'); if (s) s.classList.add('show'); var sc = $('.scrim'); if (sc) sc.classList.add('show'); });
+  }
+  function reportLocate(which) {
+    if (!navigator.geolocation) { toast('Location not available'); return; }
+    var d = which === 'bear' ? app.bdraft : app.hdraft; if (!d) return;
+    toast('Locating…');
+    navigator.geolocation.getCurrentPosition(function (p) {
+      d.lat = p.coords.latitude; d.lng = p.coords.longitude; haptic();
+      if (which === 'bear') { readBear(); renderBearSheet(); } else { readHazard(); renderHazardSheet(); }
+    }, function () { toast('Location permission denied'); }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+  }
+  function afterReportSaved() {
+    if (app.map) { renderMapMarkers(); updateMapHint(); }
+    else setTimeout(route, 120);
+  }
+
+  function openBearReport(prefill) {
+    prefill = prefill || {};
+    app.bdraft = { species: 'american-black-bear', count: 1, cubs: false, behaviour: 'calm', when: localDatetimeValue(new Date()), notes: '', lat: prefill.lat != null ? prefill.lat : null, lng: prefill.lng != null ? prefill.lng : null };
+    renderBearSheet();
+  }
+  function readBear() {
+    var d = app.bdraft; if (!d) return;
+    var w = document.getElementById('b-when'); if (w) d.when = w.value;
+    var n = document.getElementById('b-notes'); if (n) d.notes = n.value;
+    var c = document.getElementById('b-cubs'); if (c) d.cubs = c.checked;
+  }
+  function renderBearSheet() {
+    var d = app.bdraft;
+    var body = '';
+    body += '<div class="wrap-note danger" style="margin:8px 16px"><span class="i">🐻</span><span><b>Bear Wise:</b> call <b>911</b> if a bear is an immediate threat. For non-emergency problems call <b>1-866-514-2327</b> (Apr–Nov). <a href="#/learn/bears" data-action="close-sheet-nav">Bear safety ›</a></span></div>';
+    body += '<div class="group" style="margin-top:6px"><div class="group-header">The bear</div><div class="list">';
+    body += '<div class="field"><span class="field-label">Type</span><div style="flex:1"></div><div style="width:220px">' + segHtml('bear-species', d.species, [['american-black-bear', 'Black bear'], ['polar-bear', 'Polar bear']]) + '</div></div>';
+    body += '<div class="field"><span class="field-label">How many</span><div style="flex:1"></div><div class="stepper"><button data-action="bcount" data-d="-1">−</button><div class="sep"></div><div id="bcount-val" style="min-width:44px;text-align:center;line-height:30px">' + d.count + '</div><div class="sep"></div><button data-action="bcount" data-d="1">+</button></div></div>';
+    body += '<div class="field"><span class="field-label">Cubs present</span><div style="flex:1"></div><label class="switch"><input type="checkbox" id="b-cubs"' + (d.cubs ? ' checked' : '') + '><span class="track"></span><span class="knob"></span></label></div>';
+    body += '</div></div>';
+    body += '<div class="group"><div class="group-header">Behaviour</div><div class="list"><div style="padding:12px 16px">' + segHtml('bear-behaviour', d.behaviour, [['calm', 'Calm / moved off'], ['curious', 'Curious'], ['aggressive', 'Aggressive']]) + '</div></div></div>';
+    body += '<div class="group"><div class="group-header">Where & when</div><div class="list">' + locCell('bear-locate', d.lat, d.lng) +
+      '<div class="field"><span class="field-label">When</span><input type="datetime-local" id="b-when" value="' + esc(d.when) + '"></div></div></div>';
+    body += '<div class="group"><div class="group-header">Notes</div><div class="list"><textarea class="notes" id="b-notes" placeholder="Location details, what it was doing…"></textarea></div></div>';
+    body += '<div class="hpad"><button class="btn btn-primary btn-block" data-action="save-bear">Save Bear Sighting</button></div>';
+    mountSheet('Report a Bear', body, 'save-bear');
+    setVal('b-notes', d.notes);
+  }
+  function saveBear() {
+    readBear();
+    var d = app.bdraft, sp = byId[d.species];
+    var entry = {
+      id: uid(), speciesId: d.species, speciesName: sp ? sp.name : 'Bear', cat: 'mammals', sub: sp ? sp.sub : 'large-mammals',
+      emoji: sp ? sp.emoji : '\u{1F43B}', evidence: 'saw', count: d.count,
+      when: d.when ? new Date(d.when).toISOString() : new Date().toISOString(),
+      lat: d.lat, lng: d.lng, notes: (d.notes || '').trim(), photo: null, fish: null, bird: null,
+      bearReport: { count: d.count, cubs: !!d.cubs, behaviour: d.behaviour }, createdAt: new Date().toISOString()
+    };
+    app.entries.push(entry); Store.put(entry); haptic(); closeSheet(); toast('🐻 Bear sighting saved'); afterReportSaved();
+  }
+
+  function openHazardReport(prefill) {
+    prefill = prefill || {};
+    app.hdraft = { type: 'wildlife-road', when: localDatetimeValue(new Date()), notes: '', lat: prefill.lat != null ? prefill.lat : null, lng: prefill.lng != null ? prefill.lng : null };
+    renderHazardSheet();
+  }
+  function readHazard() {
+    var d = app.hdraft; if (!d) return;
+    var w = document.getElementById('h-when'); if (w) d.when = w.value;
+    var n = document.getElementById('h-notes'); if (n) d.notes = n.value;
+  }
+  function renderHazardSheet() {
+    var d = app.hdraft;
+    var grid = '<div class="type-grid">';
+    HAZARD_TYPES.forEach(function (t) {
+      grid += '<button class="type-opt' + (d.type === t.id ? ' on' : '') + '" data-action="hazard-type" data-t="' + t.id + '"><span class="te">' + t.emoji + '</span><span>' + esc(t.name) + '</span></button>';
+    });
+    grid += '</div>';
+    var body = '';
+    body += '<div class="group" style="margin-top:6px"><div class="group-header">Hazard type</div>' + grid + '</div>';
+    body += '<div class="group"><div class="group-header">Where & when</div><div class="list">' + locCell('hazard-locate', d.lat, d.lng) +
+      '<div class="field"><span class="field-label">When</span><input type="datetime-local" id="h-when" value="' + esc(d.when) + '"></div></div></div>';
+    body += '<div class="group"><div class="group-header">Notes</div><div class="list"><textarea class="notes" id="h-notes" placeholder="What & where exactly…"></textarea></div></div>';
+    body += '<div class="hpad"><button class="btn btn-primary btn-block" data-action="save-hazard">Save Hazard</button></div>';
+    mountSheet('Report a Hazard', body, 'save-hazard');
+    setVal('h-notes', d.notes);
+  }
+  function saveHazard() {
+    readHazard();
+    var d = app.hdraft;
+    var h = { id: uid(), type: d.type, lat: d.lat, lng: d.lng, when: d.when ? new Date(d.when).toISOString() : new Date().toISOString(), notes: (d.notes || '').trim(), createdAt: new Date().toISOString() };
+    app.hazards.push(h); Store.put(h, 'hazards'); haptic(); closeSheet(); toast('⚠️ Hazard saved'); afterReportSaved();
+  }
+
+  /* ======================================================== LEARN / RESOURCES */
+  function viewLearn(topicId) {
+    var t = LEARN.topics[topicId];
+    if (!t) return viewMore();
+    var body = '<div class="hero" style="padding-bottom:2px">' +
+      '<div class="hero-emoji" style="background:' + (t.tint || 'var(--tint)') + '22">' + t.emoji + '</div>' +
+      '<h1>' + esc(t.title) + '</h1>' + (t.subtitle ? '<div class="sci" style="font-style:normal">' + esc(t.subtitle) + '</div>' : '') + '</div>';
+    if (t.disclaimer) body += '<div class="wrap-note"><span class="i">ℹ️</span><span>' + esc(t.disclaimer) + '</span></div>';
+    if (t.intro) body += '<p class="article-intro">' + esc(t.intro) + '</p>';
+    (t.sections || []).forEach(function (s) {
+      body += '<section class="article-sec"><h3>' + esc(s.h) + '</h3>';
+      if (s.p) body += '<p>' + esc(s.p) + '</p>';
+      if (s.bullets) { body += '<ul>'; s.bullets.forEach(function (b) { body += '<li>' + esc(b) + '</li>'; }); body += '</ul>'; }
+      if (s.steps) { body += '<ol>'; s.steps.forEach(function (b) { body += '<li>' + esc(b) + '</li>'; }); body += '</ol>'; }
+      if (s.callout) body += calloutHtml(s.callout);
+      body += '</section>';
+    });
+    if (t.links && t.links.length) {
+      body += '<div class="group"><div class="group-header">Official sources</div><div class="list">';
+      t.links.forEach(function (l) { body += linkCell(l.label, l.url, l.note); });
+      body += '</div><div class="group-footer">Opens external sites in your browser.</div></div>';
+    }
+    screen({ title: t.title, backAction: true, backText: 'Back', body: body });
+  }
+  function calloutHtml(c) {
+    var cls = c.style === 'danger' ? 'callout-danger' : c.style === 'warn' ? 'callout-warn' : 'callout-info';
+    return '<div class="callout ' + cls + '">' + (c.title ? '<div class="callout-t">' + esc(c.title) + '</div>' : '') + '<div>' + esc(c.body) + '</div></div>';
+  }
+  function viewResources() {
+    var body = '';
+    (LEARN.resources || []).forEach(function (g) {
+      body += '<div class="group"><div class="group-header">' + esc(g.group) + '</div><div class="list">';
+      g.items.forEach(function (it) { body += linkCell(it.label, it.url, it.note); });
+      body += '</div></div>';
+    });
+    body += '<div class="group-footer hpad" style="margin:8px 16px">Links open external sites in your browser. Ontario Wildlife Log isn’t affiliated with these organizations, and can’t guarantee external content.</div>';
+    screen({ title: 'Resources', backAction: true, backText: 'More', body: body });
   }
 
   /* ==================================================== LOG ENCOUNTER SHEET */
@@ -810,8 +1126,8 @@
 
   /* ------------------------------------------------------- Data export */
   function exportData() {
-    if (!app.entries.length) { toast('Nothing to export yet'); return; }
-    var blob = new Blob([JSON.stringify({ app: 'ontario-wildlife-log', version: 1, exported: new Date().toISOString(), entries: app.entries }, null, 2)], { type: 'application/json' });
+    if (!app.entries.length && !app.hazards.length) { toast('Nothing to export yet'); return; }
+    var blob = new Blob([JSON.stringify({ app: 'ontario-wildlife-log', version: 1, exported: new Date().toISOString(), entries: app.entries, hazards: app.hazards }, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url; a.download = 'wildlife-log-' + new Date().toISOString().slice(0, 10) + '.json';
@@ -825,7 +1141,8 @@
     var base = currentTab();
     var tabs = [
       ['log', '#/log', 'Log', I.log],
-      ['explore', '#/explore', 'Explore', I.explore],
+      ['explore', '#/explore', 'Guide', I.explore],
+      ['map', '#/map', 'Map', I.map],
       ['mylog', '#/mylog', 'My Log', I.mylog],
       ['more', '#/more', 'More', I.more]
     ];
@@ -838,8 +1155,9 @@
   function currentTab() {
     var h = location.hash.replace(/^#\//, '');
     if (h.indexOf('explore') === 0 || h.indexOf('species') === 0) return 'explore';
+    if (h.indexOf('map') === 0) return 'map';
     if (h.indexOf('mylog') === 0) return 'mylog';
-    if (h.indexOf('more') === 0) return 'more';
+    if (h.indexOf('more') === 0 || h.indexOf('learn') === 0 || h.indexOf('resources') === 0) return 'more';
     return 'log';
   }
 
@@ -847,6 +1165,8 @@
   function route() {
     var parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
     var r = parts[0] || 'log';
+    // Tear down the Leaflet map when navigating away from the Map screen
+    if (r !== 'map' && app.map) { try { app.map.remove(); } catch (e) {} app.map = null; app.placeMode = null; }
     if (r === 'log') viewLog();
     else if (r === 'explore') {
       if (parts[1] && parts[2]) viewSub(parts[1], parts[2]);
@@ -854,7 +1174,10 @@
       else viewExplore();
     }
     else if (r === 'species') viewSpecies(parts[1]);
+    else if (r === 'map') viewMap();
     else if (r === 'mylog') viewMyLog();
+    else if (r === 'learn') viewLearn(parts[1]);
+    else if (r === 'resources') viewResources();
     else if (r === 'more') viewMore();
     else viewLog();
     renderTabs();
@@ -872,6 +1195,37 @@
         break;
       case 'close-sheet': ev.preventDefault(); closeSheet(); break;
       case 'close-sheet-nav': closeSheet(); break; // let the link navigate too
+      case 'nav-back': ev.preventDefault(); if (history.length > 1) history.back(); else location.hash = '#/more'; break;
+      case 'report-bear':
+        ev.preventDefault();
+        if (app.map) { app.placeMode = 'bear'; updateMapHint(); toast('Tap the map where you saw the bear'); }
+        else openBearReport({});
+        break;
+      case 'report-hazard':
+        ev.preventDefault();
+        if (app.map) { app.placeMode = 'hazard'; updateMapHint(); toast('Tap the map to place the hazard'); }
+        else openHazardReport({});
+        break;
+      case 'map-filter':
+        ev.preventDefault();
+        app.mapFilter = t.getAttribute('data-f');
+        { var mc = $('#map-chips'); if (mc) mc.innerHTML = mapChips(); }
+        renderMapMarkers();
+        break;
+      case 'map-locate': ev.preventDefault(); mapLocate(false); break;
+      case 'bear-species': ev.preventDefault(); readBear(); app.bdraft.species = t.getAttribute('data-v'); renderBearSheet(); break;
+      case 'bear-behaviour': ev.preventDefault(); readBear(); app.bdraft.behaviour = t.getAttribute('data-v'); renderBearSheet(); break;
+      case 'bcount': {
+        ev.preventDefault();
+        app.bdraft.count = Math.max(1, Math.min(99, app.bdraft.count + parseInt(t.getAttribute('data-d'), 10)));
+        var bv = $('#bcount-val'); if (bv) bv.textContent = app.bdraft.count;
+        break;
+      }
+      case 'bear-locate': ev.preventDefault(); reportLocate('bear'); break;
+      case 'save-bear': ev.preventDefault(); saveBear(); break;
+      case 'hazard-type': ev.preventDefault(); readHazard(); app.hdraft.type = t.getAttribute('data-t'); renderHazardSheet(); break;
+      case 'hazard-locate': ev.preventDefault(); reportLocate('hazard'); break;
+      case 'save-hazard': ev.preventDefault(); saveHazard(); break;
       case 'save-entry': ev.preventDefault(); saveEntry(); break;
       case 'pick-species': ev.preventDefault(); syncDraftInputs(); openPicker(); break;
       case 'close-picker': ev.preventDefault(); closePicker(); break;
@@ -916,9 +1270,9 @@
       case 'set-units': ev.preventDefault(); app.settings.units = t.getAttribute('data-val'); saveSettings(); viewMore(); break;
       case 'clear-data':
         ev.preventDefault();
-        if (app.entries.length && confirm('Delete ALL ' + app.entries.length + ' logged encounters? This cannot be undone.')) {
-          app.entries = []; Store.clear(); toast('All data cleared'); route();
-        } else if (!app.entries.length) { toast('Nothing to clear'); }
+        if ((app.entries.length || app.hazards.length) && confirm('Delete ALL ' + app.entries.length + ' encounters and ' + app.hazards.length + ' hazards? This cannot be undone.')) {
+          app.entries = []; app.hazards = []; Store.clear('entries'); Store.clear('hazards'); toast('All data cleared'); route();
+        } else if (!app.entries.length && !app.hazards.length) { toast('Nothing to clear'); }
         break;
     }
   });
@@ -948,6 +1302,9 @@
     loadSettings();
     Store.load().then(function (entries) {
       app.entries = entries || [];
+      return Store.loadHazards();
+    }).then(function (hazards) {
+      app.hazards = hazards || [];
       app.ready = true;
       if (!location.hash) location.hash = '#/log';
       route();
