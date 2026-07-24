@@ -45,9 +45,21 @@ fullscreen with its own icon, feels native, and works offline.
   and **Help Ontario's wildlife** — each linking out to official Ontario/Canada sources.
   Every species page links to iNaturalist (photos), eBird/Ontario resources, and
   Species-at-Risk info.
-- **🧪 Data reliability (demo)** — an anomaly-detection model (robust z-scores + plausibility
-  rules) run over simulated contributors, including a deliberately fake "sham" account with
-  skewed data, showing how crowdsourced sightings can be vetted for conservation use.
+- **🎣 Fishing & 🦅 Birding modes** — the home screen switches into a fishing "water" version
+  (Log a Fish, with fish handling/release, protect-the-water, is-it-safe-to-eat, boating
+  safety and a licence link) or a birding version (how to birdwatch, trail etiquette & safety).
+- **🚫 Invasive species** section — categorized, with Clean·Drain·Dry and how to report.
+- **🏅 Collectible badges** (naturalist achievements, plus a secret one) and a **📊 Stats**
+  screen with honest "guide completion" progress (X of 258 species).
+- **🔒 Privacy & consent** — a first-run welcome that states data is private and on-device;
+  a Privacy screen; a conservation-sharing consent toggle (off by default, asks before
+  anything is shared); and **geoprivacy** that obscures Species-at-Risk locations in exports.
+- **📤 Shareable sighting cards** (canvas image via the native share sheet) for organic reach.
+- **🌗 Appearance** — in-app Light / Dark / Auto theme toggle; **pinch-zoom and OS text
+  scaling** respected, with visible keyboard focus (WCAG / AODA-minded).
+- **🧪 Data reliability (demo)** — an anomaly-detection model (robust z-scores over behavioural
+  signals — never rarity — plus plausibility rules) run over simulated contributors, including
+  a deliberately fake "sham" account, showing how crowdsourced sightings can be vetted.
 - **Photos** (auto-resized), **GPS location** (optional), and free-text notes per sighting.
 - **Your log** — every encounter, grouped by day, with running stats (encounters, unique
   species, categories). Export everything (sightings + hazards) to a JSON file anytime.
@@ -95,6 +107,7 @@ data/
   species.js            The Ontario species database (258 species)
   learn.js              Educational articles, curated resource links, hazard types
   trust.js              Anomaly-detection demo: synthetic data + statistical model
+  badges.js             Collectible naturalist badge definitions
 manifest.webmanifest    PWA manifest (name, icons, theme, standalone)
 service-worker.js       Offline caching of the app shell
 vendor/leaflet/         Vendored Leaflet mapping library (offline-capable)

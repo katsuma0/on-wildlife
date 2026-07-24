@@ -134,10 +134,12 @@
       burstFrac: gaps ? burst / gaps : 0, maxSpeed: maxSpeed
     };
   }
-  var KEYS = ['implausibleRate', 'rareRate', 'meanCount', 'maxCount', 'burstFrac', 'maxSpeed'];
-  var WEIGHTS = { implausibleRate: 1.2, rareRate: 1.2, meanCount: 1.0, maxCount: 0.8, burstFrac: 1.3, maxSpeed: 1.0 };
+  // Only behavioural / plausibility signals — never rarity itself. Reporting a
+  // rare or at-risk species is exactly what conservation wants, not a red flag.
+  var KEYS = ['implausibleRate', 'meanCount', 'maxCount', 'burstFrac', 'maxSpeed'];
+  var WEIGHTS = { implausibleRate: 1.2, meanCount: 1.0, maxCount: 0.8, burstFrac: 1.3, maxSpeed: 1.0 };
   var LABELS = {
-    implausibleRate: 'Out-of-season sightings', rareRate: 'Over-reports rare / at-risk species',
+    implausibleRate: 'Out-of-season sightings',
     meanCount: 'Unusually high counts', maxCount: 'Extreme single counts',
     burstFrac: 'Bot-like submission bursts', maxSpeed: 'Impossible travel between sightings'
   };
@@ -171,7 +173,6 @@
         var season = seasonOf(new Date(o.when).getTime());
         var why = [];
         if (s.seasons && s.seasons.length && s.seasons.indexOf(season) < 0) why.push('reported in ' + season);
-        if (s.seen === 'rare' || s.atRisk) why.push('rare/at-risk');
         if (o.count >= 15) why.push('count of ' + o.count);
         if (why.length) examples.push({ name: s.name || o.speciesId, why: why.join(' · ') });
       });
