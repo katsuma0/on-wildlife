@@ -59,9 +59,11 @@ fullscreen with its own icon, feels native, and works offline.
 - **📤 Shareable sighting cards** (canvas image via the native share sheet) for organic reach.
 - **🌗 Appearance** — in-app Light / Dark / Auto theme toggle; **pinch-zoom and OS text
   scaling** respected, with visible keyboard focus (WCAG / AODA-minded).
-- **🌍 Community (optional)** — connect a deployable [backend](server/) to pool anonymized
+- **🌍 Community (optional)** — connect a deployable [backend](server/) to pool **pseudonymized**
   sightings: "seen near you this week", recent bear/hazard activity, and province-wide totals.
-  Off until you connect a server and turn on sharing; at-risk locations are coarsened first.
+  Off until you connect a server and turn on sharing; coordinates are coarsened (and times
+  blurred) **before they leave the phone** and again at the server, and a secret **ownership
+  token** means only you can delete your shared data. Reset your device id anytime.
 - **📅 Timely nudges** — a season-aware "This month in Ontario" card with a gentle "you haven't
   logged one yet" prompt (deterministic, offline, no dark patterns).
 - **🖼 Real photos** — species pages pull an **openly-licensed (CC) photo from iNaturalist**
@@ -132,8 +134,10 @@ This is a web app (PWA), which shapes what iOS features are possible:
 - **Works today on iOS:** installable fullscreen app (Add to Home Screen), the **native
   share sheet** (send a sighting card straight to Messages/anywhere), standalone status-bar
   chrome, light/dark, offline, and **Web Push notifications** (iOS 16.4+ once installed) —
-  the service worker already renders pushes, and the community server is where nearby
-  bear/hazard alerts would be sent from (needs VAPID keys — see `server/README`).
+  **Enable nearby alerts** on the Community screen requests permission and subscribes through
+  the service worker (which renders incoming pushes); the community server holds the
+  subscriptions and, once you give it VAPID keys, is where nearby bear/hazard alerts are sent
+  from (see `server/README`).
 - **Not possible from a web app:** **Live Activities** and **Home-Screen Widgets** are
   native-only (ActivityKit / WidgetKit in Swift). Delivering those means shipping a native
   **SwiftUI** app (or a Capacitor wrapper with native widget/Live-Activity modules). The

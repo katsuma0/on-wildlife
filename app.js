@@ -246,7 +246,7 @@
     var navRight = cfg.navRight ? '<div class="nav-right">' + cfg.navRight + '</div>' : '';
     var nav = '<div class="nav' + (cfg.large ? ' has-large' : '') + '" id="nav">' +
       '<div class="nav-row">' + navLeft +
-      '<div class="nav-title">' + esc(cfg.title || '') + '</div>' + navRight +
+      '<div class="nav-title"' + (cfg.large ? '' : ' role="heading" aria-level="1"') + '>' + esc(cfg.title || '') + '</div>' + navRight +
       '</div></div>';
     var large = cfg.large
       ? '<div class="large-title"><h1>' + esc(cfg.title) + '</h1>' +
@@ -276,7 +276,7 @@
     screen({ title: cfg.title, large: true, subtitle: cfg.subtitle, body: body });
   }
   function modeSeg(mode) {
-    function o(id, label) { return '<button type="button" class="seg-opt' + (mode === id ? ' on' : '') + '" data-action="home-mode" data-m="' + id + '">' + label + '</button>'; }
+    function o(id, label) { return '<button type="button" class="seg-opt' + (mode === id ? ' on' : '') + '" aria-pressed="' + (mode === id ? 'true' : 'false') + '" data-action="home-mode" data-m="' + id + '">' + label + '</button>'; }
     return '<div class="hpad" style="margin-top:2px"><div class="segmented">' +
       o('all', 'All wildlife') + o('fishing', '\u{1F3A3} Fishing') + o('birding', '\u{1F985} Birding') + '</div></div>';
   }
@@ -492,13 +492,25 @@
     if (!id) { id = 'c' + Math.random().toString(36).slice(2) + Date.now().toString(36); try { localStorage.setItem('owl-cid', id); } catch (e) {} }
     return id;
   }
+  // A device-held secret that proves ownership of clientId to the server, so that
+  // knowing a client id alone can't delete or impersonate that contributor.
+  function clientToken() {
+    var t = null; try { t = localStorage.getItem('owl-tok'); } catch (e) {}
+    if (!t) {
+      t = '';
+      try { var a = new Uint8Array(16); crypto.getRandomValues(a); for (var i = 0; i < a.length; i++) t += (a[i] + 256).toString(16).slice(1); }
+      catch (e) { t = (Math.random().toString(36) + Math.random().toString(36)).replace(/[^a-z0-9]/g, '').slice(0, 32); }
+      try { localStorage.setItem('owl-tok', t); } catch (e) {}
+    }
+    return t;
+  }
   var Community = {
     base: function () { return (app.settings.communityUrl || '').replace(/\/+$/, ''); },
     on: function () { return !!(this.base() && app.settings.community); },
     post: function (payload) {
       if (!this.on()) return;
       try {
-        payload.clientId = clientId();
+        payload.clientId = clientId(); payload.token = clientToken();
         fetch(this.base() + '/api/v1/sightings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(function () {});
       } catch (e) {}
     },
@@ -519,15 +531,43 @@
     },
     remove: function () {
       var b = this.base(); if (!b) return Promise.resolve(null);
-      return fetch(b + '/api/v1/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: clientId() }) }).then(function (r) { return r.json(); }).catch(function () { return null; });
+      return fetch(b + '/api/v1/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: clientId(), token: clientToken() }) }).then(function (r) { return r.json(); }).catch(function () { return null; });
+    },
+    // Opt in (on an explicit tap, per iOS's user-gesture rule) to Web Push for
+    // nearby bear/hazard alerts. Needs the server to have a VAPID key configured.
+    enablePush: function () {
+      var b = this.base(); if (!b) { toast('Connect a server first'); return; }
+      if (!('serviceWorker' in navigator) || !('PushManager' in window) || typeof Notification === 'undefined') { toast('Push isn’t supported on this device'); return; }
+      fetch(b + '/api/v1/push/key').then(function (r) { return r.json(); }).then(function (d) {
+        var key = d && d.key;
+        if (!key) { toast('This server hasn’t set up alerts yet'); return; }
+        return Notification.requestPermission().then(function (perm) {
+          if (perm !== 'granted') { toast('Notifications not allowed'); return; }
+          return navigator.serviceWorker.ready.then(function (reg) {
+            return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToU8(key) });
+          }).then(function (sub) {
+            return fetch(b + '/api/v1/push/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: clientId(), token: clientToken(), subscription: sub }) });
+          }).then(function () { toast('Nearby bear & hazard alerts enabled'); });
+        });
+      }).catch(function () { toast('Couldn’t enable alerts'); });
     }
   };
+  function urlB64ToU8(base64) {
+    var pad = '='.repeat((4 - base64.length % 4) % 4);
+    var b64 = (base64 + pad).replace(/-/g, '+').replace(/_/g, '/');
+    var raw = atob(b64), out = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
   // Coarsen EVERY outgoing coordinate on-device before it leaves: ~5 km grid
   // normally, ~22 km for at-risk species. Raw GPS never leaves the phone.
   function coarseFor(v, sens) { var step = sens ? 5 : 20; return Math.round(v * step) / step; }
   function blurWhen(iso) { try { var d = new Date(iso); if (isNaN(d.getTime())) return ''; d.setMinutes(0, 0, 0); return d.toISOString(); } catch (e) { return ''; } }
   function communityPayload(entry) {
-    var sens = !!entry.sensitiveLoc, lat = entry.lat, lng = entry.lng;
+    // Recompute sensitivity at send time (don't trust a possibly-stale saved flag),
+    // and always treat bears as sensitive so their locations get the ~22 km grid.
+    var sens = !!entry.sensitiveLoc || isBearEntry(entry) || isSensitive(entry.speciesId);
+    var lat = entry.lat, lng = entry.lng;
     if (typeof lat === 'number') { lat = coarseFor(lat, sens); lng = coarseFor(lng, sens); }
     return {
       kind: isBearEntry(entry) ? 'bear' : 'sighting', species: entry.speciesId || '', name: '',
@@ -809,14 +849,14 @@
     body += '<div class="group"><div class="group-header">Appearance</div><div class="list">' +
       '<div class="field"><span class="field-label">Theme</span><div style="flex:1"></div>' +
       '<div class="segmented" style="width:216px">' +
-      '<button type="button" class="seg-opt' + (app.settings.theme === 'auto' ? ' on' : '') + '" data-action="set-theme" data-val="auto">Auto</button>' +
-      '<button type="button" class="seg-opt' + (app.settings.theme === 'light' ? ' on' : '') + '" data-action="set-theme" data-val="light">Light</button>' +
-      '<button type="button" class="seg-opt' + (app.settings.theme === 'dark' ? ' on' : '') + '" data-action="set-theme" data-val="dark">Dark</button>' +
+      '<button type="button" class="seg-opt' + (app.settings.theme === 'auto' ? ' on' : '') + '" aria-pressed="' + (app.settings.theme === 'auto' ? 'true' : 'false') + '" data-action="set-theme" data-val="auto">Auto</button>' +
+      '<button type="button" class="seg-opt' + (app.settings.theme === 'light' ? ' on' : '') + '" aria-pressed="' + (app.settings.theme === 'light' ? 'true' : 'false') + '" data-action="set-theme" data-val="light">Light</button>' +
+      '<button type="button" class="seg-opt' + (app.settings.theme === 'dark' ? ' on' : '') + '" aria-pressed="' + (app.settings.theme === 'dark' ? 'true' : 'false') + '" data-action="set-theme" data-val="dark">Dark</button>' +
       '</div></div>' +
       '<div class="field"><span class="field-label">Units</span><div style="flex:1"></div>' +
       '<div class="segmented" style="width:180px">' +
-      '<button type="button" class="seg-opt' + (app.settings.units === 'metric' ? ' on' : '') + '" data-action="set-units" data-val="metric">Metric</button>' +
-      '<button type="button" class="seg-opt' + (app.settings.units === 'imperial' ? ' on' : '') + '" data-action="set-units" data-val="imperial">Imperial</button>' +
+      '<button type="button" class="seg-opt' + (app.settings.units === 'metric' ? ' on' : '') + '" aria-pressed="' + (app.settings.units === 'metric' ? 'true' : 'false') + '" data-action="set-units" data-val="metric">Metric</button>' +
+      '<button type="button" class="seg-opt' + (app.settings.units === 'imperial' ? ' on' : '') + '" aria-pressed="' + (app.settings.units === 'imperial' ? 'true' : 'false') + '" data-action="set-units" data-val="imperial">Imperial</button>' +
       '</div></div></div>' +
       '<div class="group-footer">Auto follows your phone’s light or dark setting.</div></div>';
 
@@ -847,6 +887,7 @@
       '<div class="chip-row map-chiprow" id="map-chips">' + mapChips() + '</div>' +
       '<div class="map-wrap"><div id="map"></div>' +
         '<div class="map-hint" id="map-hint" role="status" aria-live="polite"></div>' +
+        '<div class="map-note" id="map-offline" role="status" aria-live="polite" hidden>Map tiles need a connection — your pins still show.</div>' +
         '<div class="map-fabs">' +
           '<button class="fab fab-locate" data-action="map-locate" aria-label="My location">' + I.crosshair + '</button>' +
           '<button class="fab fab-hazard" data-action="report-hazard" aria-label="Report hazard">⚠️</button>' +
@@ -858,7 +899,7 @@
   }
   function mapChips() {
     var f = app.mapFilter;
-    function c(id, label) { return '<button class="chip' + (f === id ? ' on' : '') + '" data-action="map-filter" data-f="' + id + '">' + label + '</button>'; }
+    function c(id, label) { return '<button class="chip' + (f === id ? ' on' : '') + '" aria-pressed="' + (f === id ? 'true' : 'false') + '" data-action="map-filter" data-f="' + id + '">' + label + '</button>'; }
     return c('all', 'All') + c('wildlife', '\u{1F43E} Wildlife') + c('bear', '\u{1F43B} Bears') + c('hazard', '⚠️ Hazards');
   }
   function locatedRecords() {
@@ -882,14 +923,20 @@
     if (app.map) { try { app.map.remove(); } catch (e) {} app.map = null; }
     var map = L.map(el, { zoomControl: true, attributionControl: true }).setView([50.0, -85.0], 5);
     app.map = map;
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+    });
+    // Degrade gracefully offline: show a note instead of a blank grey grid.
+    tiles.on('tileerror', function () { var n = $('#map-offline'); if (n) n.hidden = false; });
+    tiles.on('load', function () { var n = $('#map-offline'); if (n) n.hidden = true; });
+    tiles.addTo(map);
     renderMapMarkers();
     var located = locatedRecords();
     if (located.length) {
       try { map.fitBounds(L.latLngBounds(located.map(function (r) { return [r.lat, r.lng]; })).pad(0.35), { maxZoom: 13 }); } catch (e) {}
-    } else { mapLocate(true); }
+    }
+    // Don't silently read GPS on open (privacy): the province view is the default;
+    // the user taps the locate button when they want to centre on themselves.
     map.on('click', function (ev) {
       if (app.placeMode === 'bear') { app.placeMode = null; updateMapHint(); openBearReport({ lat: ev.latlng.lat, lng: ev.latlng.lng }); }
       else if (app.placeMode === 'hazard') { app.placeMode = null; updateMapHint(); openHazardReport({ lat: ev.latlng.lat, lng: ev.latlng.lng }); }
@@ -923,7 +970,8 @@
   function updateMapHint() {
     var el = document.getElementById('map-hint'); if (!el) return;
     if (app.placeMode) {
-      el.textContent = app.placeMode === 'bear' ? '🐻 Tap the map where you saw the bear' : '⚠️ Tap the map to place the hazard';
+      el.innerHTML = (app.placeMode === 'bear' ? '🐻 Tap the map where you saw the bear' : '⚠️ Tap the map to place the hazard') +
+        ' <button type="button" class="hint-btn" data-action="place-center">or place at map centre</button>';
       el.classList.add('show');
     } else if (!locatedRecords().length) {
       el.innerHTML = 'No mapped reports yet — tap 🐻 or ⚠️, then tap the map. Sightings you log with a location show up here too.';
@@ -932,15 +980,16 @@
   }
   function mapLocate(silent) {
     if (!app.map || !navigator.geolocation) { if (!silent) toast('Location not available'); return; }
+    // Coarse accuracy is enough to centre the map, and avoids waking precise GPS.
     navigator.geolocation.getCurrentPosition(function (p) {
       if (app.map) app.map.setView([p.coords.latitude, p.coords.longitude], 12);
-    }, function () { if (!silent) toast('Location permission denied'); }, { enableHighAccuracy: true, timeout: 9000, maximumAge: 60000 });
+    }, function () { if (!silent) toast('Location permission denied'); }, { enableHighAccuracy: false, timeout: 9000, maximumAge: 60000 });
   }
 
   /* ===================================================== BEAR & HAZARD REPORTS */
   function segHtml(action, current, opts) {
     var h = '<div class="segmented">';
-    opts.forEach(function (o) { h += '<button type="button" class="seg-opt' + (current === o[0] ? ' on' : '') + '" data-action="' + action + '" data-v="' + o[0] + '">' + esc(o[1]) + '</button>'; });
+    opts.forEach(function (o) { h += '<button type="button" class="seg-opt' + (current === o[0] ? ' on' : '') + '" aria-pressed="' + (current === o[0] ? 'true' : 'false') + '" data-action="' + action + '" data-v="' + o[0] + '">' + esc(o[1]) + '</button>'; });
     return h + '</div>';
   }
   function locCell(action, lat, lng) {
@@ -964,9 +1013,13 @@
       if (appEl) { appEl.setAttribute('inert', ''); appEl.setAttribute('aria-hidden', 'true'); }
       if (tb) { tb.setAttribute('inert', ''); tb.setAttribute('aria-hidden', 'true'); }
     } catch (e) {}
-    if (firstOpen) setTimeout(function () {
-      var f = s.querySelector('button.nav-btn.bold, input:not([type=hidden]), textarea, button, a[href]');
-      if (f) { try { f.focus(); } catch (e) {} }
+    // Move focus in on first open, and re-establish it whenever a re-render
+    // (segmented tap, edit transition) detached the focused control so it fell to <body>.
+    var needFocus = firstOpen || !s.contains(document.activeElement);
+    if (needFocus) setTimeout(function () {
+      var s2 = $('#sheet'); if (!s2 || s2.contains(document.activeElement)) return;
+      var f = s2.querySelector('input:not([type=hidden]), textarea, button.nav-btn.bold, button, a[href]');
+      if (f) { try { f.focus({ preventScroll: true }); } catch (e) { try { f.focus(); } catch (e2) {} } }
     }, 80);
   }
   function clearSheetA11y() {
@@ -993,7 +1046,10 @@
     var d = which === 'bear' ? app.bdraft : app.hdraft; if (!d) return;
     toast('Locating…');
     navigator.geolocation.getCurrentPosition(function (p) {
-      d.lat = p.coords.latitude; d.lng = p.coords.longitude; haptic();
+      d.lat = p.coords.latitude; d.lng = p.coords.longitude;
+      var active = which === 'bear' ? app.bdraft : app.hdraft;
+      if (active !== d || !$('#sheet')) return;   // sheet was closed / draft replaced — don't re-open a modal the user dismissed
+      haptic();
       if (which === 'bear') { readBear(); renderBearSheet(); } else { readHazard(); renderHazardSheet(); }
     }, function () { toast('Location permission denied'); }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
   }
@@ -1024,8 +1080,8 @@
     body += '</div></div>';
     body += '<div class="group"><div class="group-header">Behaviour</div><div class="list"><div style="padding:12px 16px">' + segHtml('bear-behaviour', d.behaviour, [['calm', 'Calm / moved off'], ['curious', 'Curious'], ['aggressive', 'Aggressive']]) + '</div></div></div>';
     body += '<div class="group"><div class="group-header">Where & when</div><div class="list">' + locCell('bear-locate', d.lat, d.lng) +
-      '<div class="field"><span class="field-label">When</span><input type="datetime-local" id="b-when" value="' + esc(d.when) + '"></div></div></div>';
-    body += '<div class="group"><div class="group-header">Notes</div><div class="list"><textarea class="notes" id="b-notes" placeholder="Location details, what it was doing…"></textarea></div></div>';
+      '<div class="field"><span class="field-label">When</span><input type="datetime-local" id="b-when" aria-label="Date and time seen" value="' + esc(d.when) + '"></div></div></div>';
+    body += '<div class="group"><div class="group-header">Notes</div><div class="list"><textarea class="notes" id="b-notes" aria-label="Notes" placeholder="Location details, what it was doing…"></textarea></div></div>';
     body += '<div class="hpad"><button class="btn btn-primary btn-block" data-action="save-bear">Save Bear Sighting</button></div>';
     mountSheet('Report a Bear', body, 'save-bear');
     setVal('b-notes', d.notes);
@@ -1041,10 +1097,12 @@
       bearReport: { count: d.count, cubs: !!d.cubs, behaviour: d.behaviour }, createdAt: new Date().toISOString()
     };
     if (entry.lat != null && isSensitive(entry.speciesId)) entry.sensitiveLoc = true;
+    if (app._saving) return; app._saving = true;
     app.entries.push(entry);
     Store.put(entry).then(function () {
+      app._saving = false;
       Community.post(communityPayload(entry)); haptic(); closeSheet(); toast('🐻 Saved to your log (on your phone)'); afterReportSaved(); setTimeout(checkNewBadges, 1400);
-    }).catch(function () { var i = app.entries.indexOf(entry); if (i >= 0) app.entries.splice(i, 1); toast('Couldn’t save — storage may be full.'); });
+    }).catch(function () { app._saving = false; var i = app.entries.indexOf(entry); if (i >= 0) app.entries.splice(i, 1); toast('Couldn’t save — storage may be full.'); });
   }
 
   function openHazardReport(prefill) {
@@ -1061,14 +1119,14 @@
     var d = app.hdraft;
     var grid = '<div class="type-grid">';
     HAZARD_TYPES.forEach(function (t) {
-      grid += '<button class="type-opt' + (d.type === t.id ? ' on' : '') + '" data-action="hazard-type" data-t="' + t.id + '"><span class="te">' + t.emoji + '</span><span>' + esc(t.name) + '</span></button>';
+      grid += '<button class="type-opt' + (d.type === t.id ? ' on' : '') + '" aria-pressed="' + (d.type === t.id ? 'true' : 'false') + '" data-action="hazard-type" data-t="' + t.id + '"><span class="te">' + t.emoji + '</span><span>' + esc(t.name) + '</span></button>';
     });
     grid += '</div>';
     var body = '';
     body += '<div class="group" style="margin-top:6px"><div class="group-header">Hazard type</div>' + grid + '</div>';
     body += '<div class="group"><div class="group-header">Where & when</div><div class="list">' + locCell('hazard-locate', d.lat, d.lng) +
-      '<div class="field"><span class="field-label">When</span><input type="datetime-local" id="h-when" value="' + esc(d.when) + '"></div></div></div>';
-    body += '<div class="group"><div class="group-header">Notes</div><div class="list"><textarea class="notes" id="h-notes" placeholder="What & where exactly…"></textarea></div></div>';
+      '<div class="field"><span class="field-label">When</span><input type="datetime-local" id="h-when" aria-label="Date and time" value="' + esc(d.when) + '"></div></div></div>';
+    body += '<div class="group"><div class="group-header">Notes</div><div class="list"><textarea class="notes" id="h-notes" aria-label="Notes" placeholder="What & where exactly…"></textarea></div></div>';
     body += '<div class="hpad"><button class="btn btn-primary btn-block" data-action="save-hazard">Save Hazard</button></div>';
     mountSheet('Report a Hazard', body, 'save-hazard');
     setVal('h-notes', d.notes);
@@ -1077,11 +1135,13 @@
     readHazard();
     var d = app.hdraft;
     var h = { id: uid(), type: d.type, lat: d.lat, lng: d.lng, when: d.when ? new Date(d.when).toISOString() : new Date().toISOString(), notes: (d.notes || '').trim(), createdAt: new Date().toISOString() };
+    if (app._saving) return; app._saving = true;
     app.hazards.push(h);
     Store.put(h, 'hazards').then(function () {
+      app._saving = false;
       Community.post({ kind: 'hazard', hazardType: h.type, cat: 'hazard', count: 1, sensitive: false, lat: typeof h.lat === 'number' ? coarseFor(h.lat, false) : null, lng: typeof h.lng === 'number' ? coarseFor(h.lng, false) : null, when: blurWhen(h.when) });
       haptic(); closeSheet(); toast('⚠️ Hazard saved'); afterReportSaved(); setTimeout(checkNewBadges, 1400);
-    }).catch(function () { var i = app.hazards.indexOf(h); if (i >= 0) app.hazards.splice(i, 1); toast('Couldn’t save — storage may be full.'); });
+    }).catch(function () { app._saving = false; var i = app.hazards.indexOf(h); if (i >= 0) app.hazards.splice(i, 1); toast('Couldn’t save — storage may be full.'); });
   }
 
   /* ======================================================== LEARN / RESOURCES */
@@ -1258,11 +1318,11 @@
     body += '<div class="badge-grid">';
     visible.forEach(function (b) {
       var on = earned[b.id];
-      body += '<div class="badge-card' + (on ? '' : ' locked') + '">' +
+      body += '<div class="badge-card' + (on ? '' : ' locked') + '" role="group" aria-label="' + esc(b.name) + ' — ' + (on ? 'earned' : 'locked') + '">' +
         '<div class="badge-ico">' + b.emoji + '</div>' +
         '<div class="badge-name">' + esc(b.name) + '</div>' +
         '<div class="badge-desc">' + esc(b.desc) + '</div>' +
-        (on ? '<div class="badge-chk">✓</div>' : '') + '</div>';
+        (on ? '<div class="badge-chk" aria-label="Earned">✓</div>' : '') + '</div>';
     });
     body += '</div>';
     if (!earned.emblems) body += '<div class="group-footer hpad" style="text-align:center">✨ There’s a secret badge to discover…</div>';
@@ -1329,7 +1389,7 @@
   /* =============================================================== PRIVACY */
   function viewPrivacy() {
     var body = '<div class="hero" style="padding-bottom:2px"><div class="hero-emoji" style="background:var(--tint-soft)">\u{1F512}</div><h1>Your Privacy</h1><div class="sci" style="font-style:normal">Private by default</div></div>';
-    body += '<p class="article-intro">Your log — sightings, photos, locations and notes — is stored <b>only on this device</b>. There are no accounts, ads or trackers. Two features can reach the internet, and both are <b>off until you turn them on</b>: connecting to a Community server, and loading reference photos.</p>';
+    body += '<p class="article-intro">Your log — sightings, photos, locations and notes — is stored <b>only on this device</b>. There are no accounts, ads or trackers, and <b>nothing you log is uploaded</b> unless you turn on Community sharing. Two optional features reach the internet only when you enable them: connecting to a Community server, and loading reference photos. One more thing worth knowing: the <b>Map</b> loads its background tiles from <b>OpenStreetMap</b>, so opening the Map tab sends the area you’re viewing (and your device’s IP) to that map service — it never sends your saved sightings.</p>';
     body += '<div class="group"><div class="group-header">On this device</div><div class="list">' +
       infoRow2('\u{1F4F1}', 'Stored locally', 'Your journal lives in this app’s private storage on your phone.') +
       infoRow2('\u{1F6AB}', 'No accounts or trackers', 'No sign-in, no ads, no analytics.') +
@@ -1371,8 +1431,10 @@
     body += '<div class="group"><div class="group-header">Connection</div><div class="list">' +
       '<div class="cell"><span class="cell-emoji">\u{1F517}</span><span class="cell-body"><span class="cell-title">Server</span><span class="cell-sub" style="white-space:normal">' + esc(url) + '</span></span></div>' +
       '<div class="field"><span class="field-label" style="flex:1">Share my sightings</span><label class="switch"><input type="checkbox" id="community-share" aria-label="Share my sightings with the community"' + (app.settings.community ? ' checked' : '') + '><span class="track"></span><span class="knob"></span></label></div>' +
+      '<button class="cell tap" data-action="enable-push"><span class="cell-emoji">\u{1F514}</span><span class="cell-body"><span class="cell-title">Enable nearby alerts</span><span class="cell-sub" style="white-space:normal">Push me when bears or hazards are reported near me (needs the server set up for push)</span></span><span class="chevron">' + I.chevron + '</span></button>' +
+      '<button class="cell tap" data-action="reset-cid"><span class="cell-emoji">\u{1F504}</span><span class="cell-body"><span class="cell-title">Reset my device id</span><span class="cell-sub" style="white-space:normal">Breaks the link between your past and future shared reports</span></span></button>' +
       '<button class="cell tap" data-action="community-disconnect"><span class="cell-emoji">\u{1F50C}</span><span class="cell-body"><span class="cell-title" style="color:var(--red)">Disconnect</span></span></button>' +
-      '</div><div class="group-footer">' + (app.settings.community ? 'Your sightings are shared anonymously (a random device id, no name). At-risk locations are coarsened before they leave your phone.' : 'Sharing is off — you can still see the community feed below.') + '</div></div>';
+      '</div><div class="group-footer">' + (app.settings.community ? 'Your sightings are shared <b>pseudonymously</b> (a random device id, no name), so a server operator could group your reports by that id — reset it anytime above. At-risk locations are coarsened before they leave your phone.' : 'Sharing is off — you can still see the community feed below.') + '</div></div>';
     body += '<div id="community-feed"><div class="empty"><div class="e">\u{1F4E1}</div><p>Loading community activity…</p></div></div>';
     screen({ title: 'Community', backAction: true, backText: 'Back', body: body });
     loadCommunityFeed();
@@ -1413,7 +1475,7 @@
       '<div class="sheet-body" style="padding:8px 20px calc(24px + var(--sa-bottom))">' +
       '<div style="text-align:center;font-size:44px;margin:8px 0">\u{1F43E}</div>' +
       '<h2 style="text-align:center;margin:0 0 6px;font-size:22px">Welcome to Wildlife Log</h2>' +
-      '<p style="text-align:center;color:var(--label-2);font-size:15px;line-height:1.45;margin:0 0 16px">Log the wildlife, fish and plants you find across Ontario. <b>Everything stays private on your device</b> — nothing is shared, and if that ever changes we’ll ask you first.</p>' +
+      '<p style="text-align:center;color:var(--label-2);font-size:15px;line-height:1.45;margin:0 0 16px">Log the wildlife, fish and plants you find across Ontario. <b>Your sightings stay private on your device</b> — nothing you log is uploaded unless you choose to turn on sharing.</p>' +
       '<button class="btn btn-primary btn-block" data-action="accept-privacy">Get started</button>' +
       '<div class="spacer"></div>' +
       '<button class="btn btn-plain btn-block" data-action="open-privacy-first" style="height:40px">Read our privacy note</button>' +
@@ -1478,7 +1540,7 @@
       : [['saw', 'Saw'], ['heard', 'Heard'], ['tracks', 'Signs']];
     var evHtml = '<div class="segmented">';
     evOpts.forEach(function (o) {
-      evHtml += '<button type="button" class="seg-opt' + (d.evidence === o[0] ? ' on' : '') + '" data-action="set-evidence" data-val="' + o[0] + '">' + o[1] + '</button>';
+      evHtml += '<button type="button" class="seg-opt' + (d.evidence === o[0] ? ' on' : '') + '" aria-pressed="' + (d.evidence === o[0] ? 'true' : 'false') + '" data-action="set-evidence" data-val="' + o[0] + '">' + o[1] + '</button>';
     });
     evHtml += '</div>';
 
@@ -1496,7 +1558,7 @@
       '<div class="val" id="count-val">' + d.count + '</div>' +
       '<div class="sep"></div><button data-action="count" data-d="1">+</button></div></div>';
     body += '<div class="field"><span class="field-label">When</span>' +
-      '<input type="datetime-local" id="f-when" value="' + esc(d.when) + '"></div>';
+      '<input type="datetime-local" id="f-when" aria-label="Date and time seen" value="' + esc(d.when) + '"></div>';
     body += '<button class="cell tap" data-action="use-location">' +
       '<span class="cell-emoji" style="color:var(--tint)">' + I.pin + '</span>' +
       '<span class="cell-body" style="text-align:left"><span class="cell-title" id="loc-title">' +
@@ -1514,8 +1576,8 @@
       if (d.evidence === 'caught') {
         body += '<div class="field"><span class="field-label">Kept or released?</span><div style="flex:1"></div>' +
           '<div style="width:170px"><div class="segmented">' +
-          '<button type="button" class="seg-opt' + (d.released ? ' on' : '') + '" data-action="set-kept" data-v="released">Released</button>' +
-          '<button type="button" class="seg-opt' + (!d.released ? ' on' : '') + '" data-action="set-kept" data-v="kept">Kept</button>' +
+          '<button type="button" class="seg-opt' + (d.released ? ' on' : '') + '" aria-pressed="' + (d.released ? 'true' : 'false') + '" data-action="set-kept" data-v="released">Released</button>' +
+          '<button type="button" class="seg-opt' + (!d.released ? ' on' : '') + '" aria-pressed="' + (!d.released ? 'true' : 'false') + '" data-action="set-kept" data-v="kept">Kept</button>' +
           '</div></div></div>';
       }
       body += '<div class="field"><span class="field-label">Length</span>' +
@@ -1539,7 +1601,7 @@
     // Photo + notes
     body += '<div class="group"><div class="group-header">Photo & Notes</div><div class="list">';
     body += '<div id="photo-slot">' + photoSlot() + '</div>';
-    body += '<textarea class="notes" id="f-notes" placeholder="Notes—where exactly, what it was doing, weather…"></textarea>';
+    body += '<textarea class="notes" id="f-notes" aria-label="Notes" placeholder="Notes—where exactly, what it was doing, weather…"></textarea>';
     body += '</div></div>';
 
     // Save
@@ -1570,7 +1632,7 @@
   function photoSlot() {
     var d = app.draft;
     if (d.photo) {
-      return '<div style="padding:12px 16px"><img class="entry-photo" src="' + d.photo + '" alt="">' +
+      return '<div style="padding:12px 16px"><img class="entry-photo" src="' + d.photo + '" alt="Photo you attached to this sighting">' +
         '<button class="btn btn-danger btn-block" style="height:40px;margin-top:10px" data-action="remove-photo">Remove photo</button></div>';
     }
     return '<button class="cell tap" data-action="take-photo">' +
@@ -1616,13 +1678,18 @@
     root.innerHTML = html;
     document.body.appendChild(root);
     app._pickerCat = startCat;
+    // a11y: trap focus in the picker and make the underlying log sheet inert
+    app._pickerOpener = document.activeElement;
+    var sheetEl = $('#sheet');
+    try { if (sheetEl) { sheetEl.setAttribute('inert', ''); sheetEl.setAttribute('aria-hidden', 'true'); } } catch (e) {}
     var inp = $('#picker-search');
     inp.addEventListener('input', function () { refreshPicker(); });
+    setTimeout(function () { try { inp.focus({ preventScroll: true }); } catch (e) { try { inp.focus(); } catch (e2) {} } }, 60);
   }
   function pickerChips(active) {
-    var html = '<button class="chip' + (active === 'all' ? ' on' : '') + '" data-action="picker-cat" data-cat="all">All</button>';
+    var html = '<button class="chip' + (active === 'all' ? ' on' : '') + '" aria-pressed="' + (active === 'all' ? 'true' : 'false') + '" data-action="picker-cat" data-cat="all">All</button>';
     CATEGORIES.forEach(function (c) {
-      html += '<button class="chip' + (active === c.id ? ' on' : '') + '" data-action="picker-cat" data-cat="' + c.id + '">' + c.emoji + ' ' + esc(c.name) + '</button>';
+      html += '<button class="chip' + (active === c.id ? ' on' : '') + '" aria-pressed="' + (active === c.id ? 'true' : 'false') + '" data-action="picker-cat" data-cat="' + c.id + '">' + c.emoji + ' ' + esc(c.name) + '</button>';
     });
     return html;
   }
@@ -1674,12 +1741,23 @@
     var q = ($('#picker-search') || {}).value || '';
     $('#picker-list').innerHTML = pickerList(app._pickerCat, q);
   }
-  function closePicker() { var r = $('#picker-root'); if (r) r.remove(); }
+  function closePicker() {
+    var sheetEl = $('#sheet');
+    try { if (sheetEl) { sheetEl.removeAttribute('inert'); sheetEl.removeAttribute('aria-hidden'); } } catch (e) {}
+    var r = $('#picker-root'); if (r) r.remove();
+    // If the opener still exists (Back with no re-render), restore focus to it;
+    // otherwise renderSheet()→afterSheetOpen() will re-establish focus.
+    if (app._pickerOpener && app._pickerOpener.focus && document.contains(app._pickerOpener)) {
+      try { app._pickerOpener.focus({ preventScroll: true }); } catch (e) {}
+    }
+    app._pickerOpener = null;
+  }
 
   function saveEntry() {
     syncDraftInputs();
     var d = app.draft;
     if (!d.speciesId && !d.customName) { toast('Choose a species first'); return; }
+    if (app._saving) return; app._saving = true;   // guard against double-tap duplicate saves
     var sp = d.speciesId ? byId[d.speciesId] : null;
     var num = function (v) { var n = parseFloat(v); return isFinite(n) ? n : null; };
     var entry = {
@@ -1718,6 +1796,7 @@
       app.entries.push(entry);
     }
     Store.put(entry).then(function () {
+      app._saving = false;
       if (!editing) Community.post(communityPayload(entry));
       haptic();
       closeSheet();
@@ -1725,8 +1804,11 @@
       setTimeout(function () { route(); }, 120);
       if (!editing) setTimeout(checkNewBadges, 1400);
     }).catch(function () {
-      if (editing) { if (prevIdx >= 0) app.entries[prevIdx] = prevEntry; }
-      else { var i = app.entries.indexOf(entry); if (i >= 0) app.entries.splice(i, 1); }
+      app._saving = false;
+      if (editing) {
+        if (prevIdx >= 0) app.entries[prevIdx] = prevEntry;
+        else { var j = app.entries.indexOf(entry); if (j >= 0) app.entries.splice(j, 1); }
+      } else { var i = app.entries.indexOf(entry); if (i >= 0) app.entries.splice(i, 1); }
       toast('Couldn’t save — your device storage may be full. Try removing the photo.');
     });
   }
@@ -1757,7 +1839,7 @@
       '<div class="hero-emoji" style="width:76px;height:76px;font-size:44px;background:' + tintFor(e.cat) + '22">' + (e.emoji || '\u{1F43E}') + '</div>' +
       '<h1>' + esc(e.speciesName) + '</h1>' +
       (sp ? '<div class="sci">' + esc(sp.sci) + '</div>' : '') + '</div>';
-    if (e.photo) body += '<div class="hpad"><img class="entry-photo" src="' + e.photo + '" alt=""></div>';
+    if (e.photo) body += '<div class="hpad"><img class="entry-photo" src="' + e.photo + '" alt="Photo of your ' + esc(e.speciesName) + ' sighting"></div>';
     body += '<div class="group"><div class="list">' + rows + '</div></div>';
     body += '<div class="hpad"><button class="btn btn-primary btn-block" data-action="share-entry" data-id="' + esc(e.id) + '">' + I.share + 'Share this sighting</button></div><div class="spacer"></div>';
     body += '<div class="hpad"><button class="btn btn-tinted btn-block" data-action="edit-entry" data-id="' + esc(e.id) + '">Edit encounter</button></div><div class="spacer"></div>';
@@ -1884,7 +1966,9 @@
     if (!app.entries.length && !app.hazards.length) { toast('Nothing to export yet'); return; }
     // Geoprivacy: coarsen at-risk species locations before they leave the device
     var exEntries = app.entries.map(function (e) {
-      if (e.sensitiveLoc && typeof e.lat === 'number') {
+      // Recompute sensitivity at export time so a stale/missing flag can't leak an
+      // at-risk or turtle location at full GPS precision into a shared backup file.
+      if ((e.sensitiveLoc || isSensitive(e.speciesId)) && typeof e.lat === 'number') {
         var c = {}; for (var k in e) if (e.hasOwnProperty(k)) c[k] = e[k];
         c.lat = coarse(e.lat); c.lng = coarse(e.lng); c.locationObscured = true;
         return c;
@@ -1912,7 +1996,8 @@
     ];
     var html = '';
     tabs.forEach(function (t) {
-      html += '<a class="tab' + (base === t[0] ? ' active' : '') + '" href="' + t[1] + '">' + t[3] + '<span>' + t[2] + '</span></a>';
+      var on = base === t[0];
+      html += '<a class="tab' + (on ? ' active' : '') + '" href="' + t[1] + '"' + (on ? ' aria-current="page"' : '') + '>' + t[3] + '<span>' + t[2] + '</span></a>';
     });
     $('#tabbar').innerHTML = html;
   }
@@ -1960,7 +2045,16 @@
   document.addEventListener('keydown', function (ev) {
     if (ev.key !== 'Escape' && ev.key !== 'Esc') return;
     if ($('#picker-root')) { ev.preventDefault(); closePicker(); }
-    else if ($('#sheet')) { ev.preventDefault(); closeSheet(); }
+    else if ($('#sheet')) {
+      ev.preventDefault();
+      // The first-run privacy gate uses id="sheet"; dismissing it via Escape must
+      // still record consent, or it silently reappears on the next launch.
+      var root = $('#sheet-root');
+      if (root && root.querySelector('[data-action="accept-privacy"]') && !app.settings.seenPrivacy) {
+        app.settings.seenPrivacy = true; saveSettings();
+      }
+      closeSheet();
+    }
   });
   document.addEventListener('click', function (ev) {
     var t = ev.target.closest('[data-action]');
@@ -1991,6 +2085,15 @@
         renderMapMarkers();
         break;
       case 'map-locate': ev.preventDefault(); mapLocate(false); break;
+      case 'place-center': {
+        ev.preventDefault();
+        if (!app.map || !app.placeMode) break;
+        var ctr = app.map.getCenter(), mode = app.placeMode;
+        app.placeMode = null; updateMapHint();
+        if (mode === 'bear') openBearReport({ lat: ctr.lat, lng: ctr.lng });
+        else openHazardReport({ lat: ctr.lat, lng: ctr.lng });
+        break;
+      }
       case 'bear-species': ev.preventDefault(); readBear(); app.bdraft.species = t.getAttribute('data-v'); renderBearSheet(); break;
       case 'bear-behaviour': ev.preventDefault(); readBear(); app.bdraft.behaviour = t.getAttribute('data-v'); renderBearSheet(); break;
       case 'bcount': {
@@ -2068,6 +2171,14 @@
         break;
       }
       case 'community-disconnect': ev.preventDefault(); app.settings.communityUrl = ''; app.settings.community = false; saveSettings(); toast('Disconnected'); viewCommunity(); break;
+      case 'enable-push': ev.preventDefault(); Community.enablePush(); break;
+      case 'reset-cid':
+        ev.preventDefault();
+        if (confirm('Reset your device id? Future shared reports won’t be linkable to your past ones. Your on-device log is unaffected.')) {
+          try { localStorage.removeItem('owl-cid'); localStorage.removeItem('owl-tok'); } catch (e) {}
+          toast('Device id reset');
+        }
+        break;
       case 'delete-shared':
         ev.preventDefault();
         if (confirm('Delete everything you’ve shared to the community server? This can’t be undone.')) {
@@ -2098,14 +2209,17 @@
 
   function captureLocation() {
     if (!navigator.geolocation) { toast('Location not available'); return; }
+    var d = app.draft; if (!d) return;   // capture THIS draft; a later openLog/editEntry may replace app.draft
     var sub = $('#loc-sub'); if (sub) sub.textContent = 'Locating…';
     navigator.geolocation.getCurrentPosition(function (pos) {
-      app.draft.lat = pos.coords.latitude; app.draft.lng = pos.coords.longitude;
+      d.lat = pos.coords.latitude; d.lng = pos.coords.longitude;
+      if (app.draft !== d) return;        // draft was replaced while GPS was pending — don't stamp the wrong entry / touch a different sheet
       var ti = $('#loc-title'), su = $('#loc-sub');
       if (ti) ti.textContent = 'Location captured';
-      if (su) su.textContent = app.draft.lat.toFixed(4) + ', ' + app.draft.lng.toFixed(4);
+      if (su) su.textContent = d.lat.toFixed(4) + ', ' + d.lng.toFixed(4);
       haptic();
     }, function () {
+      if (app.draft !== d) return;
       var su2 = $('#loc-sub'); if (su2) su2.textContent = 'Couldn’t get location — tap to retry';
       toast('Location permission denied');
     }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });

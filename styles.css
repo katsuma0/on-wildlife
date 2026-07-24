@@ -249,6 +249,7 @@ img { max-width: 100%; }
 }
 .tab svg { width: 26px; height: 26px; }
 .tab.active { color: var(--tint); }
+.tab.active span { font-weight: 700; }   /* non-colour cue for the selected tab */
 .tab:active { transform: scale(0.92); }
 
 /* ------------------------------------------------------- Grouped lists */
@@ -548,7 +549,7 @@ textarea.notes {
 .sp-photo-wrap { display: none; width: 100%; }
 .sp-photo-wrap.show { display: block; margin-bottom: 14px; }
 .sp-photo { width: 100%; max-height: 300px; object-fit: cover; border-radius: 16px; display: block; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12); }
-.photo-credit { font-size: 11px; color: var(--label-3); margin-top: 6px; line-height: 1.3; }
+.photo-credit { font-size: 11px; color: var(--label-2); margin-top: 6px; line-height: 1.3; }
 .hero h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.3px; }
 .hero .sci { color: var(--label-2); font-style: italic; font-size: 15px; margin-top: 2px; }
 .hero .badges { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 12px; }
@@ -680,6 +681,17 @@ textarea.notes {
   opacity: 0; transform: translateY(-6px); transition: opacity 0.2s, transform 0.2s; pointer-events: none;
 }
 .map-hint.show { opacity: 1; transform: none; }
+.hint-btn {
+  pointer-events: auto; margin-left: 6px; background: rgba(255, 255, 255, 0.2); color: #fff;
+  border-radius: 8px; padding: 4px 9px; font-size: 12px; font-weight: 600; min-height: 30px;
+}
+.map-note {
+  position: absolute; left: 12px; right: 76px; bottom: 12px; z-index: 500;
+  background: rgba(28, 28, 30, 0.92); color: #fff; padding: 8px 12px; border-radius: 10px;
+  font-size: 12px; line-height: 1.35;
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+}
+.map-note[hidden] { display: none; }
 
 /* Leaflet teardrop pins built from divIcons */
 .pin-wrap { background: none; border: 0; }
