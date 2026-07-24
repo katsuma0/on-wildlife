@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate (syntax, data, server)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run validation
+        run: node tests/validate.js
+
+  e2e:
+    name: Headless UI (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Playwright + Chromium
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+      - name: Serve app and run suites
+        env:
+          BASE: http://localhost:8000/index.html
+        run: |
+          python3 -m http.server 8000 &
+          SERVER=$!
+          sleep 1
+          node tests/e2e.js
+          node tests/e2e2.js
+          kill $SERVER

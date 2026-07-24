@@ -1,0 +1,14 @@
+{
+  "name": "ontario-wildlife-log",
+  "version": "1.0.0",
+  "private": true,
+  "description": "iOS-styled Ontario wildlife logging PWA. The app itself is zero-dependency, plain HTML/CSS/JS; these devDependencies are for the test suites only.",
+  "scripts": {
+    "validate": "node tests/validate.js",
+    "test:e2e": "node tests/e2e.js && node tests/e2e2.js",
+    "test": "npm run validate"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.2"
+  }
+}
