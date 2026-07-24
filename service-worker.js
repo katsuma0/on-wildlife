@@ -1,7 +1,7 @@
 /* Ontario Wildlife Log — offline service worker.
    Precaches the app shell so the app opens and works with no connection.
    Bump CACHE when any shell file changes to roll the cache forward. */
-var CACHE = 'owl-v4';
+var CACHE = 'owl-v5';
 var SHELL = [
   './',
   './index.html',
@@ -36,6 +36,29 @@ self.addEventListener('activate', function (e) {
       return Promise.all(keys.map(function (k) { if (k !== CACHE) return caches.delete(k); }));
     }).then(function () { return self.clients.claim(); })
   );
+});
+
+/* Web Push (iOS 16.4+ when installed to the Home Screen). The client subscribes
+   for nearby bear/hazard alerts; delivery needs VAPID keys on the backend (see
+   server/README). These handlers render and open notifications when they arrive. */
+self.addEventListener('push', function (e) {
+  var data = {};
+  try { data = e.data ? e.data.json() : {}; } catch (err) { data = { body: e.data && e.data.text() }; }
+  var title = data.title || 'Ontario Wildlife Log';
+  var opts = {
+    body: data.body || 'New wildlife activity near you.',
+    icon: './icons/icon-192.png', badge: './icons/icon-192.png',
+    data: { url: data.url || './' }
+  };
+  e.waitUntil(self.registration.showNotification(title, opts));
+});
+self.addEventListener('notificationclick', function (e) {
+  e.notification.close();
+  var url = (e.notification.data && e.notification.data.url) || './';
+  e.waitUntil(self.clients.matchAll({ type: 'window' }).then(function (list) {
+    for (var i = 0; i < list.length; i++) { if ('focus' in list[i]) { list[i].navigate && list[i].navigate(url); return list[i].focus(); } }
+    if (self.clients.openWindow) return self.clients.openWindow(url);
+  }));
 });
 
 self.addEventListener('fetch', function (e) {

@@ -9,8 +9,9 @@ It's built as a **Progressive Web App (PWA)**, so there's nothing to install fro
 store: open it in Safari on your iPhone and tap **Add to Home Screen**. It then launches
 fullscreen with its own icon, feels native, and works offline.
 
-> **Status:** 258 fact-checked Ontario species across 7 categories. Insects & fungi are
-> planned next (they appear as "Coming Soon" in the app).
+> **Status:** 326 fact-checked Ontario species across 9 categories (mammals, birds,
+> reptiles, amphibians, fish, trees, plants, **insects & fungi**). Optional **community**
+> data pooling via a deployable backend.
 
 ---
 
@@ -57,6 +58,14 @@ fullscreen with its own icon, feels native, and works offline.
 - **📤 Shareable sighting cards** (canvas image via the native share sheet) for organic reach.
 - **🌗 Appearance** — in-app Light / Dark / Auto theme toggle; **pinch-zoom and OS text
   scaling** respected, with visible keyboard focus (WCAG / AODA-minded).
+- **🌍 Community (optional)** — connect a deployable [backend](server/) to pool anonymized
+  sightings: "seen near you this week", recent bear/hazard activity, and province-wide totals.
+  Off until you connect a server and turn on sharing; at-risk locations are coarsened first.
+- **📅 Timely nudges** — a season-aware "This month in Ontario" card with a gentle "you haven't
+  logged one yet" prompt (deterministic, offline, no dark patterns).
+- **🖼 Real photos** — species pages pull an **openly-licensed (CC) photo from iNaturalist**
+  with attribution when online, falling back to the emoji offline. (These are not Lone Pine's
+  copyrighted images — a legal, real-photo layer.)
 - **🧪 Data reliability (demo)** — an anomaly-detection model (robust z-scores over behavioural
   signals — never rarity — plus plausibility rules) run over simulated contributors, including
   a deliberately fake "sham" account, showing how crowdsourced sightings can be vetted.
@@ -109,10 +118,25 @@ data/
   trust.js              Anomaly-detection demo: synthetic data + statistical model
   badges.js             Collectible naturalist badge definitions
 manifest.webmanifest    PWA manifest (name, icons, theme, standalone)
-service-worker.js       Offline caching of the app shell
+service-worker.js       Offline caching + Web Push handlers
 vendor/leaflet/         Vendored Leaflet mapping library (offline-capable)
 icons/                  App icons (SVG master + PNGs incl. apple-touch-icon)
+server/                 Optional community backend (zero-dependency Node) + its README
 ```
+
+## 📲 iOS support & the native-feature question
+
+This is a web app (PWA), which shapes what iOS features are possible:
+
+- **Works today on iOS:** installable fullscreen app (Add to Home Screen), the **native
+  share sheet** (send a sighting card straight to Messages/anywhere), standalone status-bar
+  chrome, light/dark, offline, and **Web Push notifications** (iOS 16.4+ once installed) —
+  the service worker already renders pushes, and the community server is where nearby
+  bear/hazard alerts would be sent from (needs VAPID keys — see `server/README`).
+- **Not possible from a web app:** **Live Activities** and **Home-Screen Widgets** are
+  native-only (ActivityKit / WidgetKit in Swift). Delivering those means shipping a native
+  **SwiftUI** app (or a Capacitor wrapper with native widget/Live-Activity modules). The
+  data model and design here carry straight over when that's the goal.
 
 No build step and no dependencies — it's plain HTML/CSS/JS that runs anywhere.
 
@@ -151,10 +175,11 @@ so it's never locked in.
 
 ## 🛣 Roadmap
 
-- **Opt-in community layer** — a secure backend so users can pool anonymized sightings for
-  real-time, area-based safety alerts (recent bear activity, turtle-crossing hotspots),
-  with the anomaly-detection model (see `data/trust.js`) filtering out unreliable data.
-- Insects & butterflies, and mushrooms & fungi guides.
-- Real photos and range maps on species pages.
-- iCloud/file sync and sharing a sighting.
-- A native App Store build (the PWA can be wrapped, or rebuilt in SwiftUI).
+- **Web Push delivery** — wire VAPID keys + a sender into the community server so nearby
+  bear/hazard reports push to opted-in phones (iOS 16.4+ installed PWAs).
+- **Richer imagery** — multiple photos + range maps per species (via iNaturalist/GBIF),
+  and French + plain-language presets for AODA-grade accessibility.
+- **Native SwiftUI build** — for true **Live Activities and Home-Screen Widgets** (e.g. a
+  "recent bear activity near you" widget), which a web app can't provide.
+- Deeper community: seasonal BioBlitz / classroom "pass-the-phone" group mode, and an
+  Ontario Parks "park mode" with seasonally-timed conservation missions.

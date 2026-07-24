@@ -51,7 +51,7 @@
 
   var app = {
     entries: [], hazards: [],
-    settings: { units: 'metric', theme: 'auto', homeMode: 'all', contribute: false, seenPrivacy: false, seenInstall: false, badges: [] },
+    settings: { units: 'metric', theme: 'auto', homeMode: 'all', contribute: false, seenPrivacy: false, seenInstall: false, community: false, communityUrl: '', badges: [] },
     draft: null, hdraft: null, ready: false, map: null, mapFilter: 'all', placeMode: null
   };
 
@@ -277,6 +277,38 @@
     list.forEach(function (e) { h += entryCell(e); });
     return h + '</div><div class="group-footer"><a href="#/mylog">See all encounters ›</a></div></div>';
   }
+  // Timely, season-aware highlight for the current month (deterministic, offline)
+  function seasonalNote() {
+    var notes = [
+      { t: 'Deep winter — watch for snowy owls, winter finches, and fresh tracks in the snow.', s: ['snowy-owl', 'black-capped-chickadee', 'red-fox'] },
+      { t: 'Late winter — great horned owls are nesting and calling at dusk.', s: ['great-horned-owl', 'white-tailed-deer', 'snowshoe-hare'] },
+      { t: 'Early spring — the first spring peepers call and maple sap runs.', s: ['spring-peeper', 'sugar-maple', 'american-robin'] },
+      { t: 'Spring migration — waterfowl and early songbirds return; trilliums emerge.', s: ['common-loon', 'white-trillium', 'red-winged-blackbird'] },
+      { t: 'Peak migration and bloom — songbirds pour through and turtles begin nesting.', s: ['baltimore-oriole', 'snapping-turtle', 'white-trillium'] },
+      { t: 'Turtles are crossing roads to nest — help them across in the direction they’re heading.', s: ['snapping-turtle', 'blandings-turtle', 'common-loon'] },
+      { t: 'High summer — monarchs on milkweed, dragonflies everywhere, young birds fledging.', s: ['common-milkweed', 'walleye', 'great-blue-heron'] },
+      { t: 'Late summer — berries ripen and fish feed best in the cool mornings.', s: ['staghorn-sumac', 'smallmouth-bass', 'monarch'] },
+      { t: 'Fall migration and colour — hawks stream south and the maples turn.', s: ['sugar-maple', 'bald-eagle', 'white-tailed-deer'] },
+      { t: 'Autumn — the deer rut begins and salmon run up the Great Lakes rivers.', s: ['white-tailed-deer', 'chinook-salmon', 'moose'] },
+      { t: 'Late fall — moose are active and waterfowl stage before freeze-up.', s: ['moose', 'canada-goose', 'common-loon'] },
+      { t: 'Winter arrives — chickadees crowd feeders and owls hunt the short days.', s: ['black-capped-chickadee', 'snowy-owl', 'snowshoe-hare'] }
+    ];
+    return notes[new Date().getMonth()];
+  }
+  function seasonalCard() {
+    var sn = seasonalNote();
+    var loggedSet = {}; app.entries.forEach(function (e) { if (e.speciesId) loggedSet[e.speciesId] = 1; });
+    var suggest = sn.s.filter(function (id) { return byId[id] && !loggedSet[id]; })[0];
+    var h = '<div class="group"><div class="group-header">This month in Ontario</div><div class="list">' +
+      '<div class="cell"><span class="cell-emoji">\u{1F4C5}</span><span class="cell-body"><span class="cell-sub" style="white-space:normal;font-size:15px;color:var(--label)">' + esc(sn.t) + '</span></span></div>';
+    if (suggest) {
+      var s = byId[suggest];
+      h += '<a class="cell tap" href="#/species/' + esc(suggest) + '"><span class="cell-emoji">' + s.emoji + '</span>' +
+        '<span class="cell-body"><span class="cell-title">Look for ' + (/^[aeiou]/i.test(s.name) ? 'an ' : 'a ') + esc(s.name) + '</span>' +
+        '<span class="cell-sub">Around right now — you haven’t logged one yet</span></span><span class="chevron">' + I.chevron + '</span></a>';
+    }
+    return h + '</div></div>';
+  }
 
   function allHome() {
     var hour = new Date().getHours();
@@ -291,9 +323,11 @@
     body += '<div class="chip-row" style="margin-top:14px">' +
       '<button class="chip chip-alert" data-action="report-bear">\u{1F43B} Report a Bear</button>' +
       '<button class="chip chip-warn" data-action="report-hazard">⚠️ Report a Hazard</button>' +
+      '<a class="chip" href="#/community">\u{1F30D} Community</a>' +
       '<a class="chip" href="#/explore">\u{1F50D} Field Guide</a>' +
       '<a class="chip" href="#/badges">\u{1F3C5} Badges</a>' +
       '</div>';
+    body += seasonalCard();
     body += '<div class="group"><div class="group-header">Safety & Alerts</div><div class="list">' +
       '<a class="cell tap" href="#/alerts"><span class="cell-emoji">⚠️</span><span class="cell-body"><span class="cell-title">Safety & Alerts</span><span class="cell-sub">Dangers to know · your bear & hazard reports</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       learnCell('\u{1F577}️', 'Ticks & Lyme disease', 'What to look for and what to do', 'ticks') +
@@ -440,6 +474,78 @@
   function isSensitive(id) { var s = byId[id]; return !!(s && (s.atRisk || s.sub === 'turtles')); }
   function coarse(x) { return Math.round(x * 10) / 10; } // ~11 km grid
 
+  /* ---- Community (optional pooled data via a user-deployed backend) ---- */
+  function clientId() {
+    var id = null; try { id = localStorage.getItem('owl-cid'); } catch (e) {}
+    if (!id) { id = 'c' + Math.random().toString(36).slice(2) + Date.now().toString(36); try { localStorage.setItem('owl-cid', id); } catch (e) {} }
+    return id;
+  }
+  var Community = {
+    base: function () { return (app.settings.communityUrl || '').replace(/\/+$/, ''); },
+    on: function () { return !!(this.base() && app.settings.community); },
+    post: function (payload) {
+      if (!this.on()) return;
+      try {
+        payload.clientId = clientId();
+        fetch(this.base() + '/api/v1/sightings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(function () {});
+      } catch (e) {}
+    },
+    feed: function (lat, lng) {
+      var b = this.base(); if (!b) return Promise.resolve(null);
+      var q = '?days=7&km=75' + (lat != null ? ('&lat=' + lat + '&lng=' + lng) : '');
+      return fetch(b + '/api/v1/community' + q).then(function (r) { return r.json(); }).catch(function () { return null; });
+    },
+    stats: function () {
+      var b = this.base(); if (!b) return Promise.resolve(null);
+      return fetch(b + '/api/v1/stats').then(function (r) { return r.json(); }).catch(function () { return null; });
+    },
+    health: function (url) {
+      url = (url || '').replace(/\/+$/, ''); if (!url) return Promise.resolve(false);
+      return fetch(url + '/api/v1/health').then(function (r) { return r.ok; }).catch(function () { return false; });
+    }
+  };
+  function communityPayload(entry) {
+    var sens = !!entry.sensitiveLoc, lat = entry.lat, lng = entry.lng;
+    if (sens && typeof lat === 'number') { lat = Math.round(lat * 5) / 5; lng = Math.round(lng * 5) / 5; } // coarsen at-risk before it leaves the device
+    return {
+      kind: isBearEntry(entry) ? 'bear' : 'sighting', species: entry.speciesId || '', name: entry.speciesName || '',
+      cat: entry.cat || '', sub: entry.sub || '', count: entry.count || 1, sensitive: sens,
+      lat: typeof lat === 'number' ? lat : null, lng: typeof lng === 'number' ? lng : null, when: entry.when
+    };
+  }
+
+  /* ---- Species photos: openly-licensed (CC) images from iNaturalist, with
+         attribution, cached. NOT the copyrighted Lone Pine images — a legal,
+         real-photo layer that gracefully falls back to the emoji offline. ---- */
+  var _photoTried = {};
+  function speciesPhoto(s, cb) {
+    var cache = {}; try { cache = JSON.parse(localStorage.getItem('owl-photos') || '{}'); } catch (e) {}
+    if (cache[s.id] && cache[s.id].url) { cb(cache[s.id]); return; }
+    if (_photoTried[s.id]) { cb(null); return; }
+    _photoTried[s.id] = 1;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) { cb(null); return; }
+    var url = 'https://api.inaturalist.org/v1/taxa?q=' + encodeURIComponent(s.sci || s.name) + '&rank=species&per_page=1';
+    fetch(url).then(function (r) { return r.json(); }).then(function (d) {
+      var t = d && d.results && d.results[0], p = t && t.default_photo;
+      if (p && p.medium_url) {
+        var rec = { url: p.medium_url, attr: String(p.attribution || '').replace(/\(c\)/gi, '©').slice(0, 140) };
+        try { cache[s.id] = rec; localStorage.setItem('owl-photos', JSON.stringify(cache)); } catch (e) {}
+        cb(rec);
+      } else cb(null);
+    }).catch(function () { cb(null); });
+  }
+  function applySpeciesPhoto(s) {
+    speciesPhoto(s, function (rec) {
+      if (!rec || !rec.url) return;
+      var box = $('#sp-photo'), em = $('#sp-emoji');
+      if (!box) return;
+      box.innerHTML = '<img class="sp-photo" src="' + esc(rec.url) + '" alt="' + esc(s.name) + '" loading="lazy">' +
+        '<div class="photo-credit">' + esc(rec.attr || 'iNaturalist') + ' · CC · iNaturalist</div>';
+      box.classList.add('show');
+      if (em) em.style.display = 'none';
+    });
+  }
+
   function entryCell(e) {
     var meta = e.speciesId ? byId[e.speciesId] : null;
     var sub = fmtDay(e.when) + ' · ' + fmtTime(e.when);
@@ -477,15 +583,18 @@
         '<div class="cc">' + count + ' species</div></div></a>';
     });
     body += '</div>';
-    body += '<div class="group-header hpad" style="margin-top:18px">Coming Soon</div>';
-    body += '<div class="card-grid">';
-    COMING_SOON.forEach(function (c) {
-      body += '<div class="cat-card soon">' +
-        '<div class="ce">' + c.emoji + '</div>' +
-        '<div><div class="cn">' + esc(c.name) + '</div>' +
-        '<div class="cc">In a future update</div></div></div>';
-    });
-    body += '</div></div>';
+    if (COMING_SOON.length) {
+      body += '<div class="group-header hpad" style="margin-top:18px">Coming Soon</div>';
+      body += '<div class="card-grid">';
+      COMING_SOON.forEach(function (c) {
+        body += '<div class="cat-card soon">' +
+          '<div class="ce">' + c.emoji + '</div>' +
+          '<div><div class="cn">' + esc(c.name) + '</div>' +
+          '<div class="cc">In a future update</div></div></div>';
+      });
+      body += '</div>';
+    }
+    body += '</div>';
 
     screen({ title: 'Guide', large: true, subtitle: 'A field guide to Ontario', body: body });
     wireSearch();
@@ -543,7 +652,8 @@
     var count = app.entries.filter(function (e) { return e.speciesId === s.id; }).length;
 
     var body = '<div class="hero">' +
-      '<div class="hero-emoji" style="background:' + tintFor(s.cat) + '22">' + s.emoji + '</div>' +
+      '<div id="sp-photo" class="sp-photo-wrap"></div>' +
+      '<div class="hero-emoji" id="sp-emoji" style="background:' + tintFor(s.cat) + '22">' + s.emoji + '</div>' +
       '<h1>' + esc(s.name) + '</h1><div class="sci">' + esc(s.sci) + '</div>' +
       '<div class="badges">' + statusBadge(s) +
       '<span class="badge badge-info">' + esc(seenLabel(s.seen)) + '</span>' +
@@ -580,6 +690,7 @@
 
     var backHref = (c && sub) ? '#/explore/' + s.cat + '/' + s.sub : '#/explore';
     screen({ title: s.name, back: backHref, backText: sub ? sub.name : (c ? c.name : 'Back'), body: body });
+    applySpeciesPhoto(s);
   }
   function speciesLinks(s) {
     var q = encodeURIComponent(s.sci || s.name);
@@ -657,7 +768,11 @@
       learnCell('\u{1F30D}', 'Help Ontario’s wildlife', 'How your sightings support conservation', 'contribute') +
       '</div></div>';
 
-    body += '<div class="group"><div class="group-header">Resources & Data</div><div class="list">' +
+    body += '<div class="group"><div class="group-header">Community & Data</div><div class="list">' +
+      '<a class="cell tap" href="#/community"><span class="cell-emoji">\u{1F30D}</span>' +
+      '<span class="cell-body"><span class="cell-title">Community</span>' +
+      '<span class="cell-sub">' + (Community.on() ? 'Sharing on · see nearby activity' : app.settings.communityUrl ? 'Connected · sharing off' : 'See what’s near you this week') + '</span></span>' +
+      '<span class="chevron">' + I.chevron + '</span></a>' +
       '<a class="cell tap" href="#/resources"><span class="cell-emoji">\u{1F517}</span>' +
       '<span class="cell-body"><span class="cell-title">Ontario & Canada resources</span>' +
       '<span class="cell-sub">Trusted sites for wildlife, fishing & safety</span></span>' +
@@ -872,7 +987,7 @@
       bearReport: { count: d.count, cubs: !!d.cubs, behaviour: d.behaviour }, createdAt: new Date().toISOString()
     };
     if (entry.lat != null && isSensitive(entry.speciesId)) entry.sensitiveLoc = true;
-    app.entries.push(entry); Store.put(entry); haptic(); closeSheet(); toast('🐻 Saved to your log (on your phone)'); afterReportSaved();
+    app.entries.push(entry); Store.put(entry); Community.post(communityPayload(entry)); haptic(); closeSheet(); toast('🐻 Saved to your log (on your phone)'); afterReportSaved();
     setTimeout(checkNewBadges, 1400);
   }
 
@@ -906,7 +1021,9 @@
     readHazard();
     var d = app.hdraft;
     var h = { id: uid(), type: d.type, lat: d.lat, lng: d.lng, when: d.when ? new Date(d.when).toISOString() : new Date().toISOString(), notes: (d.notes || '').trim(), createdAt: new Date().toISOString() };
-    app.hazards.push(h); Store.put(h, 'hazards'); haptic(); closeSheet(); toast('⚠️ Hazard saved'); afterReportSaved();
+    app.hazards.push(h); Store.put(h, 'hazards');
+    Community.post({ kind: 'hazard', hazardType: h.type, cat: 'hazard', count: 1, sensitive: false, lat: h.lat, lng: h.lng, when: h.when });
+    haptic(); closeSheet(); toast('⚠️ Hazard saved'); afterReportSaved();
     setTimeout(checkNewBadges, 1400);
   }
 
@@ -1175,6 +1292,53 @@
     return '<div class="cell"><span class="cell-emoji">' + emoji + '</span>' +
       '<span class="cell-body"><span class="cell-title" style="font-size:15px">' + esc(title) + '</span>' +
       '<span class="cell-sub" style="white-space:normal">' + esc(sub) + '</span></span></div>';
+  }
+
+  /* ============================================================= COMMUNITY */
+  function viewCommunity() {
+    var url = app.settings.communityUrl;
+    var body = '<div class="hero" style="padding-bottom:2px"><div class="hero-emoji" style="background:var(--tint-soft)">\u{1F30D}</div><h1>Community</h1><div class="sci" style="font-style:normal">Pooled Ontario sightings</div></div>';
+    if (!url) {
+      body += '<p class="article-intro">Connect a community server to see what others are spotting near you this week, recent bear & hazard activity, and province-wide totals. Nothing is shared until you turn sharing on — and Species-at-Risk locations are always coarsened before they leave your phone.</p>';
+      body += '<div class="group"><div class="group-header">Connect a server</div><div class="list">' +
+        '<div class="field"><input type="url" id="community-url" placeholder="https://your-server.example" style="text-align:left;flex:1" autocapitalize="none" autocorrect="off" spellcheck="false"></div>' +
+        '</div><div class="group-footer">Don’t have one yet? Anyone can deploy the free, open-source server in a couple of minutes (see <b>server/README</b> in the project). Leave this blank to stay fully offline.</div></div>';
+      body += '<div class="hpad"><button class="btn btn-primary btn-block" data-action="community-connect">Connect</button></div>';
+      screen({ title: 'Community', backAction: true, backText: 'Back', body: body });
+      return;
+    }
+    body += '<div class="group"><div class="group-header">Connection</div><div class="list">' +
+      '<div class="cell"><span class="cell-emoji">\u{1F517}</span><span class="cell-body"><span class="cell-title">Server</span><span class="cell-sub" style="white-space:normal">' + esc(url) + '</span></span></div>' +
+      '<div class="field"><span class="field-label" style="flex:1">Share my sightings</span><label class="switch"><input type="checkbox" id="community-share"' + (app.settings.community ? ' checked' : '') + '><span class="track"></span><span class="knob"></span></label></div>' +
+      '<button class="cell tap" data-action="community-disconnect"><span class="cell-emoji">\u{1F50C}</span><span class="cell-body"><span class="cell-title" style="color:var(--red)">Disconnect</span></span></button>' +
+      '</div><div class="group-footer">' + (app.settings.community ? 'Your sightings are shared anonymously (a random device id, no name). At-risk locations are coarsened before they leave your phone.' : 'Sharing is off — you can still see the community feed below.') + '</div></div>';
+    body += '<div id="community-feed"><div class="empty"><div class="e">\u{1F4E1}</div><p>Loading community activity…</p></div></div>';
+    screen({ title: 'Community', backAction: true, backText: 'Back', body: body });
+    loadCommunityFeed();
+  }
+  function loadCommunityFeed() {
+    var go = function (lat, lng) {
+      Community.feed(lat, lng).then(function (d) {
+        var box = $('#community-feed'); if (!box) return;
+        if (!d || !d.ok) { box.innerHTML = '<div class="empty"><div class="e">\u{1F4F5}</div><h3>Couldn’t reach the server</h3><p>Check the address, or that the server is running.</p></div>'; return; }
+        var h = '<div class="stat-grid" style="margin-top:4px">' + stat(d.stats.sightings, 'This week') + stat(d.stats.contributors, 'People') + stat(d.stats.species, 'Species') + '</div>';
+        if (d.topSpecies && d.topSpecies.length) {
+          h += '<div class="group"><div class="group-header">Seen near you this week</div><div class="list">';
+          d.topSpecies.forEach(function (t) { var s = byId[t.id]; h += '<a class="cell tap" href="#/species/' + esc(t.id) + '"><span class="cell-emoji">' + ((s && s.emoji) || '\u{1F43E}') + '</span><span class="cell-body"><span class="cell-title">' + esc(s ? s.name : t.id) + '</span></span><span class="cell-value">×' + t.count + '</span></a>'; });
+          h += '</div></div>';
+        }
+        var events = (d.bears || []).map(function (b) { return { e: '\u{1F43B} Bear', when: b.when }; }).concat((d.hazards || []).map(function (z) { return { e: '⚠️ ' + (hazardType(z.type).name), when: z.when }; }));
+        if (events.length) {
+          h += '<div class="group"><div class="group-header">Recent bear & hazard activity nearby</div><div class="list">';
+          events.slice(0, 10).forEach(function (v) { h += '<div class="cell"><span class="cell-body"><span class="cell-title" style="font-size:15px">' + esc(v.e) + '</span><span class="cell-sub">' + esc(v.when ? fmtDay(v.when) : '') + '</span></span></div>'; });
+          h += '</div><div class="group-footer">Locations are approximate (coarsened for privacy). These are community reports, not official alerts.</div></div>';
+        }
+        if (!(d.topSpecies && d.topSpecies.length) && !events.length) h += '<div class="empty"><div class="e">\u{1F331}</div><h3>Quiet so far</h3><p>Be the first to log something near you this week.</p></div>';
+        box.innerHTML = h;
+      });
+    };
+    if (navigator.geolocation) navigator.geolocation.getCurrentPosition(function (p) { go(p.coords.latitude, p.coords.longitude); }, function () { go(null, null); }, { timeout: 6000, maximumAge: 300000 });
+    else go(null, null);
   }
 
   /* ====================================================== FIRST-RUN PRIVACY */
@@ -1482,6 +1646,7 @@
 
     app.entries.push(entry);
     Store.put(entry);
+    Community.post(communityPayload(entry));
     haptic();
     closeSheet();
     toast('✓ Logged ' + entry.speciesName);
@@ -1646,7 +1811,7 @@
     if (h.indexOf('map') === 0) return 'map';
     if (h.indexOf('mylog') === 0 || h.indexOf('badges') === 0 || h.indexOf('stats') === 0) return 'mylog';
     if (h.indexOf('more') === 0 || h.indexOf('learn') === 0 || h.indexOf('resources') === 0 ||
-        h.indexOf('trust') === 0 || h.indexOf('invasives') === 0 || h.indexOf('privacy') === 0) return 'more';
+        h.indexOf('trust') === 0 || h.indexOf('invasives') === 0 || h.indexOf('privacy') === 0 || h.indexOf('community') === 0) return 'more';
     return 'log';
   }
 
@@ -1666,6 +1831,7 @@
     else if (r === 'map') viewMap();
     else if (r === 'mylog') viewMyLog();
     else if (r === 'alerts') viewAlerts();
+    else if (r === 'community') viewCommunity();
     else if (r === 'invasives') viewInvasives();
     else if (r === 'badges') viewBadges();
     else if (r === 'stats') viewStats();
@@ -1771,6 +1937,19 @@
       case 'open-privacy-first': ev.preventDefault(); app.settings.seenPrivacy = true; saveSettings(); closeSheet(); setTimeout(function () { location.hash = '#/privacy'; }, 320); break;
       case 'version-tap': ev.preventDefault(); versionTap(); break;
       case 'dismiss-install': ev.preventDefault(); app.settings.seenInstall = true; saveSettings(); viewLog(); break;
+      case 'community-connect': {
+        ev.preventDefault();
+        var inp = $('#community-url'); var url = inp ? inp.value.trim() : '';
+        if (!url) { toast('Enter a server address'); break; }
+        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+        toast('Connecting…');
+        Community.health(url).then(function (ok) {
+          if (ok) { app.settings.communityUrl = url.replace(/\/+$/, ''); saveSettings(); toast('Connected'); viewCommunity(); }
+          else toast('Couldn’t reach that server');
+        });
+        break;
+      }
+      case 'community-disconnect': ev.preventDefault(); app.settings.communityUrl = ''; app.settings.community = false; saveSettings(); toast('Disconnected'); viewCommunity(); break;
       case 'clear-data':
         ev.preventDefault();
         if ((app.entries.length || app.hazards.length) && confirm('Delete ALL ' + app.entries.length + ' encounters and ' + app.hazards.length + ' hazards? This cannot be undone.')) {
@@ -1786,6 +1965,10 @@
     else if (ev.target.id === 'consent-toggle') {
       app.settings.contribute = !!ev.target.checked; saveSettings();
       toast(ev.target.checked ? 'Thanks — we’ll ask before anything is shared' : 'Sharing stays off');
+    }
+    else if (ev.target.id === 'community-share') {
+      app.settings.community = !!ev.target.checked; saveSettings();
+      toast(ev.target.checked ? 'Sharing anonymized sightings — thank you!' : 'Sharing turned off');
     }
   });
 
