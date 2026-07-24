@@ -1,1 +1,135 @@
-# on-wildlife
+# 🐾 Ontario Wildlife Log
+
+A simple, **iOS-styled** field journal for logging the wildlife you encounter across
+Ontario — mammals, birds, reptiles, amphibians and fish. Spot a moose, hear a spring
+peeper, catch a walleye, or find a turtle crossing the road? Log it in a couple of taps.
+
+It's built as a **Progressive Web App (PWA)**, so there's nothing to install from an app
+store: open it in Safari on your iPhone and tap **Add to Home Screen**. It then launches
+fullscreen with its own icon, feels native, and works completely offline.
+
+> **Status:** v1 — Ontario animals. Plants, trees, insects and fungi are planned for
+> future updates (they already appear as "Coming Soon" in the app).
+
+---
+
+## ✨ Features
+
+- **iOS look & feel** — San Francisco system font, grouped inset lists, large-title
+  navigation bars, a translucent bottom tab bar, iOS switches/steppers/segmented
+  controls, full **light & dark mode**, and safe-area handling for notch/home-indicator.
+- **Categories → subcategories → species**, e.g. Reptiles › Turtles › Blanding's Turtle.
+- **A field guide** to Ontario wildlife with ID tips, habitat, best seasons, conservation
+  status (Species at Risk are flagged), safety cautions (e.g. the venomous massasauga),
+  and fun facts.
+- **Fast logging** with details that adapt to what you're recording:
+  - 🎣 **Fishing** — caught or seen, length, weight, bait/lure, water body, kept/released.
+  - 🦅 **Birding** — count, behaviour, seen or heard.
+  - 🐢 **Any wildlife** — saw / heard / signs (tracks & scat), count, date & time.
+- **🐻 Report a Bear** — a quick bear-sighting flow with black/polar type, number, cubs
+  and behaviour, and a prominent **Bear Wise** banner (911 for an immediate threat, or the
+  1-866-514-2327 line for non-emergency problems) — the real reporting channel.
+- **⚠️ Report a Hazard** — wildlife on the road, roadkill, turtle crossings, construction,
+  flooding, ice, fallen trees, tick hotspots and more.
+- **🗺 Map** — see your located sightings, bear reports and hazards as pins (built on
+  Leaflet + OpenStreetMap). Filter by wildlife / bears / hazards, and drop a pin by tapping
+  the map or using GPS.
+- **📚 Learn & Safety** — Lone-Pine-style educational articles: **Ticks & Lyme disease**
+  (identify, prevent, remove, and when to see a doctor), **Bear safety**, **Wildlife on
+  roads**, and **Help Ontario's wildlife** — each linking out to official Ontario/Canada
+  sources. Every species page links to iNaturalist (photos), eBird/Ontario resources, and
+  Species-at-Risk info.
+- **Photos** (auto-resized), **GPS location** (optional), and free-text notes per sighting.
+- **Your log** — every encounter, grouped by day, with running stats (encounters, unique
+  species, categories). Export everything (sightings + hazards) to a JSON file anytime.
+- **Private & offline** — all data is stored on your device (IndexedDB); nothing is sent
+  anywhere. No account, no tracking. (Map tiles need a connection; everything else works
+  offline.)
+
+---
+
+## 📱 Testing it on your iPhone
+
+Because it's a static site, the quickest way to get a live link is **GitHub Pages**:
+
+1. Push this branch (already done if you're reading this in a PR).
+2. In the repo, go to **Settings → Pages**.
+3. Under **Build and deployment → Source**, choose **Deploy from a branch**.
+4. Pick the branch (e.g. `claude/ontario-wildlife-log-hf9i94` to preview, or `main` once
+   merged) and folder **`/ (root)`**, then **Save**.
+5. Wait ~1 minute, then open the published URL (something like
+   `https://<your-username>.github.io/on-wildlife/`) in **Safari on your iPhone**.
+6. Tap the **Share** button → **Add to Home Screen**. Launch it from the new icon — it
+   now runs fullscreen like a native app.
+
+### Running locally
+
+```bash
+# from the project root
+python3 -m http.server 8137
+# then open http://localhost:8137 in a browser
+```
+
+A local server is needed (rather than opening the file directly) so the service worker
+and data scripts load correctly.
+
+---
+
+## 🗂 Project structure
+
+```
+index.html              App shell + iOS/PWA meta tags
+styles.css              iOS design system (light/dark, components)
+app.js                  SPA: hash routing, IndexedDB journal, map, all screens
+data/
+  categories.js         Category & subcategory metadata (+ "coming soon")
+  species.js            The Ontario species database
+  learn.js              Educational articles, curated resource links, hazard types
+manifest.webmanifest    PWA manifest (name, icons, theme, standalone)
+service-worker.js       Offline caching of the app shell
+vendor/leaflet/         Vendored Leaflet mapping library (offline-capable)
+icons/                  App icons (SVG master + PNGs incl. apple-touch-icon)
+```
+
+No build step and no dependencies — it's plain HTML/CSS/JS that runs anywhere.
+
+## 🧬 Species data model
+
+Each record in `data/species.js` follows this shape:
+
+```js
+{
+  id, name, sci,          // ids + common & scientific names
+  cat, sub,               // category / subcategory (see categories.js)
+  emoji, size, habitat,
+  tips, fact,             // how to identify + a fun fact
+  seasons, activity, seen,// when/how it's observed; how common it is
+  status, atRisk, caution,// conservation status; at-risk flag; safety note
+  region,                 // where in Ontario
+  angling                 // fish only: a bait/method tip
+}
+```
+
+Conservation statuses reflect Ontario (SARO/COSEWIC) context; anything Special
+Concern / Threatened / Endangered is flagged as **at risk** in the guide.
+
+## 🌍 Community data & conservation
+
+Consistent records of what you see, where and when are the backbone of wildlife
+monitoring. Today the app is **private and offline** — your data stays on your device.
+The vision is that the more people log wildlife, the more useful the picture becomes:
+turtle-crossing hotspots, recent bear activity, local trends.
+
+A true shared/community layer (and push "alerts") needs a secure backend server, so
+it's on the roadmap. In the meantime the app points to the channels that already reach
+conservation databases — **iNaturalist** and **eBird** for observations, **Bear Wise**
+for bear problems, and Ontario's **Species at Risk** reporting — and can export your data
+so it's never locked in.
+
+## 🛣 Roadmap
+
+- Opt-in community layer to pool anonymized sightings (turtle hotspots, bear activity).
+- Plants & wildflowers, trees, insects & butterflies, and fungi guides.
+- Real photos and range maps on species pages.
+- iCloud/file sync and sharing a sighting.
+- A native App Store build (the PWA can be wrapped, or rebuilt in SwiftUI).
