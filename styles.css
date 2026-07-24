@@ -704,6 +704,15 @@ textarea.notes {
 .type-opt .te { font-size: 22px; flex-shrink: 0; }
 .type-opt.on { border-color: var(--tint); background: var(--tint-soft); }
 
+/* ------------------------------------------ Reliability / anomaly bars */
+.riskbar { display: block; margin-top: 8px; height: 6px; border-radius: 3px; background: var(--fill-strong); overflow: hidden; }
+.riskbar-fill { display: block; height: 100%; border-radius: 3px; transition: width 0.4s var(--ease); }
+.risk-hi { background: var(--red); }
+.risk-mid { background: var(--orange); }
+.risk-lo { background: var(--tint); }
+.zrow { padding: 9px 16px; }
+.zrow-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; }
+
 @media (min-width: 640px) {
   #app { max-width: 480px; margin: 0 auto; }
   .tabbar { max-width: 480px; left: 50%; transform: translateX(-50%); }

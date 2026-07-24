@@ -1,15 +1,16 @@
 # 🐾 Ontario Wildlife Log
 
 A simple, **iOS-styled** field journal for logging the wildlife you encounter across
-Ontario — mammals, birds, reptiles, amphibians and fish. Spot a moose, hear a spring
-peeper, catch a walleye, or find a turtle crossing the road? Log it in a couple of taps.
+Ontario — mammals, birds, reptiles, amphibians, fish, **trees and plants**. Spot a moose,
+hear a spring peeper, catch a walleye, find a turtle crossing the road, or identify a
+dangerous plant? Log it in a couple of taps.
 
 It's built as a **Progressive Web App (PWA)**, so there's nothing to install from an app
 store: open it in Safari on your iPhone and tap **Add to Home Screen**. It then launches
-fullscreen with its own icon, feels native, and works completely offline.
+fullscreen with its own icon, feels native, and works offline.
 
-> **Status:** v1 — Ontario animals. Plants, trees, insects and fungi are planned for
-> future updates (they already appear as "Coming Soon" in the app).
+> **Status:** 258 fact-checked Ontario species across 7 categories. Insects & fungi are
+> planned next (they appear as "Coming Soon" in the app).
 
 ---
 
@@ -18,10 +19,14 @@ fullscreen with its own icon, feels native, and works completely offline.
 - **iOS look & feel** — San Francisco system font, grouped inset lists, large-title
   navigation bars, a translucent bottom tab bar, iOS switches/steppers/segmented
   controls, full **light & dark mode**, and safe-area handling for notch/home-indicator.
-- **Categories → subcategories → species**, e.g. Reptiles › Turtles › Blanding's Turtle.
-- **A field guide** to Ontario wildlife with ID tips, habitat, best seasons, conservation
-  status (Species at Risk are flagged), safety cautions (e.g. the venomous massasauga),
-  and fun facts.
+- **7 categories → subcategories → species** — Mammals, Birds, Reptiles, Amphibians, Fish,
+  **Trees** (conifers & broadleaf) and **Plants** (wildflowers, shrubs & berries, ferns &
+  grasses, and dangerous & invasive). e.g. Reptiles › Turtles › Blanding's Turtle.
+- **A field guide** to Ontario wildlife & flora with ID tips, habitat, best seasons,
+  conservation status (Species at Risk are flagged), safety cautions (e.g. the venomous
+  massasauga, poison ivy, giant hogweed), and facts.
+- **⚠️ Safety & Alerts hub** — bear & hazard reports plus every dangerous/venomous/poisonous
+  species and plant in one place, with the ticks, bear, dangerous-plants and roads guides.
 - **Fast logging** with details that adapt to what you're recording:
   - 🎣 **Fishing** — caught or seen, length, weight, bait/lure, water body, kept/released.
   - 🦅 **Birding** — count, behaviour, seen or heard.
@@ -35,10 +40,14 @@ fullscreen with its own icon, feels native, and works completely offline.
   Leaflet + OpenStreetMap). Filter by wildlife / bears / hazards, and drop a pin by tapping
   the map or using GPS.
 - **📚 Learn & Safety** — Lone-Pine-style educational articles: **Ticks & Lyme disease**
-  (identify, prevent, remove, and when to see a doctor), **Bear safety**, **Wildlife on
-  roads**, and **Help Ontario's wildlife** — each linking out to official Ontario/Canada
-  sources. Every species page links to iNaturalist (photos), eBird/Ontario resources, and
+  (identify, prevent, remove, and when to see a doctor), **Bear safety**, **Dangerous
+  plants** (poison ivy, wild parsnip, giant hogweed, water hemlock), **Wildlife on roads**,
+  and **Help Ontario's wildlife** — each linking out to official Ontario/Canada sources.
+  Every species page links to iNaturalist (photos), eBird/Ontario resources, and
   Species-at-Risk info.
+- **🧪 Data reliability (demo)** — an anomaly-detection model (robust z-scores + plausibility
+  rules) run over simulated contributors, including a deliberately fake "sham" account with
+  skewed data, showing how crowdsourced sightings can be vetted for conservation use.
 - **Photos** (auto-resized), **GPS location** (optional), and free-text notes per sighting.
 - **Your log** — every encounter, grouped by day, with running stats (encounters, unique
   species, categories). Export everything (sightings + hazards) to a JSON file anytime.
@@ -83,8 +92,9 @@ styles.css              iOS design system (light/dark, components)
 app.js                  SPA: hash routing, IndexedDB journal, map, all screens
 data/
   categories.js         Category & subcategory metadata (+ "coming soon")
-  species.js            The Ontario species database
+  species.js            The Ontario species database (258 species)
   learn.js              Educational articles, curated resource links, hazard types
+  trust.js              Anomaly-detection demo: synthetic data + statistical model
 manifest.webmanifest    PWA manifest (name, icons, theme, standalone)
 service-worker.js       Offline caching of the app shell
 vendor/leaflet/         Vendored Leaflet mapping library (offline-capable)
@@ -128,8 +138,10 @@ so it's never locked in.
 
 ## 🛣 Roadmap
 
-- Opt-in community layer to pool anonymized sightings (turtle hotspots, bear activity).
-- Plants & wildflowers, trees, insects & butterflies, and fungi guides.
+- **Opt-in community layer** — a secure backend so users can pool anonymized sightings for
+  real-time, area-based safety alerts (recent bear activity, turtle-crossing hotspots),
+  with the anomaly-detection model (see `data/trust.js`) filtering out unreliable data.
+- Insects & butterflies, and mushrooms & fungi guides.
 - Real photos and range maps on species pages.
 - iCloud/file sync and sharing a sighting.
 - A native App Store build (the PWA can be wrapped, or rebuilt in SwiftUI).

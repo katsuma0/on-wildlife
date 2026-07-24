@@ -112,6 +112,25 @@ window.LEARN = {
       ]
     },
 
+    plants: {
+      id: 'plants', emoji: '☠️', title: 'Dangerous Plants', tint: '#689F38',
+      subtitle: 'Ontario plants to look out for — and not touch',
+      intro: 'Most Ontario plants are harmless, but a few can cause painful rashes or serious burns, and one is dangerously poisonous. Learn to recognize these and give them space.',
+      sections: [
+        { h: 'Poison ivy', p: 'Leaves of three, let it be. Three pointed leaflets (the middle on a longer stalk), often glossy and reddish in spring/fall; grows as a low plant, shrub or climbing vine.', callout: { style: 'warn', title: 'What to do', body: 'Contact with any part — even dead stems — causes an itchy, blistering rash from its oil (urushiol). Never touch it and never burn it (the smoke is hazardous). If exposed, wash skin, tools and clothing with soap and water as soon as possible.' } },
+        { h: 'Wild parsnip', p: 'Tall plant with flat-topped clusters of small yellow flowers and a grooved green stem; common along roadsides and in old fields.', callout: { style: 'warn', title: 'What to do', body: 'Its sap makes skin extremely sensitive to sunlight, causing severe burns and blisters. Wear gloves and long sleeves near it; if sap contacts skin, wash it off, cover the area and keep it out of the sun.' } },
+        { h: 'Giant hogweed', p: 'A towering invasive (up to 5 m) with huge white umbrella-shaped flower heads, enormous jagged leaves, and a thick green stem with purple blotches and coarse hairs.', callout: { style: 'danger', title: 'Do not touch — report it', body: 'Its watery sap causes severe burns and blistering in sunlight and can injure eyes. Stay well clear, keep children and pets away, and report sightings to Ontario’s Invading Species Hotline.' } },
+        { h: 'Water hemlock', p: 'Wetland plant with small white umbrella-shaped flower clusters and a stout, sometimes purple-streaked stem — easily confused with edible look-alikes.', callout: { style: 'danger', title: 'Highly poisonous', body: 'One of the most poisonous plants in North America — eating even a small amount can be fatal. Never forage a plant you cannot identify with certainty.' } },
+        { h: 'Stinging nettle', p: 'Leafy plant covered in fine hairs that inject a sting on contact, leaving a burning, itchy rash for a while. Unpleasant but not dangerous; wash the area and avoid scratching.' },
+        { h: 'A good rule', p: 'Learn a few key dangerous plants, don’t touch what you can’t identify, and never eat wild plants unless you are completely certain they are safe.' }
+      ],
+      links: [
+        { label: 'Ontario — Giant hogweed', url: 'https://www.ontario.ca/page/giant-hogweed', note: 'Identify & report' },
+        { label: 'Invasive Species Centre', url: 'https://www.invasivespeciescentre.ca', note: 'Invasive plants in Ontario' },
+        { label: 'Ontario — Poison ivy & wild parsnip', url: 'https://www.ontario.ca/page/poison-ivy', note: 'Identification & safety' }
+      ]
+    },
+
     contribute: {
       id: 'contribute', emoji: '\u{1F30D}', title: 'Help Ontario’s Wildlife', tint: '#14804a',
       subtitle: 'How your sightings support conservation',

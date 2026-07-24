@@ -118,6 +118,7 @@
     for (var i = 0; i < c.subs.length; i++) if (c.subs[i].id === subId) return c.subs[i];
     return null;
   }
+  function isFloraCat(catId) { var c = catMeta(catId); return !!(c && c.flora); }
   function speciesInCat(catId) { return SPECIES.filter(function (s) { return s.cat === catId; }); }
   function speciesInSub(catId, subId) { return SPECIES.filter(function (s) { return s.cat === catId && s.sub === subId; }); }
   var seenRank = { common: 0, uncommon: 1, rare: 2 };
@@ -249,11 +250,12 @@
       '<button class="chip" data-action="open-log" data-cat="reptiles" data-sub="turtles">\u{1F422} Log a Turtle</button>' +
       '</div>';
 
-    // Safety & learning
-    body += '<div class="group"><div class="group-header">Safety & Learning</div><div class="list">' +
+    // Safety & alerts
+    body += '<div class="group"><div class="group-header">Safety & Alerts</div><div class="list">' +
+      '<a class="cell tap" href="#/alerts"><span class="cell-emoji">⚠️</span><span class="cell-body"><span class="cell-title">Safety & Alerts</span><span class="cell-sub">Dangers to know · your bear & hazard reports</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       learnCell('\u{1F577}️', 'Ticks & Lyme disease', 'What to look for and what to do', 'ticks') +
       learnCell('\u{1F43B}', 'Bear safety', 'Prevent encounters · Bear Wise', 'bears') +
-      learnCell('\u{1F6E3}️', 'Wildlife on roads', 'Deer, moose & turtles', 'roads') +
+      learnCell('☠️', 'Dangerous plants', 'Poison ivy, giant hogweed & more', 'plants') +
       '</div></div>';
 
     if (app.entries.length) {
@@ -396,7 +398,7 @@
       '<h1>' + esc(s.name) + '</h1><div class="sci">' + esc(s.sci) + '</div>' +
       '<div class="badges">' + statusBadge(s) +
       '<span class="badge badge-info">' + esc(seenLabel(s.seen)) + '</span>' +
-      '<span class="badge badge-info">' + esc(activityLabel(s.activity)) + '</span>' +
+      (isFloraCat(s.cat) ? '' : '<span class="badge badge-info">' + esc(activityLabel(s.activity)) + '</span>') +
       '</div></div>';
 
     if (s.caution) body += '<div class="wrap-note danger"><span class="i">⚠️</span><span>' + esc(s.caution) + '</span></div>';
@@ -494,16 +496,22 @@
       '</div></div>';
 
     body += '<div class="group"><div class="group-header">Learn & Safety</div><div class="list">' +
+      '<a class="cell tap" href="#/alerts"><span class="cell-emoji">⚠️</span><span class="cell-body"><span class="cell-title">Safety & Alerts</span><span class="cell-sub">Dangers to know · your bear & hazard reports</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       learnCell('\u{1F577}️', 'Ticks & Lyme disease', 'Identify, prevent, remove & when to see a doctor', 'ticks') +
       learnCell('\u{1F43B}', 'Bear safety (Bear Wise)', 'Prevent encounters and how to report a bear', 'bears') +
+      learnCell('☠️', 'Dangerous plants', 'Poison ivy, wild parsnip, giant hogweed', 'plants') +
       learnCell('\u{1F6E3}️', 'Wildlife on roads', 'Deer, moose, turtles & road hazards', 'roads') +
       learnCell('\u{1F30D}', 'Help Ontario’s wildlife', 'How your sightings support conservation', 'contribute') +
       '</div></div>';
 
-    body += '<div class="group"><div class="group-header">Resources</div><div class="list">' +
+    body += '<div class="group"><div class="group-header">Resources & Data</div><div class="list">' +
       '<a class="cell tap" href="#/resources"><span class="cell-emoji">\u{1F517}</span>' +
       '<span class="cell-body"><span class="cell-title">Ontario & Canada resources</span>' +
       '<span class="cell-sub">Trusted sites for wildlife, fishing & safety</span></span>' +
+      '<span class="chevron">' + I.chevron + '</span></a>' +
+      '<a class="cell tap" href="#/trust"><span class="cell-emoji">\u{1F9EA}</span>' +
+      '<span class="cell-body"><span class="cell-title">Data reliability</span>' +
+      '<span class="cell-sub">Anomaly detection on contributor data (demo)</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></a></div></div>';
     body += '<div class="group"><div class="group-header">Your Data</div><div class="list">' +
       moreCell('\u{1F4E4}', 'Export encounters', 'Download your log as a file', 'javascript:void 0', 'export-data') +
@@ -779,6 +787,130 @@
     });
     body += '<div class="group-footer hpad" style="margin:8px 16px">Links open external sites in your browser. Ontario Wildlife Log isn’t affiliated with these organizations, and can’t guarantee external content.</div>';
     screen({ title: 'Resources', backAction: true, backText: 'More', body: body });
+  }
+
+  /* ==================================================== SAFETY & ALERTS */
+  function isDanger(s) {
+    if (!s.caution) return false;
+    // Exclude purely legal/protection notes (e.g. protected species) that aren't a physical danger
+    if (/illegal|protected/i.test(s.caution) &&
+        !/venom|bite|burn|poison|rash|sting|toxic|attack|aggress|blister|quill|spray|fatal|dangerous|charge/i.test(s.caution)) return false;
+    return true;
+  }
+  function viewAlerts() {
+    var reports = [];
+    app.entries.forEach(function (e) { if (isBearEntry(e)) reports.push({ kind: 'bear', e: e, when: e.when }); });
+    app.hazards.forEach(function (h) { reports.push({ kind: 'hazard', h: h, when: h.when }); });
+    reports.sort(function (a, b) { return new Date(b.when) - new Date(a.when); });
+
+    var body = '';
+    body += '<div class="wrap-note"><span class="i">⚠️</span><span>Your bear & hazard reports and Ontario’s dangerous wildlife and plants, in one place. Community-wide real-time alerts need a shared server (on the roadmap) — for now this shows your reports plus what to watch for.</span></div>';
+
+    body += '<div class="group"><div class="group-header">Your recent reports</div>';
+    if (reports.length) {
+      body += '<div class="list">';
+      reports.slice(0, 12).forEach(function (r) {
+        if (r.kind === 'bear') {
+          body += '<div class="cell tap" data-action="open-entry" data-id="' + esc(r.e.id) + '"><span class="cell-emoji">\u{1F43B}</span><span class="cell-body"><span class="cell-title">Bear sighting' + (r.e.bearReport && r.e.bearReport.cubs ? ' · cubs' : '') + '</span><span class="cell-sub">' + esc(fmtDay(r.when) + ' · ' + fmtTime(r.when)) + '</span></span><span class="chevron">' + I.chevron + '</span></div>';
+        } else {
+          var ht = hazardType(r.h.type);
+          body += '<a class="cell tap" href="#/map"><span class="cell-emoji">' + ht.emoji + '</span><span class="cell-body"><span class="cell-title">' + esc(ht.name) + '</span><span class="cell-sub">' + esc(fmtDay(r.when) + ' · ' + fmtTime(r.when) + (r.h.notes ? ' · ' + r.h.notes : '')) + '</span></span><span class="chevron">' + I.chevron + '</span></a>';
+        }
+      });
+      body += '</div>';
+    } else {
+      body += '<div class="list"><div class="info-row"><div class="info-v muted">No reports yet. Use 🐻 Report a Bear or ⚠️ Report a Hazard — they’ll show here and on the map.</div></div></div>';
+    }
+    body += '<div class="group-footer"><a href="#/map">Open the map ›</a></div></div>';
+
+    body += '<div class="hpad" style="display:flex;gap:10px">' +
+      '<button class="btn btn-gray btn-block" data-action="report-bear">\u{1F43B} Bear</button>' +
+      '<button class="btn btn-gray btn-block" data-action="report-hazard">⚠️ Hazard</button></div>';
+
+    body += '<div class="group"><div class="group-header">Safety guides</div><div class="list">' +
+      learnCell('\u{1F577}️', 'Ticks & Lyme disease', 'Identify, prevent & remove', 'ticks') +
+      learnCell('\u{1F43B}', 'Bear safety (Bear Wise)', 'Prevent encounters & report', 'bears') +
+      learnCell('☠️', 'Dangerous plants', 'Poison ivy, giant hogweed & more', 'plants') +
+      learnCell('\u{1F6E3}️', 'Wildlife on roads', 'Deer, moose & turtles', 'roads') +
+      '</div></div>';
+
+    body += dangerousList();
+    screen({ title: 'Safety & Alerts', large: true, subtitle: 'Dangers to know & report', body: body });
+  }
+  function dangerousList() {
+    var flagged = SPECIES.filter(isDanger);
+    if (!flagged.length) return '';
+    var order = CATEGORIES.map(function (c) { return c.id; });
+    flagged.sort(function (a, b) { var d = order.indexOf(a.cat) - order.indexOf(b.cat); return d !== 0 ? d : a.name.localeCompare(b.name); });
+    var html = '<div class="group"><div class="group-header">Dangerous wildlife & plants (' + flagged.length + ')</div><div class="list">';
+    flagged.forEach(function (s) {
+      html += '<a class="cell tap" href="#/species/' + esc(s.id) + '">' +
+        '<span class="cell-emoji">' + s.emoji + '</span>' +
+        '<span class="cell-body"><span class="cell-title">' + esc(s.name) + '</span>' +
+        '<span class="cell-sub">' + esc(s.caution) + '</span></span>' +
+        '<span class="badge badge-danger" style="flex-shrink:0">⚠</span></a>';
+    });
+    html += '</div><div class="group-footer">Tap any for identification and safety details.</div></div>';
+    return html;
+  }
+
+  /* ============================================ DATA RELIABILITY (anomaly demo) */
+  function riskClass(label) { return label === 'Flagged' ? 'risk-hi' : label === 'Review' ? 'risk-mid' : 'risk-lo'; }
+  function trustBadgeClass(label) { return label === 'Flagged' ? 'badge-danger' : label === 'Review' ? 'badge-risk' : 'badge-ok'; }
+  function viewTrust() {
+    var T = window.TRUST;
+    if (!T || !T.result) return viewMore();
+    var cs = T.result.contributors;
+    var flagged = cs.filter(function (c) { return c.label === 'Flagged'; }).length;
+    var review = cs.filter(function (c) { return c.label === 'Review'; }).length;
+    var maxRisk = Math.max(1, cs.reduce(function (m, c) { return Math.max(m, c.risk); }, 0));
+    var body = '';
+    body += '<div class="wrap-note"><span class="i">\u{1F9EA}</span><span><b>Demo.</b> Crowdsourced sightings only help conservation if they’re trustworthy. This runs a statistical model over <b>simulated</b> contributors — including a deliberately fake “sham” account with skewed, mostly false data — and flags anomalies. Not real user data.</span></div>';
+    body += '<div class="stat-grid" style="margin-top:4px">' + stat(cs.length, 'Accounts') + stat(flagged, 'Flagged') + stat(review, 'To review') + '</div>';
+    body += '<div class="group"><div class="group-header">Contributors — by anomaly risk</div><div class="list">';
+    cs.forEach(function (c) {
+      body += '<a class="cell tap" href="#/trust/' + encodeURIComponent(c.account) + '">' +
+        '<span class="cell-body"><span class="cell-title">' + esc(c.account) + '</span>' +
+        '<span class="cell-sub">' + c.obsCount + ' sightings · ' + esc(c.home) + '</span>' +
+        '<span class="riskbar"><span class="riskbar-fill ' + riskClass(c.label) + '" style="width:' + Math.round(c.risk / maxRisk * 100) + '%"></span></span></span>' +
+        '<span class="badge ' + trustBadgeClass(c.label) + '" style="flex-shrink:0">' + esc(c.label) + '</span>' +
+        '<span class="chevron">' + I.chevron + '</span></a>';
+    });
+    body += '</div><div class="group-footer">Robust z-scores (median/MAD) across six behavioural & plausibility features, combined into a 0–100 risk score. Tap an account for the breakdown.</div></div>';
+    screen({ title: 'Data reliability', large: true, subtitle: 'Anomaly detection (demo)', body: body });
+  }
+  function viewTrustAccount(id) {
+    var T = window.TRUST; if (!T || !T.result) return viewTrust();
+    var acc = decodeURIComponent(id || ''), c = null;
+    T.result.contributors.forEach(function (x) { if (x.account === acc) c = x; });
+    if (!c) return viewTrust();
+    var res = T.result;
+    var heroBg = c.label === 'Flagged' ? '#ff3b3022' : c.label === 'Review' ? '#ff950022' : 'var(--tint-soft)';
+    var heroIco = c.label === 'Flagged' ? '⚠️' : c.label === 'Review' ? '\u{1F50D}' : '✓';
+    var body = '<div class="hero" style="padding:18px 20px 6px"><div class="hero-emoji" style="width:64px;height:64px;font-size:30px;background:' + heroBg + '">' + heroIco + '</div>' +
+      '<h1 style="font-size:22px">' + esc(c.account) + '</h1>' +
+      '<div class="badges"><span class="badge ' + trustBadgeClass(c.label) + '">' + esc(c.label) + '</span><span class="badge badge-info">Risk ' + c.risk + '/100</span><span class="badge badge-info">' + c.obsCount + ' sightings</span>' + (c.sham ? '<span class="badge badge-danger">simulated sham</span>' : '') + '</div></div>';
+    if (c.reasons.length) {
+      body += '<div class="group"><div class="group-header">Why it was flagged</div><div class="list">';
+      c.reasons.forEach(function (r) { body += '<div class="cell"><span class="cell-emoji">⚠️</span><span class="cell-body"><span class="cell-title" style="font-size:15px">' + esc(r) + '</span></span></div>'; });
+      body += '</div></div>';
+    } else {
+      body += '<div class="wrap-note"><span class="i">✓</span><span>No significant anomalies — this contributor’s data is consistent with peers.</span></div>';
+    }
+    body += '<div class="group"><div class="group-header">Feature deviation (robust z-score)</div><div class="list" style="padding:8px 0">';
+    res.keys.forEach(function (k) {
+      var z = c.z[k]; var pct = Math.max(2, Math.min(100, Math.round(Math.min(Math.abs(z), 4) / 4 * 100)));
+      var cls = z >= 1.8 ? 'risk-hi' : z >= 1 ? 'risk-mid' : 'risk-lo';
+      body += '<div class="zrow"><div class="zrow-top"><span>' + esc(res.labels[k]) + '</span><span class="muted">' + (z >= 0 ? '+' : '') + z.toFixed(1) + 'σ</span></div>' +
+        '<span class="riskbar"><span class="riskbar-fill ' + cls + '" style="width:' + pct + '%"></span></span></div>';
+    });
+    body += '</div><div class="group-footer">σ = deviations from the peer median (median/MAD). Higher = more unusual.</div></div>';
+    if (c.examples.length) {
+      body += '<div class="group"><div class="group-header">Suspicious sightings</div><div class="list">';
+      c.examples.forEach(function (ex) { body += '<div class="cell"><span class="cell-body"><span class="cell-title" style="font-size:15px">' + esc(ex.name) + '</span><span class="cell-sub">' + esc(ex.why) + '</span></span></div>'; });
+      body += '</div></div>';
+    }
+    screen({ title: c.account, backAction: true, backText: 'Reliability', body: body });
   }
 
   /* ==================================================== LOG ENCOUNTER SHEET */
@@ -1157,7 +1289,7 @@
     if (h.indexOf('explore') === 0 || h.indexOf('species') === 0) return 'explore';
     if (h.indexOf('map') === 0) return 'map';
     if (h.indexOf('mylog') === 0) return 'mylog';
-    if (h.indexOf('more') === 0 || h.indexOf('learn') === 0 || h.indexOf('resources') === 0) return 'more';
+    if (h.indexOf('more') === 0 || h.indexOf('learn') === 0 || h.indexOf('resources') === 0 || h.indexOf('trust') === 0) return 'more';
     return 'log';
   }
 
@@ -1176,6 +1308,8 @@
     else if (r === 'species') viewSpecies(parts[1]);
     else if (r === 'map') viewMap();
     else if (r === 'mylog') viewMyLog();
+    else if (r === 'alerts') viewAlerts();
+    else if (r === 'trust') { if (parts[1]) viewTrustAccount(parts[1]); else viewTrust(); }
     else if (r === 'learn') viewLearn(parts[1]);
     else if (r === 'resources') viewResources();
     else if (r === 'more') viewMore();

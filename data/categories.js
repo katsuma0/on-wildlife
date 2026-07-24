@@ -65,12 +65,36 @@ window.CATEGORIES = [
       { id: 'other-fish', name: 'Other Fish', emoji: '\u{1F420}' },
     ],
   },
+  {
+    id: 'trees',
+    name: 'Trees',
+    emoji: '\u{1F333}',
+    color: '#2E7D32',
+    blurb: 'Conifers & broadleaf',
+    flora: true,
+    subs: [
+      { id: 'conifers', name: 'Conifers & Evergreens', emoji: '\u{1F332}' },
+      { id: 'deciduous', name: 'Broadleaf / Deciduous', emoji: '\u{1F333}' },
+    ],
+  },
+  {
+    id: 'plants',
+    name: 'Plants',
+    emoji: '\u{1F33F}',
+    color: '#689F38',
+    blurb: 'Wildflowers to dangerous plants',
+    flora: true,
+    subs: [
+      { id: 'wildflowers', name: 'Wildflowers', emoji: '\u{1F338}' },
+      { id: 'shrubs-berries', name: 'Shrubs & Berries', emoji: '\u{1FAD0}' },
+      { id: 'ferns-grasses', name: 'Ferns & Grasses', emoji: '\u{1F33F}' },
+      { id: 'dangerous-invasive', name: 'Dangerous & Invasive', emoji: '☠️' },
+    ],
+  },
 ];
 
 /* Categories planned for a future release (shown greyed-out in Explore). */
 window.COMING_SOON = [
-  { id: 'plants', name: 'Plants & Wildflowers', emoji: '\u{1F33F}', color: '#66BB6A' },
-  { id: 'trees', name: 'Trees', emoji: '\u{1F333}', color: '#43A047' },
   { id: 'insects', name: 'Insects & Butterflies', emoji: '\u{1F98B}', color: '#FB8C00' },
   { id: 'fungi', name: 'Mushrooms & Fungi', emoji: '\u{1F344}', color: '#8D6E63' },
 ];
