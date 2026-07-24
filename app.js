@@ -21,7 +21,8 @@
     camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L18 8h2a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.2"/></svg>',
     map: '<svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 5 7v16l6-2 6 2 6-2V5l-6 2-6-2Z"/><path d="M11 5v16M17 7v16"/></svg>',
     link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5h5v5"/><path d="M19 5l-8 8"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg>',
-    crosshair: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>'
+    crosshair: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>',
+    share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="M8 7l4-4 4 4"/><path d="M6 12H5a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7a1 1 0 0 0-1-1h-1"/></svg>'
   };
 
   /* ----------------------------------------------------------- Utilities */
@@ -35,8 +36,24 @@
     return 'e' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
   }
   function haptic() { try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {} }
+  function isIosSafari() {
+    var ua = navigator.userAgent || '';
+    var ios = /iphone|ipad|ipod/i.test(ua);
+    var standalone = (window.navigator.standalone === true) ||
+      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    return ios && !standalone;
+  }
+  var _vtaps = 0, _vtimer;
+  function versionTap() {
+    _vtaps++; clearTimeout(_vtimer); _vtimer = setTimeout(function () { _vtaps = 0; }, 1200);
+    if (_vtaps >= 5) { _vtaps = 0; haptic(); toast('\u{1F43E} Made with care for Ontario’s wild places. Thanks for logging!'); }
+  }
 
-  var app = { entries: [], hazards: [], settings: { units: 'metric' }, draft: null, hdraft: null, ready: false, map: null, mapFilter: 'all', placeMode: null };
+  var app = {
+    entries: [], hazards: [],
+    settings: { units: 'metric', theme: 'auto', homeMode: 'all', contribute: false, seenPrivacy: false, seenInstall: false, badges: [] },
+    draft: null, hdraft: null, ready: false, map: null, mapFilter: 'all', placeMode: null
+  };
 
   /* ------------------------------------------------------------- Storage */
   var Store = {
@@ -96,10 +113,19 @@
     }
   };
   function loadSettings() {
-    try { var s = JSON.parse(localStorage.getItem('owl-settings') || '{}'); if (s && s.units) app.settings = s; }
-    catch (e) {}
+    try {
+      var s = JSON.parse(localStorage.getItem('owl-settings') || '{}');
+      if (s && typeof s === 'object') { for (var k in s) if (s.hasOwnProperty(k)) app.settings[k] = s[k]; }
+    } catch (e) {}
+    if (!Array.isArray(app.settings.badges)) app.settings.badges = [];
   }
   function saveSettings() { try { localStorage.setItem('owl-settings', JSON.stringify(app.settings)); } catch (e) {} }
+  function applyTheme() {
+    var t = app.settings.theme || 'auto';
+    var root = document.documentElement;
+    if (t === 'light' || t === 'dark') root.setAttribute('data-theme', t);
+    else root.removeAttribute('data-theme');
+  }
 
   /* ------------------------------------------------------- Data helpers */
   var SPECIES = window.SPECIES || [];
@@ -118,6 +144,7 @@
     for (var i = 0; i < c.subs.length; i++) if (c.subs[i].id === subId) return c.subs[i];
     return null;
   }
+  function isFloraCat(catId) { var c = catMeta(catId); return !!(c && c.flora); }
   function speciesInCat(catId) { return SPECIES.filter(function (s) { return s.cat === catId; }); }
   function speciesInSub(catId, subId) { return SPECIES.filter(function (s) { return s.cat === catId && s.sub === subId; }); }
   var seenRank = { common: 0, uncommon: 1, rare: 2 };
@@ -231,47 +258,116 @@
   /* ============================================================ SCREENS */
 
   function viewLog() {
-    var recent = app.entries.slice().sort(function (a, b) { return new Date(b.when) - new Date(a.when); }).slice(0, 6);
+    var mode = app.settings.homeMode || 'all';
+    var cfg = mode === 'fishing' ? fishingHome() : mode === 'birding' ? birdingHome() : allHome();
+    var body = modeSeg(mode) + cfg.body;
+    screen({ title: cfg.title, large: true, subtitle: cfg.subtitle, body: body });
+  }
+  function modeSeg(mode) {
+    function o(id, label) { return '<div class="seg-opt' + (mode === id ? ' on' : '') + '" data-action="home-mode" data-m="' + id + '">' + label + '</div>'; }
+    return '<div class="hpad" style="margin-top:2px"><div class="segmented">' +
+      o('all', 'All wildlife') + o('fishing', '\u{1F3A3} Fishing') + o('birding', '\u{1F985} Birding') + '</div></div>';
+  }
+  function recentIn(pred, n) {
+    return app.entries.filter(pred).sort(function (a, b) { return new Date(b.when) - new Date(a.when); }).slice(0, n || 6);
+  }
+  function recentGroup(title, list) {
+    if (!list.length) return '';
+    var h = '<div class="group"><div class="group-header">' + esc(title) + '</div><div class="list">';
+    list.forEach(function (e) { h += entryCell(e); });
+    return h + '</div><div class="group-footer"><a href="#/mylog">See all encounters ›</a></div></div>';
+  }
+
+  function allHome() {
     var hour = new Date().getHours();
     var greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
     var uniq = {}; app.entries.forEach(function (e) { if (e.speciesId) uniq[e.speciesId] = 1; });
-
     var body = '';
-    // Primary action
-    body += '<div class="hpad" style="margin-top:6px">' +
+    if (isIosSafari() && !app.settings.seenInstall) {
+      body += '<div class="wrap-note" style="align-items:flex-start;margin-top:8px"><span class="i">\u{1F4F2}</span><span><b>Add to Home Screen</b> to use this like a real app — fullscreen and offline. Tap the <b>Share</b> button, then <b>Add to Home Screen</b>. <button data-action="dismiss-install" style="padding:0;font-weight:600;color:var(--tint);background:none">Got it</button></span></div>';
+    }
+    body += '<div class="hpad" style="margin-top:10px">' +
       '<button class="btn btn-primary btn-block" data-action="open-log">' + I.plus + 'Log an Encounter</button></div>';
-    // Quick modes
     body += '<div class="chip-row" style="margin-top:14px">' +
       '<button class="chip chip-alert" data-action="report-bear">\u{1F43B} Report a Bear</button>' +
       '<button class="chip chip-warn" data-action="report-hazard">⚠️ Report a Hazard</button>' +
-      '<button class="chip" data-action="open-log" data-cat="fish">\u{1F3A3} Log a Fish</button>' +
-      '<button class="chip" data-action="open-log" data-cat="birds">\u{1F985} Log a Bird</button>' +
-      '<button class="chip" data-action="open-log" data-cat="reptiles" data-sub="turtles">\u{1F422} Log a Turtle</button>' +
+      '<a class="chip" href="#/explore">\u{1F50D} Field Guide</a>' +
+      '<a class="chip" href="#/badges">\u{1F3C5} Badges</a>' +
       '</div>';
-
-    // Safety & learning
-    body += '<div class="group"><div class="group-header">Safety & Learning</div><div class="list">' +
+    body += '<div class="group"><div class="group-header">Safety & Alerts</div><div class="list">' +
+      '<a class="cell tap" href="#/alerts"><span class="cell-emoji">⚠️</span><span class="cell-body"><span class="cell-title">Safety & Alerts</span><span class="cell-sub">Dangers to know · your bear & hazard reports</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       learnCell('\u{1F577}️', 'Ticks & Lyme disease', 'What to look for and what to do', 'ticks') +
       learnCell('\u{1F43B}', 'Bear safety', 'Prevent encounters · Bear Wise', 'bears') +
-      learnCell('\u{1F6E3}️', 'Wildlife on roads', 'Deer, moose & turtles', 'roads') +
+      learnCell('☠️', 'Dangerous plants', 'Poison ivy, giant hogweed & more', 'plants') +
       '</div></div>';
-
     if (app.entries.length) {
       body += '<div class="stat-grid" style="margin-top:8px">' +
         stat(app.entries.length, app.entries.length === 1 ? 'Encounter' : 'Encounters') +
-        stat(Object.keys(uniq).length, 'Species') +
-        stat(catsSeen(), 'Categories') + '</div>';
-      body += '<div class="group"><div class="group-header">Recent</div><div class="list">';
-      recent.forEach(function (e) { body += entryCell(e); });
-      body += '</div>' +
-        '<div class="group-footer"><a href="#/mylog">See all encounters ›</a></div></div>';
+        stat(Object.keys(uniq).length, 'Species') + stat(catsSeen(), 'Categories') + '</div>';
+      body += recentGroup('Recent', recentIn(function () { return true; }, 6));
     } else {
       body += '<div class="empty"><div class="e">\u{1F343}</div><h3>Start your field journal</h3>' +
-        '<p>Tap <b>Log an Encounter</b> to record the first animal you spot, hear, or catch. ' +
-        'Everything is saved right on your phone.</p></div>';
+        '<p>Tap <b>Log an Encounter</b> to record the first animal you spot, hear, or catch. Everything is saved right on your phone.</p></div>';
     }
+    return { title: greet, subtitle: 'What did you spot today?', body: body };
+  }
 
-    screen({ title: greet, large: true, subtitle: 'What did you spot today?', body: body });
+  function fishingHome() {
+    var fish = recentIn(function (e) { return e.cat === 'fish'; }, 6);
+    var caught = app.entries.filter(function (e) { return e.cat === 'fish'; });
+    var released = caught.filter(function (e) { return e.fish && e.fish.released; }).length;
+    var uniq = {}; caught.forEach(function (e) { if (e.speciesId) uniq[e.speciesId] = 1; });
+    var body = '<div class="hpad" style="margin-top:10px">' +
+      '<button class="btn btn-primary btn-block" data-action="open-log" data-cat="fish">' + I.plus + 'Log a Fish</button></div>';
+    body += '<div class="chip-row" style="margin-top:14px">' +
+      '<a class="chip" href="#/explore/fish">\u{1F41F} Fish guide</a>' +
+      '<a class="chip" href="#/species/walleye">\u{1F3A3} Species</a>' +
+      '<button class="chip chip-warn" data-action="report-hazard">⚠️ Report a hazard</button>' +
+      '</div>';
+    body += '<div class="group"><div class="group-header">Fishing — Safety & Learning</div><div class="list">' +
+      learnCell('\u{1F3A3}', 'Handling & releasing fish', 'Keep released fish alive', 'fish-handling') +
+      learnCell('\u{1F6A4}', 'Protect the water', 'Stop invasive species spreading', 'water-care') +
+      learnCell('\u{1F37D}️', 'Is it safe to eat?', 'Eating your catch, the healthy way', 'fish-eating') +
+      learnCell('\u{1F6E5}️', 'Boating safety', 'Lifejackets, cold water & gear', 'boat-safety') +
+      linkCell('Get your fishing licence', 'https://www.ontario.ca/page/get-fishing-licence', 'Required for most anglers in Ontario') +
+      '</div></div>';
+    if (caught.length) {
+      body += '<div class="stat-grid" style="margin-top:8px">' +
+        stat(caught.length, caught.length === 1 ? 'Fish' : 'Fish') + stat(Object.keys(uniq).length, 'Species') + stat(released, 'Released') + '</div>';
+      body += recentGroup('Recent catches', fish);
+    } else {
+      body += '<div class="empty"><div class="e">\u{1F3A3}</div><h3>Log your first catch</h3>' +
+        '<p>Record fish you catch or see — with length, weight, bait and whether you released it.</p></div>';
+    }
+    return { title: 'Fishing', subtitle: 'Tight lines — log your catch', body: body };
+  }
+
+  function birdingHome() {
+    var birds = recentIn(function (e) { return e.cat === 'birds'; }, 6);
+    var all = app.entries.filter(function (e) { return e.cat === 'birds'; });
+    var uniq = {}; all.forEach(function (e) { if (e.speciesId) uniq[e.speciesId] = 1; });
+    var body = '<div class="hpad" style="margin-top:10px">' +
+      '<button class="btn btn-primary btn-block" data-action="open-log" data-cat="birds">' + I.plus + 'Log a Bird</button></div>';
+    body += '<div class="chip-row" style="margin-top:14px">' +
+      '<a class="chip" href="#/explore/birds">\u{1F426} Bird guide</a>' +
+      '<a class="chip" href="#/learn/birding-how">\u{1F430} How to bird</a>' +
+      '<a class="chip" href="#/badges">\u{1F3C5} Badges</a>' +
+      '</div>';
+    body += '<div class="group"><div class="group-header">Birding — Safety & Learning</div><div class="list">' +
+      learnCell('\u{1F430}', 'How to birdwatch', 'The early bird gets the bird', 'birding-how') +
+      learnCell('\u{1F97E}', 'Trail etiquette', 'Share the trail, protect the wild', 'trail-etiquette') +
+      learnCell('\u{1F9ED}', 'Trail safety', 'Come home from every hike', 'trail-safety') +
+      learnCell('\u{1F577}️', 'Ticks & Lyme disease', 'Check after every walk', 'ticks') +
+      '</div></div>';
+    if (all.length) {
+      body += '<div class="stat-grid" style="margin-top:8px">' +
+        stat(all.length, 'Sightings') + stat(Object.keys(uniq).length, 'Species') + stat('\u{1F305}', 'Go early') + '</div>';
+      body += recentGroup('Recent birds', birds);
+    } else {
+      body += '<div class="empty"><div class="e">\u{1F985}</div><h3>Start your life list</h3>' +
+        '<p>Head out early, keep quiet, and log the birds you see or hear. Tap <b>How to birdwatch</b> for tips.</p></div>';
+    }
+    return { title: 'Birding', subtitle: 'The early bird gets the bird', body: body };
   }
   function stat(n, l) { return '<div class="stat"><div class="n">' + n + '</div><div class="l">' + esc(l) + '</div></div>'; }
   function catsSeen() { var m = {}; app.entries.forEach(function (e) { if (e.cat) m[e.cat] = 1; }); return Object.keys(m).length; }
@@ -288,6 +384,61 @@
       '<span class="cell-body"><span class="cell-title">' + esc(label) + '</span>' +
       (note ? '<span class="cell-sub">' + esc(note) + '</span>' : '') + '</span></a>';
   }
+
+  /* ---- Badges ---- */
+  var BADGES = window.BADGES || [];
+  function badgeCtx() {
+    var e = app.entries;
+    var sp = {}, cats = {}, fish = 0, birds = 0, rept = 0, amph = 0, flora = 0, released = 0, photos = 0, located = 0, turtle = false;
+    var seasons = {}, atRisk = false, earlyBird = false, nightOwl = false, emblems = {};
+    e.forEach(function (x) {
+      if (x.speciesId) sp[x.speciesId] = 1;
+      if (x.cat) cats[x.cat] = 1;
+      if (x.cat === 'fish') fish++; else if (x.cat === 'birds') birds++; else if (x.cat === 'reptiles') rept++;
+      else if (x.cat === 'amphibians') amph++; else if (x.cat === 'trees' || x.cat === 'plants') flora++;
+      if (x.sub === 'turtles') turtle = true;
+      if (x.fish && x.fish.released) released++;
+      if (x.photo) photos++;
+      if (typeof x.lat === 'number') located++;
+      var d = new Date(x.when), m = d.getMonth(), h = d.getHours();
+      seasons[m >= 2 && m <= 4 ? 'sp' : m >= 5 && m <= 7 ? 'su' : m >= 8 && m <= 10 ? 'fa' : 'wi'] = 1;
+      if (x.cat === 'birds' && h < 7) earlyBird = true;
+      if (h >= 22 || h < 4) nightOwl = true;
+      var s = byId[x.speciesId]; if (s && s.atRisk) atRisk = true;
+      if (x.speciesId === 'common-loon' || x.speciesId === 'white-trillium' || x.speciesId === 'eastern-white-pine') emblems[x.speciesId] = 1;
+    });
+    return {
+      total: e.length, species: Object.keys(sp).length, cats: cats, catsN: Object.keys(cats).length,
+      fish: fish, birds: birds, reptiles: rept, amph: amph, flora: flora, released: released,
+      photos: photos, located: located, seasons: Object.keys(seasons).length, atRisk: atRisk,
+      earlyBird: earlyBird, nightOwl: nightOwl, emblems: Object.keys(emblems).length, turtle: turtle,
+      reports: app.hazards.length + app.entries.filter(isBearEntry).length
+    };
+  }
+  function earnedBadgeIds() {
+    var c = badgeCtx(), out = [];
+    BADGES.forEach(function (b) { try { if (b.test(c)) out.push(b.id); } catch (e) {} });
+    return out;
+  }
+  function badgeById(id) { for (var i = 0; i < BADGES.length; i++) if (BADGES[i].id === id) return BADGES[i]; return null; }
+  function initBadges() {
+    var merged = {}; (app.settings.badges || []).concat(earnedBadgeIds()).forEach(function (id) { merged[id] = 1; });
+    app.settings.badges = Object.keys(merged); saveSettings();
+  }
+  function checkNewBadges() {
+    var earned = earnedBadgeIds(), known = app.settings.badges || [];
+    var fresh = earned.filter(function (id) { return known.indexOf(id) < 0; });
+    if (fresh.length) {
+      app.settings.badges = known.concat(fresh); saveSettings();
+      var b = badgeById(fresh[0]);
+      if (b) { haptic(); toast('\u{1F3C5} Badge unlocked: ' + b.name + (fresh.length > 1 ? ' +' + (fresh.length - 1) + ' more' : '')); }
+    }
+  }
+  function isInvasive(s) { return /invasiv/i.test(s.status || '') || /invasiv/i.test(s.caution || ''); }
+  // Species-at-Risk (and all turtles) get location geoprivacy: the precise point
+  // stays private on-device, but is coarsened before it could ever be shared/exported.
+  function isSensitive(id) { var s = byId[id]; return !!(s && (s.atRisk || s.sub === 'turtles')); }
+  function coarse(x) { return Math.round(x * 10) / 10; } // ~11 km grid
 
   function entryCell(e) {
     var meta = e.speciesId ? byId[e.speciesId] : null;
@@ -336,7 +487,7 @@
     });
     body += '</div></div>';
 
-    screen({ title: 'Explore', large: true, subtitle: 'A field guide to Ontario', body: body });
+    screen({ title: 'Guide', large: true, subtitle: 'A field guide to Ontario', body: body });
     wireSearch();
   }
   function wireSearch() {
@@ -370,7 +521,7 @@
         '<span class="cell-value">' + n + '</span><span class="chevron">' + I.chevron + '</span></a>';
     });
     body += '</div></div>';
-    screen({ title: c.name, back: '#/explore', backText: 'Explore', body: body });
+    screen({ title: c.name, back: '#/explore', backText: 'Guide', body: body });
   }
 
   function viewSub(catId, subId) {
@@ -396,7 +547,7 @@
       '<h1>' + esc(s.name) + '</h1><div class="sci">' + esc(s.sci) + '</div>' +
       '<div class="badges">' + statusBadge(s) +
       '<span class="badge badge-info">' + esc(seenLabel(s.seen)) + '</span>' +
-      '<span class="badge badge-info">' + esc(activityLabel(s.activity)) + '</span>' +
+      (isFloraCat(s.cat) ? '' : '<span class="badge badge-info">' + esc(activityLabel(s.activity)) + '</span>') +
       '</div></div>';
 
     if (s.caution) body += '<div class="wrap-note danger"><span class="i">⚠️</span><span>' + esc(s.caution) + '</span></div>';
@@ -452,7 +603,7 @@
   function viewMyLog() {
     if (!app.entries.length) {
       screen({
-        title: 'My Log', large: true,
+        title: 'Journal', large: true,
         body: '<div class="empty"><div class="e">\u{1F4D3}</div><h3>No encounters yet</h3>' +
           '<p>Your logged sightings will appear here, grouped by day.</p>' +
           '<div class="spacer"></div><div class="hpad"><button class="btn btn-tinted" data-action="open-log">' + I.plus + 'Log your first</button></div></div>'
@@ -476,7 +627,7 @@
       body += '</div></div>';
     });
     screen({
-      title: 'My Log', large: true, subtitle: sorted.length + ' encounters logged',
+      title: 'Journal', large: true, subtitle: sorted.length + ' encounters logged',
       navRight: '<button class="nav-btn" data-action="open-log" aria-label="Add">' + I.plus + '</button>',
       body: body
     });
@@ -485,44 +636,58 @@
   /* -------------------------------------------------------------- More */
   function viewMore() {
     var body = '';
-    body += '<div class="group"><div class="group-header">Ways to Log</div><div class="list">' +
-      moreCell('\u{1F3A3}', 'Fishing', 'Log fish caught or seen', 'open-log', { cat: 'fish' }) +
-      moreCell('\u{1F985}', 'Birding', 'Track the birds you spot', 'open-log', { cat: 'birds' }) +
-      moreCell('\u{1F422}', 'Turtles', 'Ontario turtles are Species at Risk', 'open-log', { cat: 'reptiles', sub: 'turtles' }) +
+    body += '<div class="group"><div class="group-header">Your Journal</div><div class="list">' +
+      '<a class="cell tap" href="#/badges"><span class="cell-emoji">\u{1F3C5}</span><span class="cell-body"><span class="cell-title">Badges</span><span class="cell-sub">Collectible naturalist achievements</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      '<a class="cell tap" href="#/stats"><span class="cell-emoji">\u{1F4CA}</span><span class="cell-body"><span class="cell-title">Stats</span><span class="cell-sub">Your totals & community comparison</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      moreCell('\u{1F4E4}', 'Export my log', 'Download everything as a file', 'export-data') +
+      '</div></div>';
+
+    body += '<div class="group"><div class="group-header">Report</div><div class="list">' +
       moreCell('\u{1F43B}', 'Report a bear', 'For your map & Bear Wise info', 'report-bear') +
       moreCell('⚠️', 'Report a hazard', 'Wildlife on road, construction, ticks…', 'report-hazard') +
       '</div></div>';
 
     body += '<div class="group"><div class="group-header">Learn & Safety</div><div class="list">' +
+      '<a class="cell tap" href="#/alerts"><span class="cell-emoji">⚠️</span><span class="cell-body"><span class="cell-title">Safety & Alerts</span><span class="cell-sub">Dangers to know · your bear & hazard reports</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      '<a class="cell tap" href="#/invasives"><span class="cell-emoji">\u{1F6AB}</span><span class="cell-body"><span class="cell-title">Invasive species</span><span class="cell-sub">What to watch for & how to report</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       learnCell('\u{1F577}️', 'Ticks & Lyme disease', 'Identify, prevent, remove & when to see a doctor', 'ticks') +
       learnCell('\u{1F43B}', 'Bear safety (Bear Wise)', 'Prevent encounters and how to report a bear', 'bears') +
+      learnCell('☠️', 'Dangerous plants', 'Poison ivy, wild parsnip, giant hogweed', 'plants') +
       learnCell('\u{1F6E3}️', 'Wildlife on roads', 'Deer, moose, turtles & road hazards', 'roads') +
       learnCell('\u{1F30D}', 'Help Ontario’s wildlife', 'How your sightings support conservation', 'contribute') +
       '</div></div>';
 
-    body += '<div class="group"><div class="group-header">Resources</div><div class="list">' +
+    body += '<div class="group"><div class="group-header">Resources & Data</div><div class="list">' +
       '<a class="cell tap" href="#/resources"><span class="cell-emoji">\u{1F517}</span>' +
       '<span class="cell-body"><span class="cell-title">Ontario & Canada resources</span>' +
       '<span class="cell-sub">Trusted sites for wildlife, fishing & safety</span></span>' +
+      '<span class="chevron">' + I.chevron + '</span></a>' +
+      '<a class="cell tap" href="#/trust"><span class="cell-emoji">\u{1F9EA}</span>' +
+      '<span class="cell-body"><span class="cell-title">Data reliability</span>' +
+      '<span class="cell-sub">Anomaly detection on contributor data (demo)</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></a></div></div>';
-    body += '<div class="group"><div class="group-header">Your Data</div><div class="list">' +
-      moreCell('\u{1F4E4}', 'Export encounters', 'Download your log as a file', 'javascript:void 0', 'export-data') +
-      '</div>' +
-      '<div class="group-footer">Everything you log is stored privately on this device only.</div></div>';
-    body += '<div class="group"><div class="group-header">Units</div><div class="list">' +
-      '<div class="field"><span class="field-label">Measurement</span>' +
-      '<div style="flex:1"></div>' +
+    body += '<div class="group"><div class="group-header">Appearance</div><div class="list">' +
+      '<div class="field"><span class="field-label">Theme</span><div style="flex:1"></div>' +
+      '<div class="segmented" style="width:216px">' +
+      '<div class="seg-opt' + (app.settings.theme === 'auto' ? ' on' : '') + '" data-action="set-theme" data-val="auto">Auto</div>' +
+      '<div class="seg-opt' + (app.settings.theme === 'light' ? ' on' : '') + '" data-action="set-theme" data-val="light">Light</div>' +
+      '<div class="seg-opt' + (app.settings.theme === 'dark' ? ' on' : '') + '" data-action="set-theme" data-val="dark">Dark</div>' +
+      '</div></div>' +
+      '<div class="field"><span class="field-label">Units</span><div style="flex:1"></div>' +
       '<div class="segmented" style="width:180px">' +
       '<div class="seg-opt' + (app.settings.units === 'metric' ? ' on' : '') + '" data-action="set-units" data-val="metric">Metric</div>' +
       '<div class="seg-opt' + (app.settings.units === 'imperial' ? ' on' : '') + '" data-action="set-units" data-val="imperial">Imperial</div>' +
-      '</div></div></div></div>';
-    body += '<div class="group"><div class="group-header">About</div><div class="list">' +
-      '<div class="info-row"><div class="info-v">Ontario Wildlife Log is a simple field journal for recording the animals, fish and birds you encounter across Ontario. Plants, trees, insects and fungi are coming in future updates.</div></div>' +
-      '<div class="cell"><span class="cell-body"><span class="cell-title">Species in guide</span></span><span class="cell-value">' + SPECIES.length + '</span></div>' +
-      '<div class="cell"><span class="cell-body"><span class="cell-title">Version</span></span><span class="cell-value">1.0</span></div>' +
-      '</div></div>';
+      '</div></div></div>' +
+      '<div class="group-footer">Auto follows your phone’s light or dark setting.</div></div>';
+
     body += '<div class="group"><div class="list">' +
-      '<button class="cell tap" data-action="clear-data" style="justify-content:center"><span class="btn-danger" style="background:none;color:var(--red);font-weight:500">Clear all logged data</span></button>' +
+      '<a class="cell tap" href="#/privacy"><span class="cell-emoji">\u{1F512}</span><span class="cell-body"><span class="cell-title">Privacy</span><span class="cell-sub">Your data is private, on this device</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      '</div></div>';
+
+    body += '<div class="group"><div class="group-header">About</div><div class="list">' +
+      '<div class="info-row"><div class="info-v">Ontario Wildlife Log is a simple, private field journal for the wildlife, fish and plants of Ontario. Insects & fungi are coming next.</div></div>' +
+      '<div class="cell"><span class="cell-body"><span class="cell-title">Species in guide</span></span><span class="cell-value">' + SPECIES.length + '</span></div>' +
+      '<button class="cell tap" data-action="version-tap"><span class="cell-body"><span class="cell-title">Version</span></span><span class="cell-value">2.0</span></button>' +
       '</div></div>';
     screen({ title: 'More', large: true, body: body });
   }
@@ -682,10 +847,10 @@
   function renderBearSheet() {
     var d = app.bdraft;
     var body = '';
-    body += '<div class="wrap-note danger" style="margin:8px 16px"><span class="i">🐻</span><span><b>Bear Wise:</b> call <b>911</b> if a bear is an immediate threat. For non-emergency problems call <b>1-866-514-2327</b> (Apr–Nov). <a href="#/learn/bears" data-action="close-sheet-nav">Bear safety ›</a></span></div>';
+    body += '<div class="wrap-note danger" style="margin:8px 16px"><span class="i">🐻</span><span>Saving here adds it to <b>your own log</b> — it does <b>not</b> alert authorities. For an immediate threat call <b>911</b>; for non-emergency bear problems call Bear Wise <b>1-866-514-2327</b> (Apr–Nov). <a href="#/learn/bears" data-action="close-sheet-nav">Bear safety ›</a></span></div>';
     body += '<div class="group" style="margin-top:6px"><div class="group-header">The bear</div><div class="list">';
     body += '<div class="field"><span class="field-label">Type</span><div style="flex:1"></div><div style="width:220px">' + segHtml('bear-species', d.species, [['american-black-bear', 'Black bear'], ['polar-bear', 'Polar bear']]) + '</div></div>';
-    body += '<div class="field"><span class="field-label">How many</span><div style="flex:1"></div><div class="stepper"><button data-action="bcount" data-d="-1">−</button><div class="sep"></div><div id="bcount-val" style="min-width:44px;text-align:center;line-height:30px">' + d.count + '</div><div class="sep"></div><button data-action="bcount" data-d="1">+</button></div></div>';
+    body += '<div class="field"><span class="field-label">How many</span><div style="flex:1"></div><div class="stepper"><button data-action="bcount" data-d="-1">−</button><div class="sep"></div><div class="val" id="bcount-val">' + d.count + '</div><div class="sep"></div><button data-action="bcount" data-d="1">+</button></div></div>';
     body += '<div class="field"><span class="field-label">Cubs present</span><div style="flex:1"></div><label class="switch"><input type="checkbox" id="b-cubs"' + (d.cubs ? ' checked' : '') + '><span class="track"></span><span class="knob"></span></label></div>';
     body += '</div></div>';
     body += '<div class="group"><div class="group-header">Behaviour</div><div class="list"><div style="padding:12px 16px">' + segHtml('bear-behaviour', d.behaviour, [['calm', 'Calm / moved off'], ['curious', 'Curious'], ['aggressive', 'Aggressive']]) + '</div></div></div>';
@@ -706,7 +871,9 @@
       lat: d.lat, lng: d.lng, notes: (d.notes || '').trim(), photo: null, fish: null, bird: null,
       bearReport: { count: d.count, cubs: !!d.cubs, behaviour: d.behaviour }, createdAt: new Date().toISOString()
     };
-    app.entries.push(entry); Store.put(entry); haptic(); closeSheet(); toast('🐻 Bear sighting saved'); afterReportSaved();
+    if (entry.lat != null && isSensitive(entry.speciesId)) entry.sensitiveLoc = true;
+    app.entries.push(entry); Store.put(entry); haptic(); closeSheet(); toast('🐻 Saved to your log (on your phone)'); afterReportSaved();
+    setTimeout(checkNewBadges, 1400);
   }
 
   function openHazardReport(prefill) {
@@ -740,6 +907,7 @@
     var d = app.hdraft;
     var h = { id: uid(), type: d.type, lat: d.lat, lng: d.lng, when: d.when ? new Date(d.when).toISOString() : new Date().toISOString(), notes: (d.notes || '').trim(), createdAt: new Date().toISOString() };
     app.hazards.push(h); Store.put(h, 'hazards'); haptic(); closeSheet(); toast('⚠️ Hazard saved'); afterReportSaved();
+    setTimeout(checkNewBadges, 1400);
   }
 
   /* ======================================================== LEARN / RESOURCES */
@@ -779,6 +947,251 @@
     });
     body += '<div class="group-footer hpad" style="margin:8px 16px">Links open external sites in your browser. Ontario Wildlife Log isn’t affiliated with these organizations, and can’t guarantee external content.</div>';
     screen({ title: 'Resources', backAction: true, backText: 'More', body: body });
+  }
+
+  /* ==================================================== SAFETY & ALERTS */
+  function isDanger(s) {
+    if (!s.caution) return false;
+    // Exclude purely legal/protection notes (e.g. protected species) that aren't a physical danger
+    if (/illegal|protected/i.test(s.caution) &&
+        !/venom|bite|burn|poison|rash|sting|toxic|attack|aggress|blister|quill|spray|fatal|dangerous|charge/i.test(s.caution)) return false;
+    return true;
+  }
+  function viewAlerts() {
+    var reports = [];
+    app.entries.forEach(function (e) { if (isBearEntry(e)) reports.push({ kind: 'bear', e: e, when: e.when }); });
+    app.hazards.forEach(function (h) { reports.push({ kind: 'hazard', h: h, when: h.when }); });
+    reports.sort(function (a, b) { return new Date(b.when) - new Date(a.when); });
+
+    var body = '';
+    body += '<div class="wrap-note"><span class="i">⚠️</span><span>Your bear & hazard reports and Ontario’s dangerous wildlife and plants, in one place. Community-wide real-time alerts need a shared server (on the roadmap) — for now this shows your reports plus what to watch for.</span></div>';
+
+    body += '<div class="group"><div class="group-header">Your recent reports</div>';
+    if (reports.length) {
+      body += '<div class="list">';
+      reports.slice(0, 12).forEach(function (r) {
+        if (r.kind === 'bear') {
+          body += '<div class="cell tap" data-action="open-entry" data-id="' + esc(r.e.id) + '"><span class="cell-emoji">\u{1F43B}</span><span class="cell-body"><span class="cell-title">Bear sighting' + (r.e.bearReport && r.e.bearReport.cubs ? ' · cubs' : '') + '</span><span class="cell-sub">' + esc(fmtDay(r.when) + ' · ' + fmtTime(r.when)) + '</span></span><span class="chevron">' + I.chevron + '</span></div>';
+        } else {
+          var ht = hazardType(r.h.type);
+          body += '<a class="cell tap" href="#/map"><span class="cell-emoji">' + ht.emoji + '</span><span class="cell-body"><span class="cell-title">' + esc(ht.name) + '</span><span class="cell-sub">' + esc(fmtDay(r.when) + ' · ' + fmtTime(r.when) + (r.h.notes ? ' · ' + r.h.notes : '')) + '</span></span><span class="chevron">' + I.chevron + '</span></a>';
+        }
+      });
+      body += '</div>';
+    } else {
+      body += '<div class="list"><div class="info-row"><div class="info-v muted">No reports yet. Use 🐻 Report a Bear or ⚠️ Report a Hazard — they’ll show here and on the map.</div></div></div>';
+    }
+    body += '<div class="group-footer"><a href="#/map">Open the map ›</a></div></div>';
+
+    body += '<div class="hpad" style="display:flex;gap:10px">' +
+      '<button class="btn btn-gray btn-block" data-action="report-bear">\u{1F43B} Bear</button>' +
+      '<button class="btn btn-gray btn-block" data-action="report-hazard">⚠️ Hazard</button></div>';
+
+    body += '<div class="group"><div class="group-header">Safety guides</div><div class="list">' +
+      learnCell('\u{1F577}️', 'Ticks & Lyme disease', 'Identify, prevent & remove', 'ticks') +
+      learnCell('\u{1F43B}', 'Bear safety (Bear Wise)', 'Prevent encounters & report', 'bears') +
+      learnCell('☠️', 'Dangerous plants', 'Poison ivy, giant hogweed & more', 'plants') +
+      learnCell('\u{1F6E3}️', 'Wildlife on roads', 'Deer, moose & turtles', 'roads') +
+      '</div></div>';
+
+    body += dangerousList();
+    screen({ title: 'Safety & Alerts', large: true, subtitle: 'Dangers to know & report', body: body });
+  }
+  function dangerousList() {
+    var flagged = SPECIES.filter(isDanger);
+    if (!flagged.length) return '';
+    var order = CATEGORIES.map(function (c) { return c.id; });
+    flagged.sort(function (a, b) { var d = order.indexOf(a.cat) - order.indexOf(b.cat); return d !== 0 ? d : a.name.localeCompare(b.name); });
+    var html = '<div class="group"><div class="group-header">Dangerous wildlife & plants (' + flagged.length + ')</div><div class="list">';
+    flagged.forEach(function (s) {
+      html += '<a class="cell tap" href="#/species/' + esc(s.id) + '">' +
+        '<span class="cell-emoji">' + s.emoji + '</span>' +
+        '<span class="cell-body"><span class="cell-title">' + esc(s.name) + '</span>' +
+        '<span class="cell-sub">' + esc(s.caution) + '</span></span>' +
+        '<span class="badge badge-danger" style="flex-shrink:0">⚠</span></a>';
+    });
+    html += '</div><div class="group-footer">Tap any for identification and safety details.</div></div>';
+    return html;
+  }
+
+  /* ============================================ DATA RELIABILITY (anomaly demo) */
+  function riskClass(label) { return label === 'Flagged' ? 'risk-hi' : label === 'Review' ? 'risk-mid' : 'risk-lo'; }
+  function trustBadgeClass(label) { return label === 'Flagged' ? 'badge-danger' : label === 'Review' ? 'badge-risk' : 'badge-ok'; }
+  function viewTrust() {
+    var T = window.TRUST;
+    if (!T || !T.result) return viewMore();
+    var cs = T.result.contributors;
+    var flagged = cs.filter(function (c) { return c.label === 'Flagged'; }).length;
+    var review = cs.filter(function (c) { return c.label === 'Review'; }).length;
+    var maxRisk = Math.max(1, cs.reduce(function (m, c) { return Math.max(m, c.risk); }, 0));
+    var body = '';
+    body += '<div class="wrap-note"><span class="i">\u{1F9EA}</span><span><b>Demo.</b> Crowdsourced sightings only help conservation if they’re trustworthy. This runs a statistical model over <b>simulated</b> contributors — including a deliberately fake “sham” account with skewed, mostly false data — and flags anomalies. Not real user data.</span></div>';
+    body += '<div class="stat-grid" style="margin-top:4px">' + stat(cs.length, 'Accounts') + stat(flagged, 'Flagged') + stat(review, 'To review') + '</div>';
+    body += '<div class="group"><div class="group-header">Contributors — by anomaly risk</div><div class="list">';
+    cs.forEach(function (c) {
+      body += '<a class="cell tap" href="#/trust/' + encodeURIComponent(c.account) + '">' +
+        '<span class="cell-body"><span class="cell-title">' + esc(c.account) + '</span>' +
+        '<span class="cell-sub">' + c.obsCount + ' sightings · ' + esc(c.home) + '</span>' +
+        '<span class="riskbar"><span class="riskbar-fill ' + riskClass(c.label) + '" style="width:' + Math.round(c.risk / maxRisk * 100) + '%"></span></span></span>' +
+        '<span class="badge ' + trustBadgeClass(c.label) + '" style="flex-shrink:0">' + esc(c.label) + '</span>' +
+        '<span class="chevron">' + I.chevron + '</span></a>';
+    });
+    body += '</div><div class="group-footer">Robust z-scores (median/MAD) across six behavioural & plausibility features, combined into a 0–100 risk score. Tap an account for the breakdown.</div></div>';
+    screen({ title: 'Data reliability', large: true, subtitle: 'Anomaly detection (demo)', body: body });
+  }
+  function viewTrustAccount(id) {
+    var T = window.TRUST; if (!T || !T.result) return viewTrust();
+    var acc = decodeURIComponent(id || ''), c = null;
+    T.result.contributors.forEach(function (x) { if (x.account === acc) c = x; });
+    if (!c) return viewTrust();
+    var res = T.result;
+    var heroBg = c.label === 'Flagged' ? '#ff3b3022' : c.label === 'Review' ? '#ff950022' : 'var(--tint-soft)';
+    var heroIco = c.label === 'Flagged' ? '⚠️' : c.label === 'Review' ? '\u{1F50D}' : '✓';
+    var body = '<div class="hero" style="padding:18px 20px 6px"><div class="hero-emoji" style="width:64px;height:64px;font-size:30px;background:' + heroBg + '">' + heroIco + '</div>' +
+      '<h1 style="font-size:22px">' + esc(c.account) + '</h1>' +
+      '<div class="badges"><span class="badge ' + trustBadgeClass(c.label) + '">' + esc(c.label) + '</span><span class="badge badge-info">Risk ' + c.risk + '/100</span><span class="badge badge-info">' + c.obsCount + ' sightings</span>' + (c.sham ? '<span class="badge badge-danger">simulated sham</span>' : '') + '</div></div>';
+    if (c.reasons.length) {
+      body += '<div class="group"><div class="group-header">Why it was flagged</div><div class="list">';
+      c.reasons.forEach(function (r) { body += '<div class="cell"><span class="cell-emoji">⚠️</span><span class="cell-body"><span class="cell-title" style="font-size:15px">' + esc(r) + '</span></span></div>'; });
+      body += '</div></div>';
+    } else {
+      body += '<div class="wrap-note"><span class="i">✓</span><span>No significant anomalies — this contributor’s data is consistent with peers.</span></div>';
+    }
+    body += '<div class="group"><div class="group-header">Feature deviation (robust z-score)</div><div class="list" style="padding:8px 0">';
+    res.keys.forEach(function (k) {
+      var z = c.z[k]; var pct = Math.max(2, Math.min(100, Math.round(Math.min(Math.abs(z), 4) / 4 * 100)));
+      var cls = z >= 1.8 ? 'risk-hi' : z >= 1 ? 'risk-mid' : 'risk-lo';
+      body += '<div class="zrow"><div class="zrow-top"><span>' + esc(res.labels[k]) + '</span><span class="muted">' + (z >= 0 ? '+' : '') + z.toFixed(1) + 'σ</span></div>' +
+        '<span class="riskbar"><span class="riskbar-fill ' + cls + '" style="width:' + pct + '%"></span></span></div>';
+    });
+    body += '</div><div class="group-footer">σ = deviations from the peer median (median/MAD). Higher = more unusual.</div></div>';
+    if (c.examples.length) {
+      body += '<div class="group"><div class="group-header">Suspicious sightings</div><div class="list">';
+      c.examples.forEach(function (ex) { body += '<div class="cell"><span class="cell-body"><span class="cell-title" style="font-size:15px">' + esc(ex.name) + '</span><span class="cell-sub">' + esc(ex.why) + '</span></span></div>'; });
+      body += '</div></div>';
+    }
+    screen({ title: c.account, backAction: true, backText: 'Reliability', body: body });
+  }
+
+  /* ================================================================ BADGES */
+  function viewBadges() {
+    var earned = {}; earnedBadgeIds().forEach(function (id) { earned[id] = 1; });
+    var visible = BADGES.filter(function (b) { return !b.secret || earned[b.id]; });
+    var denom = BADGES.filter(function (b) { return !b.secret; }).length + (earned.emblems ? 1 : 0);
+    var earnedCount = Object.keys(earned).length;
+    var body = '<div class="stat-grid" style="margin-top:4px">' +
+      stat(earnedCount, 'Earned') + stat(denom, 'Total') + stat(Math.round(earnedCount / denom * 100) + '%', 'Complete') + '</div>';
+    body += '<div class="badge-grid">';
+    visible.forEach(function (b) {
+      var on = earned[b.id];
+      body += '<div class="badge-card' + (on ? '' : ' locked') + '">' +
+        '<div class="badge-ico">' + b.emoji + '</div>' +
+        '<div class="badge-name">' + esc(b.name) + '</div>' +
+        '<div class="badge-desc">' + esc(b.desc) + '</div>' +
+        (on ? '<div class="badge-chk">✓</div>' : '') + '</div>';
+    });
+    body += '</div>';
+    if (!earned.emblems) body += '<div class="group-footer hpad" style="text-align:center">✨ There’s a secret badge to discover…</div>';
+    screen({ title: 'Badges', backAction: true, backText: 'Back', body: body });
+  }
+
+  /* ================================================================= STATS */
+  function viewStats() {
+    var c = badgeCtx();
+    if (!c.total) {
+      screen({ title: 'Stats', large: true, subtitle: 'Your field record',
+        body: '<div class="empty"><div class="e">\u{1F4CA}</div><h3>No stats yet</h3><p>Log a few encounters and your totals, badges and community comparison will appear here.</p><div class="spacer"></div><div class="hpad"><a class="btn btn-tinted" href="#/log">Start logging</a></div></div>' });
+      return;
+    }
+    var earned = earnedBadgeIds().length;
+    var body = '<div class="stat-grid" style="margin-top:4px">' +
+      stat(c.total, 'Encounters') + stat(c.species, 'Species') + stat(c.catsN, 'Categories') + '</div>';
+    // Honest personal progress: how much of the Ontario guide you've recorded
+    var perCat = {}; app.entries.forEach(function (e) { if (e.speciesId) (perCat[e.cat] = perCat[e.cat] || {})[e.speciesId] = 1; });
+    body += '<div class="group"><div class="group-header">Guide completion</div><div class="list" style="padding:8px 0">';
+    body += progressRow('\u{1F30E} All species', c.species, SPECIES.length);
+    CATEGORIES.forEach(function (cm) {
+      var got = perCat[cm.id] ? Object.keys(perCat[cm.id]).length : 0;
+      if (got) body += progressRow(cm.emoji + ' ' + cm.name, got, speciesInCat(cm.id).length, cm.color);
+    });
+    body += '</div><div class="group-footer">You’ve recorded ' + c.species + ' of Ontario’s ' + SPECIES.length + ' guide species. A live community comparison arrives with the shared layer.</div></div>';
+    body += '<div class="group"><div class="list">' +
+      '<a class="cell tap" href="#/badges"><span class="cell-emoji">\u{1F3C5}</span><span class="cell-body"><span class="cell-title">Badges</span><span class="cell-sub">' + earned + ' earned</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      '</div></div>';
+    screen({ title: 'Stats', large: true, subtitle: 'Your field record', body: body });
+  }
+  function progressRow(label, got, total, color) {
+    var p = total ? Math.round(got / total * 100) : 0;
+    return '<div class="zrow"><div class="zrow-top"><span>' + esc(label) + '</span><span class="muted">' + got + ' / ' + total + '</span></div>' +
+      '<span class="riskbar"><span class="riskbar-fill" style="width:' + Math.max(2, p) + '%;background:' + (color || 'var(--tint)') + '"></span></span></div>';
+  }
+
+  /* ============================================================= INVASIVES */
+  function viewInvasives() {
+    var inv = SPECIES.filter(isInvasive);
+    var body = '<div class="hero" style="padding-bottom:2px"><div class="hero-emoji" style="background:rgba(230,81,0,.14)">\u{1F6AB}</div><h1>Invasive Species</h1><div class="sci" style="font-style:normal">Ontario’s unwanted species — and how you help</div></div>';
+    body += '<p class="article-intro">Invasive species are plants, animals and insects from elsewhere that spread aggressively and harm Ontario’s native wildlife, waters and forests. Learning to spot and report them makes a real difference.</p>';
+    body += '<div class="callout callout-warn" style="margin:10px 20px"><div class="callout-t">How you help</div><div>Clean · Drain · Dry your boat and gear, never move firewood or live bait, plant native species, and report what you find.</div></div>';
+    var order = CATEGORIES.map(function (cm) { return cm.id; });
+    var groups = {}; inv.forEach(function (s) { (groups[s.cat] = groups[s.cat] || []).push(s); });
+    order.forEach(function (cid) {
+      if (!groups[cid]) return; var cm = catMeta(cid);
+      body += '<div class="group"><div class="group-header">' + esc(cm.name) + '</div><div class="list">';
+      groups[cid].sort(function (a, b) { return a.name.localeCompare(b.name); }).forEach(function (s) {
+        body += '<a class="cell tap" href="#/species/' + esc(s.id) + '"><span class="cell-emoji">' + s.emoji + '</span>' +
+          '<span class="cell-body"><span class="cell-title">' + esc(s.name) + '</span><span class="cell-sub">' + esc(s.caution || s.habitat) + '</span></span>' +
+          '<span class="badge badge-risk" style="flex-shrink:0">invasive</span></a>';
+      });
+      body += '</div></div>';
+    });
+    body += '<div class="group"><div class="group-header">Report & learn</div><div class="list">' +
+      '<div class="cell"><span class="cell-emoji">\u{1F4DE}</span><span class="cell-body"><span class="cell-title">Invading Species Hotline</span><span class="cell-sub">1-800-563-7711</span></span></div>' +
+      linkCell('EDDMapS Ontario — report online', 'https://www.eddmaps.org/ontario/', '') +
+      linkCell('Ontario — Invasive species', 'https://www.ontario.ca/page/invasive-species-ontario', '') +
+      '</div></div>';
+    screen({ title: 'Invasive Species', backAction: true, backText: 'Back', body: body });
+  }
+
+  /* =============================================================== PRIVACY */
+  function viewPrivacy() {
+    var body = '<div class="hero" style="padding-bottom:2px"><div class="hero-emoji" style="background:var(--tint-soft)">\u{1F512}</div><h1>Your Privacy</h1><div class="sci" style="font-style:normal">Private by default</div></div>';
+    body += '<p class="article-intro">Everything you log — sightings, photos, locations and notes — is stored <b>only on this device</b>. Nothing is uploaded, and there are no accounts, ads or trackers.</p>';
+    body += '<div class="group"><div class="group-header">What that means</div><div class="list">' +
+      infoRow2('\u{1F4F1}', 'On your device', 'Your log lives in this app’s private storage on your phone.') +
+      infoRow2('\u{1F6AB}', 'No tracking', 'No analytics, no ads, nothing shared with anyone.') +
+      infoRow2('\u{1F4E4}', 'You’re in control', 'Export your whole log to a file, or delete everything, anytime.') +
+      '</div></div>';
+    body += '<div class="group"><div class="group-header">Contribute to conservation (coming soon)</div><div class="list">' +
+      '<div class="field"><span class="field-label" style="flex:1">Share anonymized sightings</span>' +
+      '<label class="switch"><input type="checkbox" id="consent-toggle"' + (app.settings.contribute ? ' checked' : '') + '><span class="track"></span><span class="knob"></span></label></div>' +
+      '</div><div class="group-footer">Off by default. A shared community layer isn’t built yet. When it launches, we’ll <b>ask your permission first</b> and show you exactly what would be shared. Sensitive Species-at-Risk locations are always obscured before anything is shared.</div></div>';
+    body += '<div class="group"><div class="list">' +
+      '<button class="cell tap" data-action="export-data"><span class="cell-emoji">\u{1F4E4}</span><span class="cell-body"><span class="cell-title">Export my data</span></span><span class="chevron">' + I.chevron + '</span></button>' +
+      '<button class="cell tap" data-action="clear-data"><span class="cell-emoji">\u{1F5D1}️</span><span class="cell-body"><span class="cell-title" style="color:var(--red)">Delete all my data</span></span></button>' +
+      '</div></div>';
+    screen({ title: 'Privacy', backAction: true, backText: 'More', body: body });
+  }
+  function infoRow2(emoji, title, sub) {
+    return '<div class="cell"><span class="cell-emoji">' + emoji + '</span>' +
+      '<span class="cell-body"><span class="cell-title" style="font-size:15px">' + esc(title) + '</span>' +
+      '<span class="cell-sub" style="white-space:normal">' + esc(sub) + '</span></span></div>';
+  }
+
+  /* ====================================================== FIRST-RUN PRIVACY */
+  function maybePrivacyBanner() {
+    if (app.settings.seenPrivacy) return;
+    var html = '<div class="scrim show" data-action="accept-privacy"></div>' +
+      '<div class="sheet show" id="sheet" style="max-height:none">' +
+      '<div class="sheet-grabber"></div>' +
+      '<div class="sheet-body" style="padding:8px 20px calc(24px + var(--sa-bottom))">' +
+      '<div style="text-align:center;font-size:44px;margin:8px 0">\u{1F43E}</div>' +
+      '<h2 style="text-align:center;margin:0 0 6px;font-size:22px">Welcome to Wildlife Log</h2>' +
+      '<p style="text-align:center;color:var(--label-2);font-size:15px;line-height:1.45;margin:0 0 16px">Log the wildlife, fish and plants you find across Ontario. <b>Everything stays private on your device</b> — nothing is shared, and if that ever changes we’ll ask you first.</p>' +
+      '<button class="btn btn-primary btn-block" data-action="accept-privacy">Get started</button>' +
+      '<div class="spacer"></div>' +
+      '<button class="btn btn-plain btn-block" data-action="open-privacy-first" style="height:40px">Read our privacy note</button>' +
+      '</div></div>';
+    $('#sheet-root').innerHTML = html;
   }
 
   /* ==================================================== LOG ENCOUNTER SHEET */
@@ -852,7 +1265,7 @@
       '<div style="width:' + (isFish ? '150' : '210') + 'px">' + evHtml + '</div></div>';
     body += '<div class="field"><span class="field-label">How many</span><div style="flex:1"></div>' +
       '<div class="stepper"><button data-action="count" data-d="-1">−</button><div class="sep"></div>' +
-      '<div style="min-width:44px;text-align:center;line-height:30px" id="count-val">' + d.count + '</div>' +
+      '<div class="val" id="count-val">' + d.count + '</div>' +
       '<div class="sep"></div><button data-action="count" data-d="1">+</button></div></div>';
     body += '<div class="field"><span class="field-label">When</span>' +
       '<input type="datetime-local" id="f-when" value="' + esc(d.when) + '"></div>';
@@ -862,15 +1275,20 @@
       (d.lat != null ? 'Location captured' : 'Add current location') + '</span>' +
       '<span class="cell-sub" id="loc-sub">' +
       (d.lat != null ? (d.lat.toFixed(4) + ', ' + d.lng.toFixed(4)) : 'Optional · uses your GPS') + '</span></span></button>';
-    body += '</div></div>';
+    body += '</div>';
+    if (sp && isSensitive(sp.id)) body += '<div class="group-footer">\u{1F4CD} This is a Species at Risk — its exact location stays private on your phone and is obscured if data is ever shared.</div>';
+    body += '</div>';
 
     // Fish-specific
     if (isFish) {
       var u = app.settings.units;
       body += '<div class="group"><div class="group-header">Catch Details</div><div class="list">';
       if (d.evidence === 'caught') {
-        body += '<div class="field"><span class="field-label">Released</span><div style="flex:1"></div>' +
-          '<label class="switch"><input type="checkbox" id="f-released"' + (d.released ? ' checked' : '') + '><span class="track"></span><span class="knob"></span></label></div>';
+        body += '<div class="field"><span class="field-label">Kept or released?</span><div style="flex:1"></div>' +
+          '<div style="width:170px"><div class="segmented">' +
+          '<div class="seg-opt' + (d.released ? ' on' : '') + '" data-action="set-kept" data-v="released">Released</div>' +
+          '<div class="seg-opt' + (!d.released ? ' on' : '') + '" data-action="set-kept" data-v="kept">Kept</div>' +
+          '</div></div></div>';
       }
       body += '<div class="field"><span class="field-label">Length</span>' +
         '<input type="number" inputmode="decimal" id="f-length" placeholder="0" step="0.1">' +
@@ -940,7 +1358,6 @@
     d._notes = g('f-notes'); d._behavior = g('f-behavior');
     d._length = g('f-length'); d._weight = g('f-weight');
     d._bait = g('f-bait'); d._water = g('f-water');
-    var r = document.getElementById('f-released'); if (r) d.released = r.checked;
   }
   function closeSheet() {
     var s = $('#sheet'), sc = $('.scrim');
@@ -979,17 +1396,33 @@
     });
     return html;
   }
+  function recentSpeciesList(n) {
+    var seen = {}, out = [];
+    app.entries.slice().sort(function (a, b) { return new Date(b.when) - new Date(a.when); }).forEach(function (e) {
+      if (e.speciesId && byId[e.speciesId] && !seen[e.speciesId]) { seen[e.speciesId] = 1; out.push(byId[e.speciesId]); }
+    });
+    return out.slice(0, n || 6);
+  }
   function pickerList(catId, q) {
     var list;
     if (q) list = searchSpecies(q).filter(function (s) { return catId === 'all' || s.cat === catId; });
     else list = sortSpecies(catId === 'all' ? SPECIES.slice() : speciesInCat(catId));
     var html = '';
-    // "Not in guide" option
-    html += '<div class="group" style="margin-top:6px"><div class="list">' +
+    // One-tap tiles for species you've logged before — the most common re-log
+    if (!q) {
+      var rec = recentSpeciesList(6).filter(function (s) { return catId === 'all' || s.cat === catId; });
+      if (rec.length) {
+        html += '<div class="group" style="margin-top:6px"><div class="group-header">Recently logged</div><div class="chip-row" style="padding:2px 16px 6px">';
+        rec.forEach(function (s) { html += '<button class="chip" data-action="select-species" data-id="' + esc(s.id) + '">' + s.emoji + ' ' + esc(s.name) + '</button>'; });
+        html += '</div></div>';
+      }
+    }
+    // "Not sure" escape hatch — never let anyone get stuck on a name
+    html += '<div class="group"' + (q ? ' style="margin-top:6px"' : '') + '><div class="list">' +
       '<button class="cell tap" data-action="custom-species">' +
       '<span class="cell-emoji">✏️</span>' +
-      '<span class="cell-body" style="text-align:left"><span class="cell-title">Something else…</span>' +
-      '<span class="cell-sub">Type a name not in the guide</span></span>' +
+      '<span class="cell-body" style="text-align:left"><span class="cell-title" style="color:var(--tint)">I’m not sure — name it later</span>' +
+      '<span class="cell-sub">Log it now and identify it whenever</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></button></div></div>';
     if (!list.length) {
       html += '<div class="empty"><div class="e">\u{1F50D}</div><h3>No matches</h3></div>';
@@ -1045,6 +1478,7 @@
       };
     }
     if (d.cat === 'birds') entry.bird = { behavior: (d._behavior || '').trim() };
+    if (entry.lat != null && isSensitive(entry.speciesId)) entry.sensitiveLoc = true;
 
     app.entries.push(entry);
     Store.put(entry);
@@ -1052,6 +1486,7 @@
     closeSheet();
     toast('✓ Logged ' + entry.speciesName);
     setTimeout(function () { route(); }, 120);
+    setTimeout(checkNewBadges, 1400);
   }
 
   /* ---- Entry detail sheet ---- */
@@ -1064,7 +1499,7 @@
     rows += info('When', fmtDay(e.when) + ' at ' + fmtTime(e.when));
     rows += info('Observation', e.evidence === 'caught' ? 'Caught' : e.evidence === 'heard' ? 'Heard' : e.evidence === 'tracks' ? 'Tracks / signs' : 'Seen');
     if (e.count > 1) rows += info('Count', String(e.count));
-    if (e.lat != null) rows += info('Location', e.lat.toFixed(5) + ', ' + e.lng.toFixed(5));
+    if (e.lat != null) rows += info('Location', e.lat.toFixed(5) + ', ' + e.lng.toFixed(5) + (e.sensitiveLoc ? '  \u{1F512}' : ''));
     if (e.fish) {
       var u = e.fish.units === 'imperial' ? { l: 'in', w: 'lb' } : { l: 'cm', w: 'kg' };
       if (e.fish.length != null) rows += info('Length', e.fish.length + ' ' + u.l);
@@ -1082,6 +1517,7 @@
       (sp ? '<div class="sci">' + esc(sp.sci) + '</div>' : '') + '</div>';
     if (e.photo) body += '<div class="hpad"><img class="entry-photo" src="' + e.photo + '" alt=""></div>';
     body += '<div class="group"><div class="list">' + rows + '</div></div>';
+    body += '<div class="hpad"><button class="btn btn-primary btn-block" data-action="share-entry" data-id="' + esc(e.id) + '">' + I.share + 'Share this sighting</button></div><div class="spacer"></div>';
     if (sp) body += '<div class="hpad"><a class="btn btn-tinted btn-block" href="#/species/' + esc(sp.id) + '" data-action="close-sheet-nav">View in field guide</a></div><div class="spacer"></div>';
     body += '<div class="hpad"><button class="btn btn-danger btn-block" data-action="delete-entry" data-id="' + esc(e.id) + '">Delete this encounter</button></div>';
 
@@ -1092,6 +1528,49 @@
       '<div class="sheet-body">' + body + '</div></div>';
     $('#sheet-root').innerHTML = html;
     requestAnimationFrame(function () { $('#sheet').classList.add('show'); $('.scrim').classList.add('show'); });
+  }
+  function wrapText(g, text, x, y, maxW, lh) {
+    var words = String(text).split(' '), line = '', lines = [];
+    words.forEach(function (w) {
+      var test = line ? line + ' ' + w : w;
+      if (g.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test;
+    });
+    if (line) lines.push(line);
+    var startY = y - (lines.length - 1) * lh / 2;
+    lines.forEach(function (l, i) { g.fillText(l, x, startY + i * lh); });
+  }
+  function shareEntry(id) {
+    var e = null; for (var i = 0; i < app.entries.length; i++) if (app.entries[i].id === id) { e = app.entries[i]; break; }
+    if (!e) return;
+    var sp = e.speciesId ? byId[e.speciesId] : null;
+    var W = 1080, H = 1080, canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H; var g = canvas.getContext('2d');
+    var grad = g.createLinearGradient(0, 0, 0, H); grad.addColorStop(0, '#2f8f5b'); grad.addColorStop(1, '#0e6b3d');
+    g.fillStyle = grad; g.fillRect(0, 0, W, H);
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = '340px "Apple Color Emoji","Segoe UI Emoji",sans-serif';
+    try { g.fillText(e.emoji || '\u{1F43E}', W / 2, 360); } catch (er) {}
+    g.fillStyle = '#fff'; g.font = '700 84px -apple-system,system-ui,sans-serif';
+    wrapText(g, e.speciesName, W / 2, 636, W - 160, 92);
+    if (sp) { g.fillStyle = 'rgba(255,255,255,.85)'; g.font = 'italic 40px -apple-system,system-ui,serif'; g.fillText(sp.sci, W / 2, 762); }
+    g.fillStyle = 'rgba(255,255,255,.92)'; g.font = '40px -apple-system,system-ui,sans-serif';
+    var loc = e.lat != null ? (e.sensitiveLoc ? 'Location protected' : (e.lat.toFixed(2) + ', ' + e.lng.toFixed(2))) : '';
+    g.fillText(fmtDay(e.when) + (loc ? '  ·  ' + loc : ''), W / 2, 842);
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.font = '600 38px -apple-system,system-ui,sans-serif';
+    g.fillText('\u{1F43E}  Ontario Wildlife Log', W / 2, 992);
+    canvas.toBlob(function (blob) {
+      if (!blob) { toast('Could not create image'); return; }
+      var file = null;
+      try { file = new File([blob], 'sighting.png', { type: 'image/png' }); } catch (er) {}
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: e.speciesName, text: 'I spotted a ' + e.speciesName + ' in Ontario! \u{1F43E}' }).catch(function () {});
+      } else {
+        var url = URL.createObjectURL(blob), a = document.createElement('a');
+        a.href = url; a.download = 'wildlife-sighting.png'; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        toast('Saved sighting image');
+      }
+    }, 'image/png');
   }
   function deleteEntry(id) {
     app.entries = app.entries.filter(function (e) { return e.id !== id; });
@@ -1127,7 +1606,16 @@
   /* ------------------------------------------------------- Data export */
   function exportData() {
     if (!app.entries.length && !app.hazards.length) { toast('Nothing to export yet'); return; }
-    var blob = new Blob([JSON.stringify({ app: 'ontario-wildlife-log', version: 1, exported: new Date().toISOString(), entries: app.entries, hazards: app.hazards }, null, 2)], { type: 'application/json' });
+    // Geoprivacy: coarsen at-risk species locations before they leave the device
+    var exEntries = app.entries.map(function (e) {
+      if (e.sensitiveLoc && typeof e.lat === 'number') {
+        var c = {}; for (var k in e) if (e.hasOwnProperty(k)) c[k] = e[k];
+        c.lat = coarse(e.lat); c.lng = coarse(e.lng); c.locationObscured = true;
+        return c;
+      }
+      return e;
+    });
+    var blob = new Blob([JSON.stringify({ app: 'ontario-wildlife-log', version: 1, exported: new Date().toISOString(), entries: exEntries, hazards: app.hazards }, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url; a.download = 'wildlife-log-' + new Date().toISOString().slice(0, 10) + '.json';
@@ -1140,10 +1628,10 @@
   function renderTabs() {
     var base = currentTab();
     var tabs = [
-      ['log', '#/log', 'Log', I.log],
+      ['log', '#/log', 'Home', I.log],
       ['explore', '#/explore', 'Guide', I.explore],
       ['map', '#/map', 'Map', I.map],
-      ['mylog', '#/mylog', 'My Log', I.mylog],
+      ['mylog', '#/mylog', 'Journal', I.mylog],
       ['more', '#/more', 'More', I.more]
     ];
     var html = '';
@@ -1156,8 +1644,9 @@
     var h = location.hash.replace(/^#\//, '');
     if (h.indexOf('explore') === 0 || h.indexOf('species') === 0) return 'explore';
     if (h.indexOf('map') === 0) return 'map';
-    if (h.indexOf('mylog') === 0) return 'mylog';
-    if (h.indexOf('more') === 0 || h.indexOf('learn') === 0 || h.indexOf('resources') === 0) return 'more';
+    if (h.indexOf('mylog') === 0 || h.indexOf('badges') === 0 || h.indexOf('stats') === 0) return 'mylog';
+    if (h.indexOf('more') === 0 || h.indexOf('learn') === 0 || h.indexOf('resources') === 0 ||
+        h.indexOf('trust') === 0 || h.indexOf('invasives') === 0 || h.indexOf('privacy') === 0) return 'more';
     return 'log';
   }
 
@@ -1176,6 +1665,12 @@
     else if (r === 'species') viewSpecies(parts[1]);
     else if (r === 'map') viewMap();
     else if (r === 'mylog') viewMyLog();
+    else if (r === 'alerts') viewAlerts();
+    else if (r === 'invasives') viewInvasives();
+    else if (r === 'badges') viewBadges();
+    else if (r === 'stats') viewStats();
+    else if (r === 'privacy') viewPrivacy();
+    else if (r === 'trust') { if (parts[1]) viewTrustAccount(parts[1]); else viewTrust(); }
     else if (r === 'learn') viewLearn(parts[1]);
     else if (r === 'resources') viewResources();
     else if (r === 'more') viewMore();
@@ -1251,6 +1746,7 @@
         break;
       }
       case 'set-evidence': ev.preventDefault(); syncDraftInputs(); app.draft.evidence = t.getAttribute('data-val'); renderSheet(); break;
+      case 'set-kept': ev.preventDefault(); syncDraftInputs(); app.draft.released = t.getAttribute('data-v') === 'released'; renderSheet(); break;
       case 'count': {
         ev.preventDefault();
         var delta = parseInt(t.getAttribute('data-d'), 10);
@@ -1262,12 +1758,19 @@
       case 'take-photo': ev.preventDefault(); { var pi = $('#photo-input'); if (pi) pi.click(); } break;
       case 'remove-photo': ev.preventDefault(); app.draft.photo = null; { var slot = $('#photo-slot'); if (slot) slot.innerHTML = photoSlot(); } break;
       case 'open-entry': ev.preventDefault(); openEntry(t.getAttribute('data-id')); break;
+      case 'share-entry': ev.preventDefault(); shareEntry(t.getAttribute('data-id')); break;
       case 'delete-entry':
         ev.preventDefault();
         if (confirm('Delete this encounter? This cannot be undone.')) deleteEntry(t.getAttribute('data-id'));
         break;
       case 'export-data': ev.preventDefault(); exportData(); break;
       case 'set-units': ev.preventDefault(); app.settings.units = t.getAttribute('data-val'); saveSettings(); viewMore(); break;
+      case 'home-mode': ev.preventDefault(); app.settings.homeMode = t.getAttribute('data-m'); saveSettings(); viewLog(); break;
+      case 'set-theme': ev.preventDefault(); app.settings.theme = t.getAttribute('data-val'); saveSettings(); applyTheme(); viewMore(); break;
+      case 'accept-privacy': ev.preventDefault(); app.settings.seenPrivacy = true; saveSettings(); closeSheet(); break;
+      case 'open-privacy-first': ev.preventDefault(); app.settings.seenPrivacy = true; saveSettings(); closeSheet(); setTimeout(function () { location.hash = '#/privacy'; }, 320); break;
+      case 'version-tap': ev.preventDefault(); versionTap(); break;
+      case 'dismiss-install': ev.preventDefault(); app.settings.seenInstall = true; saveSettings(); viewLog(); break;
       case 'clear-data':
         ev.preventDefault();
         if ((app.entries.length || app.hazards.length) && confirm('Delete ALL ' + app.entries.length + ' encounters and ' + app.hazards.length + ' hazards? This cannot be undone.')) {
@@ -1278,7 +1781,12 @@
   });
   // Delegated file input change
   document.addEventListener('change', function (ev) {
-    if (ev.target && ev.target.id === 'photo-input') handlePhoto(ev.target.files && ev.target.files[0]);
+    if (!ev.target) return;
+    if (ev.target.id === 'photo-input') handlePhoto(ev.target.files && ev.target.files[0]);
+    else if (ev.target.id === 'consent-toggle') {
+      app.settings.contribute = !!ev.target.checked; saveSettings();
+      toast(ev.target.checked ? 'Thanks — we’ll ask before anything is shared' : 'Sharing stays off');
+    }
   });
 
   function captureLocation() {
@@ -1300,14 +1808,17 @@
   window.addEventListener('hashchange', route);
   function boot() {
     loadSettings();
+    applyTheme();
     Store.load().then(function (entries) {
       app.entries = entries || [];
       return Store.loadHazards();
     }).then(function (hazards) {
       app.hazards = hazards || [];
       app.ready = true;
+      initBadges();
       if (!location.hash) location.hash = '#/log';
       route();
+      maybePrivacyBanner();
     });
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
