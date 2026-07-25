@@ -2114,6 +2114,33 @@
       closeSheet();
     }
   });
+
+  // iOS-style swipe from the left edge to go back. Mirrors the nav back button and
+  // rides the same push/pop animation. Ignored when a sheet or picker is open.
+  (function edgeSwipeBack() {
+    var sx = 0, sy = 0, t0 = 0, active = false;
+    function backTarget() {
+      var a = document.querySelector('#nav .nav-left a.nav-btn[href]');
+      if (a) return { href: a.getAttribute('href') };
+      if (document.querySelector('#nav .nav-left button[data-action="nav-back"]')) return { back: true };
+      return null;
+    }
+    document.addEventListener('touchstart', function (e) {
+      if (e.touches.length !== 1 || $('#sheet') || $('#picker-root') || $('#app').classList.contains('nav-animating')) { active = false; return; }
+      var t = e.touches[0];
+      if (t.clientX <= 26) { active = true; sx = t.clientX; sy = t.clientY; t0 = Date.now(); } else active = false;
+    }, { passive: true });
+    document.addEventListener('touchend', function (e) {
+      if (!active) return; active = false;
+      var t = e.changedTouches[0];
+      var dx = t.clientX - sx, dy = Math.abs(t.clientY - sy), dt = Date.now() - t0;
+      if (dx > 55 && dx > dy * 1.6 && dt < 700) {
+        var bt = backTarget(); if (!bt) return;
+        if (bt.href) location.hash = bt.href.replace(/^#/, ''); else history.back();
+      }
+    }, { passive: true });
+  })();
+
   document.addEventListener('click', function (ev) {
     var t = ev.target.closest('[data-action]');
     if (!t) return;
