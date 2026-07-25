@@ -646,17 +646,17 @@
       body += recentGroup('Recent', recentIn(function () { return true; }, 6));
     }
 
-    screen({ title: 'on-wildlife', large: true, version: 'v2.1', subtitle: 'A field guide to Ontario’s wildlife, and your own journal of it.', body: body });
+    screen({ title: 'on-wildlife', large: true, version: 'v2.2', subtitle: 'A field guide to Ontario’s wildlife, and your own journal of it.', body: body });
   }
 
   /* ============================================================= SEARCH */
   function viewSearch() {
     var body = '<div class="searchbar">' + I.search +
-      '<input type="search" id="uni-search" aria-label="Search" placeholder="Search species, at risk, categories" autocomplete="off" autocorrect="off" autocapitalize="none">' +
+      '<input type="search" id="uni-search" aria-label="Search" placeholder="Search species, categories, or a park" autocomplete="off" autocorrect="off" autocapitalize="none">' +
       '</div>';
     body += '<div id="search-results"></div>';
     body += '<div id="search-hint" class="empty" style="padding-top:40px"><div class="e">' + I.search + '</div>' +
-      '<h3>Search the guide</h3><p>Find any of Ontario’s ' + SPECIES.length + ' species by name, or jump to a category. Your search stays on this device.</p></div>';
+      '<h3>Search the guide</h3><p>Find any of Ontario’s ' + SPECIES.length + ' species by name, jump to a category, or look up a provincial park to see the wildlife around it. Your search stays on this device.</p></div>';
     screen({ title: 'Search', large: true, body: body });
     var input = $('#uni-search'); if (!input) return;
     input.focus();
@@ -679,8 +679,22 @@
         });
         html += '</div></div>';
       }
+      // Provincial parks (from the shared ecosystem data)
+      var qq = q.trim().toLowerCase();
+      var parkHits = (window.ECO ? window.ECO.parks : []).filter(function (p) { return p.name.toLowerCase().indexOf(qq) >= 0; }).slice(0, 8);
+      if (parkHits.length) {
+        html += '<div class="group"><div class="group-header">Parks</div><div class="list">';
+        parkHits.forEach(function (p) {
+          var loc = (p.region || '').split(' · ').slice(1).join(' · ') || p.region;
+          html += '<a class="cell tap" href="#/park/' + esc(p.id) + '"><span class="cell-emoji">\u{1F3DE}️</span>' +
+            '<span class="cell-body"><span class="cell-title">' + esc(p.name) + '</span>' +
+            '<span class="cell-sub">' + esc(loc) + '</span></span>' +
+            '<span class="chevron">' + I.chevron + '</span></a>';
+        });
+        html += '</div></div>';
+      }
       var list = searchSpecies(q);
-      if (!list.length && !catHits.length) {
+      if (!list.length && !catHits.length && !parkHits.length) {
         res.innerHTML = '<div class="empty"><div class="e">\u{1F50D}</div><h3>No matches</h3><p>Try another name.</p></div>';
         return;
       }
@@ -692,6 +706,58 @@
       }
       res.innerHTML = html;
     });
+  }
+
+  // A provincial park as a wildlife destination: the fish in its waters (exact,
+  // from on-camp's data) and the wildlife common to its region (a regional guide,
+  // ranked by how often each species is seen).
+  function viewParkEco(id) {
+    var ECO = window.ECO;
+    if (!ECO) { location.replace('#/search'); return; }
+    var p = ECO.parks.filter(function (x) { return x.id === id; })[0];
+    if (!p) { location.replace('#/search'); return; }
+    var loc = (p.region || '').split(' · ').slice(1).join(' · ') || '';
+    var regionName = { north: 'northern', central: 'central', south: 'southern' }[p.bucket] || 'this part of';
+    var near = (loc && loc.toLowerCase() !== p.name.toLowerCase()) ? ', near ' + esc(loc) : '';
+    var logged = loggedIdSet();
+    var body = '<p class="article-intro">' + esc(p.name) + ' sits in ' + regionName + ' Ontario' + near + '. Here are the fish in its waters and the wildlife you are likely to run into nearby. Log anything you spot.</p>';
+
+    if (p.fish && p.fish.length) {
+      body += '<div class="group"><div class="group-header">Fish in ' + (p.water ? esc(p.water) : 'its waters') + '</div><div class="list">';
+      p.fish.forEach(function (fk) {
+        var f = ECO.fish[fk]; if (!f) return;
+        var wl = f.wl && byId[f.wl] ? byId[f.wl] : null;
+        if (wl) body += speciesCell(wl, { loggedIds: logged, sub: '<i>' + esc(wl.sci) + '</i>' });
+        else body += '<div class="cell"><span class="cell-emoji">\u{1F41F}</span><span class="cell-body"><span class="cell-title">' + esc(f.name) + '</span></span></div>';
+      });
+      body += '</div></div>';
+    }
+
+    var rank = { common: 0, uncommon: 1, rare: 2 };
+    var inRegion = SPECIES.filter(function (s) {
+      return s.cat !== 'fish' && ECO.regionBucket(s.region).indexOf(p.bucket) >= 0;
+    });
+    CATEGORIES.forEach(function (c) {
+      if (c.id === 'fish') return;
+      var rows = inRegion.filter(function (s) { return s.cat === c.id; })
+        .sort(function (a, b) { return (rank[a.seen] == null ? 9 : rank[a.seen]) - (rank[b.seen] == null ? 9 : rank[b.seen]); })
+        .slice(0, 4);
+      if (!rows.length) return;
+      body += '<div class="group"><div class="group-header">' + c.emoji + ' ' + esc(c.name) + '</div><div class="list">';
+      rows.forEach(function (s) { body += speciesCell(s, { loggedIds: logged, sub: '<i>' + esc(s.sci) + '</i>' }); });
+      body += '</div></div>';
+    });
+
+    body += '<div class="group"><div class="list">' +
+      '<a class="cell tap" href="https://katsuma0.github.io/on-camp/" target="_blank" rel="noopener noreferrer">' +
+      '<span class="cell-body"><span class="cell-title">Rate its campsites in on-camp</span>' +
+      '<span class="cell-sub">Campgrounds, sites and trails</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      (p.url ? '<a class="cell tap" href="' + esc(p.url) + '" target="_blank" rel="noopener noreferrer">' +
+        '<span class="cell-body"><span class="cell-title">Ontario Parks page</span>' +
+        '<span class="cell-sub">Hours, fees and reservations</span></span><span class="chevron">' + I.chevron + '</span></a>' : '') +
+      '</div><div class="group-footer">The wildlife here is common across ' + regionName + ' Ontario, a regional guide rather than a confirmed checklist for this park.</div></div>';
+
+    screen({ title: p.name, backAction: true, backText: 'Search', body: body });
   }
 
   /* ============================================================== LEARN */
@@ -933,7 +999,7 @@
     body += '<div class="group"><div class="group-header">About</div><div class="list">' +
       '<div class="info-row"><div class="info-v">on-wildlife is a simple, private field guide and journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario. Look a species up, read a longer account if you want one, and log what you see. It works offline and installs to your home screen.</div></div><div class="info-row"><div class="info-v">I built it because I wanted one clear place to name what I run into outside and keep a record of it, without ads, accounts, or anything watching over my shoulder. Everything you log stays on this device. There is no server and nothing is tracked. Sensitive spots, like bear sightings, are coarsened before they can go to the optional community layer.</div></div>' +
       '<div class="cell"><span class="cell-body"><span class="cell-title">Species in guide</span></span><span class="cell-value">' + SPECIES.length + '</span></div>' +
-      '<button class="cell tap" data-action="version-tap"><span class="cell-body"><span class="cell-title">Version</span></span><span class="cell-value">2.1</span></button>' +
+      '<button class="cell tap" data-action="version-tap"><span class="cell-body"><span class="cell-title">Version</span></span><span class="cell-value">2.2</span></button>' +
       '<a class="cell tap" href="https://katsuma0.github.io" target="_blank" rel="noopener noreferrer">' +
       '<span class="cell-body"><span class="cell-title">Made by Katsuma Onishi</span>' +
       '<span class="cell-sub">katsuma0.github.io</span></span><span class="chevron">' + I.chevron + '</span></a>' +
@@ -2090,7 +2156,7 @@
   }
   function currentTab() {
     var h = location.hash.replace(/^#\//, '');
-    if (h.indexOf('search') === 0) return 'search';
+    if (h.indexOf('search') === 0 || h.indexOf('park') === 0) return 'search';
     if (h.indexOf('map') === 0) return 'map';
     if (h.indexOf('learn') === 0 || h.indexOf('alerts') === 0 || h.indexOf('invasives') === 0 || h.indexOf('roads') === 0) return 'learn';
     if (h.indexOf('more') === 0 || h.indexOf('resources') === 0 || h.indexOf('trust') === 0 ||
@@ -2116,6 +2182,7 @@
     else if (r === 'atrisk') viewAtRisk();
     else if (r === 'species') viewSpecies(parts[1]);
     else if (r === 'search') viewSearch();
+    else if (r === 'park') viewParkEco(parts[1]);
     else if (r === 'map') viewMap();
     else if (r === 'mylog') viewMyLog();
     else if (r === 'alerts') viewAlerts();

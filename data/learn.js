@@ -19,7 +19,7 @@ window.LEARN = {
           'Wear light-coloured long sleeves and pants. Tuck your pants into your socks so ticks stay on the outside.',
           'Use an approved repellent (DEET or icaridin) on skin, and permethrin on clothing and gear.',
           'Walk in the centre of trails and stay out of tall grass and brush.',
-          'Shower within about two hours of coming indoors, and put your clothes in a hot dryer for 10 minutes or more. High heat kills ticks.'
+          'Shower within about two hours of coming indoors, and put dry clothes in a hot dryer for at least 10 minutes. High heat kills ticks. Damp or wet field clothes need longer, up to an hour.'
         ] },
         { h: 'Do a tick check', p: 'After you have been outdoors, check yourself, your kids and your pets. Ticks like warm, hidden spots:', bullets: [
           'Scalp and hairline, and behind and in the ears',
@@ -39,7 +39,7 @@ window.LEARN = {
           'An expanding red rash, sometimes with a bull’s-eye (erythema migrans). Not everyone gets a rash.',
           'Fever, chills, headache and fatigue',
           'Muscle and joint aches'
-        ], callout: { style: 'warn', title: 'When to see a doctor', body: 'See a healthcare provider if you develop symptoms, if a blacklegged tick was attached for about 24 hours or more, or if you are not sure. Early Lyme disease is very treatable with antibiotics. When in doubt, get checked.' } },
+        ], callout: { style: 'warn', title: 'When to see a doctor', body: 'The 24-hour guide is for Lyme disease, which usually needs a long attachment to pass on. Other tick-borne infections can pass sooner, so remove any tick promptly and watch for symptoms whatever the timing. See a healthcare provider if you develop a rash, fever or flu-like symptoms in the weeks after a bite, if a blacklegged tick was attached for about a day or more, or if you are not sure. Early Lyme disease is very treatable with antibiotics.' } },
         { h: 'Don’t forget pets', p: 'Check dogs and cats after walks, especially around the ears, neck and toes, and talk to your vet about tick prevention.' }
       ],
       links: [
@@ -87,7 +87,7 @@ window.LEARN = {
       intro: 'Vehicle collisions with wildlife are common in Ontario, and for some species they are a serious threat. Road mortality is one of the biggest dangers to Ontario’s turtles. A bit of awareness protects you and the animals.',
       sections: [
         { h: 'Deer and moose', bullets: [
-          'Most active at dawn, dusk and at night, and especially in the fall.',
+          'Most active at dawn, dusk and at night. Deer collisions peak in the fall rut, but moose are drawn to roadside salt and greenery and peak in late spring and early summer, with a second rise in fall.',
           'Heed wildlife-crossing signs and scan the road edges. If one animal crosses, expect more.',
           'Brake firmly and stay in your lane. Swerving into oncoming traffic or the ditch is often worse.',
           'Moose are tall and dark, and their eyes may not reflect your headlights. Use high beams when it is safe to.'
@@ -98,7 +98,7 @@ window.LEARN = {
           'Handle small turtles gently by the sides of the shell. For a snapping turtle, slide it onto a car mat to drag it, or lift it from the back of the shell above the tail. Keep clear of the head, and never lift it by the tail.',
           'Wash your hands afterward. Report injured turtles to the Ontario Turtle Conservation Centre.'
         ] },
-        { h: 'Construction and road hazards', p: 'Report road hazards, closures and construction through Ontario 511, and never stop in an unsafe spot to do it. You can also drop a pin on the map in this app to note a hazard for yourself.' },
+        { h: 'Construction and road hazards', p: 'Check road conditions, closures and construction on Ontario 511 before you drive, and never stop in an unsafe spot to look. You can also drop a pin on the map in this app to note a hazard for yourself.' },
         { h: 'If you hit or find injured wildlife', bullets: [
           'Pull over safely and turn on your hazards. Do not touch large or potentially dangerous animals.',
           'For injured wildlife, contact a licensed wildlife rehabilitator.',
@@ -106,7 +106,7 @@ window.LEARN = {
         ] }
       ],
       links: [
-        { label: 'Ontario 511: road conditions and closures', url: 'https://511on.ca', note: 'Report and check road hazards' },
+        { label: 'Ontario 511: road conditions and closures', url: 'https://511on.ca', note: 'Check road conditions and closures' },
         { label: 'Ontario Turtle Conservation Centre', url: 'https://ontarioturtle.ca', note: 'Injured turtles and the turtle hotline' },
         { label: 'Ontario Nature', url: 'https://ontarionature.org', note: 'Reptile and amphibian conservation' }
       ]
@@ -119,8 +119,8 @@ window.LEARN = {
       sections: [
         { h: 'Poison ivy', p: 'Leaves of three, let it be. Three pointed leaflets, with the middle one on a longer stalk, often glossy and reddish in spring and fall. It grows as a low plant, a shrub, or a climbing vine.', callout: { style: 'warn', title: 'What to do', body: 'Contact with any part of it, even dead stems, causes an itchy, blistering rash from its oil (urushiol). Never touch it, and never burn it, since the smoke is hazardous. If you are exposed, wash your skin, tools and clothing with soap and water as soon as you can.' } },
         { h: 'Wild parsnip', p: 'A tall plant with flat-topped clusters of small yellow flowers and a grooved green stem. Common along roadsides and in old fields.', callout: { style: 'warn', title: 'What to do', body: 'Its sap makes skin extremely sensitive to sunlight, which causes severe burns and blisters. Wear gloves and long sleeves near it. If sap contacts skin, wash it off, cover the area, and keep it out of the sun.' } },
-        { h: 'Giant hogweed', p: 'A towering invasive plant, up to 5 m, with huge white umbrella-shaped flower heads, enormous jagged leaves, and a thick green stem with purple blotches and coarse hairs.', callout: { style: 'danger', title: 'Do not touch it. Report it.', body: 'Its watery sap causes severe burns and blistering in sunlight, and it can injure your eyes. Stay well clear, keep children and pets away, and report sightings to Ontario’s Invading Species Hotline.' } },
-        { h: 'Water hemlock', p: 'A wetland plant with small white umbrella-shaped flower clusters and a stout, sometimes purple-streaked stem. It is easily confused with edible look-alikes.', callout: { style: 'danger', title: 'Highly poisonous', body: 'This is one of the most poisonous plants in North America. Eating even a small amount can be fatal. Never forage a plant you cannot identify with certainty.' } },
+        { h: 'Giant hogweed', p: 'A towering invasive plant, up to 5 m, with huge white umbrella-shaped flower heads, enormous jagged leaves, and a thick green stem with purple blotches and coarse hairs.', callout: { style: 'danger', title: 'Do not touch it. Report it.', body: 'Its watery sap causes severe burns and blistering in sunlight, and it can injure your eyes. Stay well clear and keep children and pets away. If sap touches your skin, wash it off with soap and water right away and keep the area out of the sun for at least 48 hours. If it gets in your eyes, rinse with water and get medical care. Report sightings to Ontario’s Invading Species Hotline.' } },
+        { h: 'Water hemlock', p: 'A wetland plant with small white umbrella-shaped flower clusters and a stout, sometimes purple-streaked stem. It is easily confused with edible look-alikes.', callout: { style: 'danger', title: 'Highly poisonous', body: 'This is one of the most poisonous plants in North America. Eating even a small amount can be fatal, and fast. Never forage a plant you cannot identify with certainty. If someone may have eaten it, call 911 or the Ontario Poison Centre at 1-800-268-9017 right away, do not wait for symptoms.' } },
         { h: 'Stinging nettle', p: 'A leafy plant covered in fine hairs that sting on contact and leave a burning, itchy rash for a while. Unpleasant but not dangerous. Wash the area and try not to scratch.' },
         { h: 'A good rule', p: 'Learn a few key dangerous plants, do not touch what you cannot identify, and never eat wild plants unless you are completely certain they are safe.' }
       ],
@@ -149,7 +149,7 @@ window.LEARN = {
         { h: 'Releasing', bullets: [
           'Back the hook out the way it went in.',
           'If a fish is hooked deep, cut the line close to the hook rather than digging for it.',
-          'Revive a tired fish by holding it upright, facing the current, until it swims off on its own.'
+          'Revive a tired fish by holding it upright, facing the current, until it swims off on its own. In still water, move it slowly forward or in a gentle figure-eight so water passes over the gills, and never drag it rapidly back and forth.'
         ] },
         { h: 'Keeping fish to eat', p: 'Dispatch it quickly and humanely, get it cold right away, and keep only what you will eat, within the limits for that water.',
           callout: { style: 'info', title: 'Know before you go', body: 'Seasons, size limits and catch limits change by species and by lake or river. They keep the fishery healthy. Check the regulations and get your licence first.' } }
@@ -188,7 +188,7 @@ window.LEARN = {
       intro: 'Fish is a healthy, local food, but some Ontario fish carry contaminants like mercury. The province publishes exactly how much of each fish is safe to eat.',
       sections: [
         { h: 'Use the eating guide', p: 'Ontario’s Guide to Eating Ontario Fish gives safe meal limits by species, size, and location. As a rule, bigger, older, predatory fish such as large walleye and pike carry more contaminants than smaller ones.' },
-        { h: 'Sensitive groups', p: 'People who are or may become pregnant, and young children, should follow the stricter sensitive-population limits in the guide.' },
+        { h: 'Sensitive groups', p: 'People who are or may become pregnant, and children under 15, should follow the stricter sensitive-population limits in the guide.' },
         { h: 'Preparation helps a bit', p: 'Trimming fat and skin, and cooking so the fat drips away, lowers some contaminants. It does not lower mercury, which is in the meat. When unsure, eat smaller fish and vary the species and waters you eat from.',
           callout: { style: 'info', title: 'Quick rule of thumb', body: 'Smaller fish, more variety, and check the guide for your lake before a big fish fry.' } }
       ],
@@ -201,9 +201,9 @@ window.LEARN = {
       subtitle: 'Simple rules for a safe day on the water',
       intro: 'Most boating tragedies in Ontario involve cold water and an unworn lifejacket. A little preparation keeps a good day safe.',
       sections: [
-        { h: 'Wear your lifejacket', p: 'Carry a Canadian-approved lifejacket or PFD for every person aboard, and actually wear it. Most drownings happen to people who had one on the boat but were not wearing it.' },
+        { h: 'Wear your lifejacket', p: 'Carry a Canadian-approved lifejacket or PFD for every person aboard, and actually wear it. Most boating drownings are people who were not wearing one.' },
         { h: 'Cold water is the real danger', p: 'Ontario water is cold most of the year. A sudden fall in causes an involuntary gasp and rapid loss of muscle control. Dress for the water temperature, not the air.' },
-        { h: 'Carry the required gear', p: 'Bring the safety equipment your boat’s size requires: a bailer or pump, a buoyant heaving line, a sound signalling device, navigation lights, and a fire extinguisher where needed. Operating a motorized boat requires proof of competency, which is the Pleasure Craft Operator Card.' },
+        { h: 'Carry the required gear', p: 'Bring the safety equipment your boat’s size requires: a bailer or pump, a buoyant heaving line, a sound signalling device, navigation lights, and a fire extinguisher where needed. Operating a motorized boat requires proof of competency, usually the Pleasure Craft Operator Card. Renters can instead complete the rental company’s pre-departure safety checklist.' },
         { h: 'Before you go', bullets: [
           'Check the weather and forecast.',
           'Tell someone your route and return time.',

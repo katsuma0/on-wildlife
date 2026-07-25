@@ -29,7 +29,7 @@
   --fill-strong: rgba(120, 120, 128, 0.2);
 
   --red: #d1372b;
-  --orange: #ff9500;
+  --orange: #ff9500; --orange-strong: #b45309;
   --yellow: #ffcc00;
   --green: #34c759;
   --blue: #007aff;
@@ -70,7 +70,7 @@
     --fill-strong: rgba(120, 120, 128, 0.36);
 
     --red: #ff6961;
-    --orange: #ff9f0a;
+    --orange: #ff9f0a; --orange-strong: #ff9f0a;
     --yellow: #ffd60a;
     --green: #30d158;
     --blue: #0a84ff;
@@ -86,7 +86,7 @@
   --bg: #f2f2f7; --bg-elevated: #fff; --bg-secondary: #efeff4; --bar: rgba(249, 249, 249, 0.82); --bar-border: rgba(0, 0, 0, 0.28);
   --label: #000; --label-2: rgba(60, 60, 67, 0.75); --label-3: rgba(60, 60, 67, 0.3); --tab-inactive: #6d6d72; --separator: rgba(60, 60, 67, 0.29);
   --fill: rgba(120, 120, 128, 0.12); --fill-strong: rgba(120, 120, 128, 0.2);
-  --red: #d1372b; --orange: #ff9500; --yellow: #ffcc00; --green: #34c759; --blue: #007aff; --purple: #af52de;
+  --red: #d1372b; --orange: #ff9500; --orange-strong: #b45309; --yellow: #ffcc00; --green: #34c759; --blue: #007aff; --purple: #af52de;
 }
 :root[data-theme='dark'] {
   color-scheme: dark;
@@ -94,7 +94,7 @@
   --bg: #000; --bg-elevated: #1c1c1e; --bg-secondary: #2c2c2e; --bar: rgba(30, 30, 30, 0.8); --bar-border: rgba(255, 255, 255, 0.18);
   --label: #fff; --label-2: rgba(235, 235, 245, 0.65); --label-3: rgba(235, 235, 245, 0.3); --tab-inactive: rgba(235, 235, 245, 0.6); --separator: rgba(84, 84, 88, 0.6);
   --fill: rgba(120, 120, 128, 0.24); --fill-strong: rgba(120, 120, 128, 0.36);
-  --red: #ff6961; --orange: #ff9f0a; --yellow: #ffd60a; --green: #30d158; --blue: #0a84ff; --purple: #bf5af3;
+  --red: #ff6961; --orange: #ff9f0a; --orange-strong: #ff9f0a; --yellow: #ffd60a; --green: #30d158; --blue: #0a84ff; --purple: #bf5af3;
 }
 
 * { box-sizing: border-box; }
@@ -464,7 +464,7 @@ img { max-width: 100%; }
   font-weight: 600;
   letter-spacing: 0.1px;
 }
-.badge-risk { background: rgba(255, 149, 0, 0.16); color: var(--orange); }
+.badge-risk { background: rgba(255, 149, 0, 0.16); color: var(--orange-strong); }
 .badge-danger { background: rgba(255, 59, 48, 0.16); color: var(--red); }
 .badge-ok { background: var(--tint-soft); color: var(--tint); }
 .badge-info { background: var(--fill-strong); color: var(--label-2); }
