@@ -9,7 +9,7 @@ It is a **Progressive Web App (PWA)**, so there is nothing to install from an ap
 Open it in Safari on your iPhone and tap **Add to Home Screen**. It then launches
 fullscreen with its own icon, feels native, and works offline.
 
-> **Status:** 511 fact-checked Ontario species across 9 categories. Optional community
+> **Status:** 580 fact-checked Ontario species across 9 categories. Optional community
 > data pooling through a deployable backend.
 
 ---
@@ -114,7 +114,7 @@ styles.css              iOS design system (light/dark, components)
 app.js                  SPA: hash routing, IndexedDB journal, map, all screens
 data/
   categories.js         Category and subcategory metadata
-  species.js            The Ontario species database (511 species)
+  species.js            The Ontario species database (580 species)
   learn.js              Educational articles, resource links, hazard types
   trust.js              Anomaly-detection demo: synthetic data and statistical model
   badges.js             Collectible naturalist badge definitions
