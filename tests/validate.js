@@ -23,7 +23,7 @@ var ROOT = path.resolve(__dirname, '..');
 var fails = [];
 var passes = 0;
 function ok(name) { passes++; console.log('  ✓ ' + name); }
-function bad(name, detail) { fails.push(name + (detail ? ' — ' + detail : '')); console.log('  ✗ ' + name + (detail ? ' — ' + detail : '')); }
+function bad(name, detail) { fails.push(name + (detail ? ', ' + detail : '')); console.log('  ✗ ' + name + (detail ? ', ' + detail : '')); }
 function rel(p) { return path.join(ROOT, p); }
 
 // ---- 1. syntax ----

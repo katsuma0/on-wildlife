@@ -1,6 +1,6 @@
 /* Collectible naturalist badges. Each badge's test() runs against a small
    context object (built in app.js from the user's log). Nature-themed, earned
-   through genuine use — plus one secret "easter egg" badge. */
+   through genuine use, plus one secret "easter egg" badge. */
 window.BADGES = [
   { id: 'first', name: 'First Steps', emoji: '\u{1F331}', desc: 'Log your first encounter.', test: function (c) { return c.total >= 1; } },
   { id: 'five', name: 'Getting Started', emoji: '\u{1F50D}', desc: 'Log 5 encounters.', test: function (c) { return c.total >= 5; } },

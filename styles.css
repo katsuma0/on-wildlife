@@ -1,5 +1,5 @@
 /* =========================================================================
-   Ontario Wildlife Log — iOS design system
+   Ontario Wildlife Log, iOS design system
    A vanilla-CSS approximation of native iOS (UIKit) styling: San Francisco
    system font, grouped inset lists, large-title nav bars, translucent tab &
    nav bars, iOS controls, full light/dark support and safe-area handling.
@@ -7,7 +7,7 @@
    ========================================================================= */
 
 :root {
-  /* Accent / tint — Ontario forest green */
+  /* Accent / tint. Ontario forest green */
   --tint: #14804a;
   --tint-press: #0f6b3d;
   --tint-soft: rgba(20, 128, 74, 0.12);
@@ -21,9 +21,9 @@
   --bar-border: rgba(0, 0, 0, 0.28);
 
   --label: #000000;
-  --label-2: rgba(60, 60, 67, 0.75); /* secondary text — bumped from iOS 0.6 to clear WCAG AA (≈5:1) */
+  --label-2: rgba(60, 60, 67, 0.75); /* secondary text, bumped from iOS 0.6 to clear WCAG AA (≈5:1) */
   --label-3: rgba(60, 60, 67, 0.3);
-  --tab-inactive: #6d6d72;           /* inactive tab labels — accessible grey, not 0.3 fill */
+  --tab-inactive: #6d6d72;           /* inactive tab labels, accessible grey, not 0.3 fill */
   --separator: rgba(60, 60, 67, 0.29);
   --fill: rgba(120, 120, 128, 0.12);
   --fill-strong: rgba(120, 120, 128, 0.2);
@@ -78,7 +78,7 @@
   }
 }
 
-/* Explicit theme override — the in-app Appearance toggle stamps data-theme on
+/* Explicit theme override, the in-app Appearance toggle stamps data-theme on
    <html> and must win over the media query in both directions. */
 :root[data-theme='light'] {
   color-scheme: light;

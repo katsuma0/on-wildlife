@@ -1,4 +1,4 @@
-/* Headless UI smoke test — core flows. Run: `node tests/e2e.js`
+/* Headless UI smoke test, core flows. Run: `node tests/e2e.js`
    Requires Playwright (`npm install && npx playwright install chromium`) and a
    static server serving the app (BASE, default http://localhost:8000/index.html). */
 const { chromium } = require('playwright');

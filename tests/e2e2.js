@@ -1,4 +1,4 @@
-/* Headless UI smoke test — hardening behaviours (a11y states, picker inert,
+/* Headless UI smoke test, hardening behaviours (a11y states, picker inert,
    double-tap guard, community-payload privacy). Run: `node tests/e2e2.js`
    Requires Playwright + a static server (BASE, default localhost:8000). */
 const { chromium } = require('playwright');

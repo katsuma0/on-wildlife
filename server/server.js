@@ -1,19 +1,19 @@
-/* Ontario Wildlife Log — community backend (reference implementation).
+/* Ontario Wildlife Log, community backend (reference implementation).
  *
  * A tiny, ZERO-DEPENDENCY Node HTTP server that lets the app pool anonymized
  * sightings so users can see "near you this week", recent bear/hazard activity,
  * and province-wide totals. Protections baked in:
- *   1. Geoprivacy — coordinates are coarsened AT INGEST (never stored raw): to a
+ *   1. Geoprivacy, coordinates are coarsened AT INGEST (never stored raw): to a
  *      ~5 km grid normally and a ~22 km grid for at-risk species and bears. The
- *      coarse grid is FORCED server-side for bears — never trusted to the client.
- *   2. Ownership tokens — a client proves ownership of its (pseudonymous) id with
+ *      coarse grid is FORCED server-side for bears, never trusted to the client.
+ *   2. Ownership tokens, a client proves ownership of its (pseudonymous) id with
  *      a secret token, so knowing an id alone can't submit-as or delete another's
  *      data. Only the token's hash is stored.
- *   3. Rate limiting — every route is limited per IP; submissions also per client
+ *   3. Rate limiting, every route is limited per IP; submissions also per client
  *      and per IP per day, plus a cap on how many new ids one IP can mint.
- *   4. Bounded storage — the rate map is swept, orphan clients are pruned, writes
+ *   4. Bounded storage, the rate map is swept, orphan clients are pruned, writes
  *      are atomic (tmp+rename) with a .bak fallback, and pushSubs are capped.
- *   5. Soft anti-abuse — rapid-fire / impossible-travel submissions are throttled
+ *   5. Soft anti-abuse, rapid-fire / impossible-travel submissions are throttled
  *      temporarily (never a permanent ban, never a retroactive purge of history).
  *
  * Identities are a random client id (pseudonymous, not "anonymous"): no accounts,
@@ -126,7 +126,7 @@ function updateClient(cid, s) {
   }
   c.count++;
   c.lastAt = now; if (typeof s.lat === 'number') { c.lastLat = s.lat; c.lastLng = s.lng; }
-  // A sustained burst earns a TEMPORARY cooldown — no permanent ban, and a single
+  // A sustained burst earns a TEMPORARY cooldown, no permanent ban, and a single
   // high-count observation (e.g. a 300-goose flock) is never a trigger.
   if (c.bursts >= 6) c.flaggedUntil = now + 600000;          // 10-minute throttle
   return c;

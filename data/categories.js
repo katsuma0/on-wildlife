@@ -110,7 +110,7 @@ window.CATEGORIES = [
     name: 'Fungi',
     emoji: '\u{1F344}',
     color: '#8D6E63',
-    blurb: 'Mushrooms — look, don’t eat',
+    blurb: 'Mushrooms, look, don’t eat',
     flora: true,
     subs: [
       { id: 'edible', name: 'Edible (with great care)', emoji: '\u{1F344}' },

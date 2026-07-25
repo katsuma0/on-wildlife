@@ -1,8 +1,8 @@
 /* Data-reliability demo: anomaly detection over simulated contributors.
    Crowdsourced wildlife data is only useful for conservation if it is
-   trustworthy. This module builds a DETERMINISTIC synthetic dataset — several
+   trustworthy. This module builds a DETERMINISTIC synthetic dataset, several
    genuine contributors plus one deliberately fake "sham" account whose data is
-   skewed and largely false — and runs a transparent statistical model
+   skewed and largely false, and runs a transparent statistical model
    (robust z-scores + domain plausibility rules) that flags anomalous accounts.
    All data here is simulated; it is not real user data. */
 (function () {
@@ -20,7 +20,7 @@
     };
   }
   function pick(rng, arr) { return arr[Math.floor(rng() * arr.length)]; }
-  var BASE = Date.UTC(2025, 3, 1, 12, 0, 0); // Apr 1 2025 — fixed epoch (no Date.now)
+  var BASE = Date.UTC(2025, 3, 1, 12, 0, 0); // Apr 1 2025, fixed epoch (no Date.now)
   var CITIES = [
     { n: 'Toronto', lat: 43.65, lng: -79.38 }, { n: 'Ottawa', lat: 45.42, lng: -75.70 },
     { n: 'Sudbury', lat: 46.49, lng: -80.99 }, { n: 'London', lat: 42.98, lng: -81.24 },
@@ -80,7 +80,7 @@
       var createdAt = burstStart + i * Math.floor(rng() * 45000); // many within seconds
       obs.push({ speciesId: s.id, count: count, lat: lat, lng: lng, when: new Date(when).toISOString(), createdAt: createdAt });
     }
-    return { account: name, home: '—', sham: true, obs: obs };
+    return { account: name, home: ', ', sham: true, obs: obs };
   }
 
   var DATA = [
@@ -134,7 +134,7 @@
       burstFrac: gaps ? burst / gaps : 0, maxSpeed: maxSpeed
     };
   }
-  // Only behavioural / plausibility signals — never rarity itself. Reporting a
+  // Only behavioural / plausibility signals, never rarity itself. Reporting a
   // rare or at-risk species is exactly what conservation wants, not a red flag.
   var KEYS = ['implausibleRate', 'meanCount', 'maxCount', 'burstFrac', 'maxSpeed'];
   var WEIGHTS = { implausibleRate: 1.2, meanCount: 1.0, maxCount: 0.8, burstFrac: 1.3, maxSpeed: 1.0 };
