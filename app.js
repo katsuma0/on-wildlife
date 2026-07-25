@@ -394,7 +394,6 @@
       '<button class="chip chip-alert" data-action="report-bear">\u{1F43B} Report a Bear</button>' +
       '<button class="chip chip-warn" data-action="report-hazard">⚠️ Report a Hazard</button>' +
       '<a class="chip" href="#/explore">\u{1F50D} Field Guide</a>' +
-      '<a class="chip" href="#/badges">\u{1F3C5} Badges</a>' +
       '<a class="chip" href="#/community">\u{1F30D} Community</a>' +
       '</div>';
     body += seasonalCard();
@@ -455,7 +454,6 @@
     body += '<div class="chip-row" style="margin-top:14px">' +
       '<a class="chip" href="#/explore/birds">\u{1F426} Bird guide</a>' +
       '<a class="chip" href="#/learn/birding-how">\u{1F430} How to bird</a>' +
-      '<a class="chip" href="#/badges">\u{1F3C5} Badges</a>' +
       '</div>';
     body += '<div class="group"><div class="group-header">Birding safety and learning</div><div class="list">' +
       learnCell('\u{1F430}', 'How to birdwatch', 'The early bird gets the bird', 'birding-how') +
@@ -477,7 +475,7 @@
   function catsSeen() { var m = {}; app.entries.forEach(function (e) { if (e.cat) m[e.cat] = 1; }); return Object.keys(m).length; }
   function learnCell(emoji, title, sub, topicId) {
     return '<a class="cell tap" href="#/learn/' + esc(topicId) + '">' +
-      '<span class="cell-emoji">' + emoji + '</span>' +
+      (emoji ? '<span class="cell-emoji">' + emoji + '</span>' : '') +
       '<span class="cell-body"><span class="cell-title">' + esc(title) + '</span>' +
       '<span class="cell-sub">' + esc(sub) + '</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></a>';
@@ -529,15 +527,7 @@
     var merged = {}; (app.settings.badges || []).concat(earnedBadgeIds()).forEach(function (id) { merged[id] = 1; });
     app.settings.badges = Object.keys(merged); saveSettings();
   }
-  function checkNewBadges() {
-    var earned = earnedBadgeIds(), known = app.settings.badges || [];
-    var fresh = earned.filter(function (id) { return known.indexOf(id) < 0; });
-    if (fresh.length) {
-      app.settings.badges = known.concat(fresh); saveSettings();
-      var b = badgeById(fresh[0]);
-      if (b) { haptic(); toast('\u{1F3C5} Badge unlocked: ' + b.name + (fresh.length > 1 ? ' +' + (fresh.length - 1) + ' more' : '')); }
-    }
-  }
+  function checkNewBadges() { /* badges retired; no achievement toasts */ }
   function isInvasive(s) { return /invasiv/i.test(s.status || '') || /invasiv/i.test(s.caution || ''); }
   // Species-at-Risk (and all turtles) get location geoprivacy: the precise point
   // stays private on-device, but is coarsened before it could ever be shared/exported.
@@ -902,36 +892,35 @@
   function viewMore() {
     var body = '';
     body += '<div class="group"><div class="group-header">Your Journal</div><div class="list">' +
-      '<a class="cell tap" href="#/badges"><span class="cell-emoji">\u{1F3C5}</span><span class="cell-body"><span class="cell-title">Badges</span><span class="cell-sub">Collectible naturalist achievements</span></span><span class="chevron">' + I.chevron + '</span></a>' +
-      '<a class="cell tap" href="#/stats"><span class="cell-emoji">\u{1F4CA}</span><span class="cell-body"><span class="cell-title">Stats</span><span class="cell-sub">Your totals & community comparison</span></span><span class="chevron">' + I.chevron + '</span></a>' +
-      moreCell('\u{1F4E4}', 'Export my log', 'Download everything as a file', 'export-data') +
+      '<a class="cell tap" href="#/stats"><span class="cell-body"><span class="cell-title">Stats</span><span class="cell-sub">Your totals & community comparison</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      moreCell('', 'Export my log', 'Download everything as a file', 'export-data') +
       '</div></div>';
 
     body += '<div class="group"><div class="group-header">Report</div><div class="list">' +
-      moreCell('\u{1F43B}', 'Report a bear', 'For your map & Bear Wise info', 'report-bear') +
-      moreCell('⚠️', 'Report a hazard', 'Wildlife on road, construction, ticks…', 'report-hazard') +
+      moreCell('', 'Report a bear', 'For your map & Bear Wise info', 'report-bear') +
+      moreCell('', 'Report a hazard', 'Wildlife on road, construction, ticks…', 'report-hazard') +
       '</div></div>';
 
     body += '<div class="group"><div class="group-header">Learn & Safety</div><div class="list">' +
-      '<a class="cell tap" href="#/alerts"><span class="cell-emoji">⚠️</span><span class="cell-body"><span class="cell-title">Safety & Alerts</span><span class="cell-sub">Dangers to know · your bear & hazard reports</span></span><span class="chevron">' + I.chevron + '</span></a>' +
-      '<a class="cell tap" href="#/invasives"><span class="cell-emoji">\u{1F6AB}</span><span class="cell-body"><span class="cell-title">Invasive species</span><span class="cell-sub">What to watch for & how to report</span></span><span class="chevron">' + I.chevron + '</span></a>' +
-      learnCell('\u{1F577}️', 'Ticks & Lyme disease', 'Identify, prevent, remove & when to see a doctor', 'ticks') +
-      learnCell('\u{1F43B}', 'Bear safety (Bear Wise)', 'Prevent encounters and how to report a bear', 'bears') +
-      learnCell('☠️', 'Dangerous plants', 'Poison ivy, wild parsnip, giant hogweed', 'plants') +
-      learnCell('\u{1F6E3}️', 'Wildlife on roads', 'Deer, moose, turtles & road hazards', 'roads') +
-      learnCell('\u{1F30D}', 'Help Ontario’s wildlife', 'How your sightings support conservation', 'contribute') +
+      '<a class="cell tap" href="#/alerts"><span class="cell-body"><span class="cell-title">Safety & Alerts</span><span class="cell-sub">Dangers to know · your bear & hazard reports</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      '<a class="cell tap" href="#/invasives"><span class="cell-body"><span class="cell-title">Invasive species</span><span class="cell-sub">What to watch for & how to report</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      learnCell('', 'Ticks & Lyme disease', 'Identify, prevent, remove & when to see a doctor', 'ticks') +
+      learnCell('', 'Bear safety (Bear Wise)', 'Prevent encounters and how to report a bear', 'bears') +
+      learnCell('', 'Dangerous plants', 'Poison ivy, wild parsnip, giant hogweed', 'plants') +
+      learnCell('', 'Wildlife on roads', 'Deer, moose, turtles & road hazards', 'roads') +
+      learnCell('', 'Help Ontario’s wildlife', 'How your sightings support conservation', 'contribute') +
       '</div></div>';
 
     body += '<div class="group"><div class="group-header">Community & Data</div><div class="list">' +
-      '<a class="cell tap" href="#/community"><span class="cell-emoji">\u{1F30D}</span>' +
+      '<a class="cell tap" href="#/community">' +
       '<span class="cell-body"><span class="cell-title">Community</span>' +
       '<span class="cell-sub">' + (Community.on() ? 'Sharing on · see nearby activity' : app.settings.communityUrl ? 'Connected · sharing off' : 'See what’s near you this week') + '</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></a>' +
-      '<a class="cell tap" href="#/resources"><span class="cell-emoji">\u{1F517}</span>' +
+      '<a class="cell tap" href="#/resources">' +
       '<span class="cell-body"><span class="cell-title">Ontario & Canada resources</span>' +
       '<span class="cell-sub">Trusted sites for wildlife, fishing & safety</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></a>' +
-      '<a class="cell tap" href="#/trust"><span class="cell-emoji">\u{1F9EA}</span>' +
+      '<a class="cell tap" href="#/trust">' +
       '<span class="cell-body"><span class="cell-title">Data reliability</span>' +
       '<span class="cell-sub">Anomaly detection on contributor data (demo)</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></a></div></div>';
@@ -950,25 +939,25 @@
       '<div class="group-footer">Auto follows your phone’s light or dark setting.</div></div>';
 
     body += '<div class="group"><div class="list">' +
-      '<a class="cell tap" href="#/privacy"><span class="cell-emoji">\u{1F512}</span><span class="cell-body"><span class="cell-title">Privacy</span><span class="cell-sub">Your data is private, on this device</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      '<a class="cell tap" href="#/privacy"><span class="cell-body"><span class="cell-title">Privacy</span><span class="cell-sub">Your data is private, on this device</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       '</div></div>';
 
     body += '<div class="group"><div class="group-header">More from the Ontario outdoors</div><div class="list">' +
       '<a class="cell tap" href="https://katsuma0.github.io/on-camp/" target="_blank" rel="noopener noreferrer">' +
-      '<span class="cell-emoji">\u{1F3D5}️</span><span class="cell-body"><span class="cell-title">ON Camp</span>' +
+      '<span class="cell-body"><span class="cell-title">on-camp</span>' +
       '<span class="cell-sub">Rate Ontario Parks campsites</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       '<a class="cell tap" href="https://katsuma0.github.io/on-fishing/" target="_blank" rel="noopener noreferrer">' +
-      '<span class="cell-emoji">\u{1F3A3}</span><span class="cell-body"><span class="cell-title">ON Fishing</span>' +
+      '<span class="cell-body"><span class="cell-title">on-fishing</span>' +
       '<span class="cell-sub">Zones, seasons and catch limits</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       '</div>' +
       '<div class="group-footer">Three field guides for Ontario, one look. Take all three.</div></div>';
 
     body += '<div class="group"><div class="group-header">About</div><div class="list">' +
-      '<div class="info-row"><div class="info-v">Ontario Wildlife Log is a simple, private field journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario.</div></div>' +
+      '<div class="info-row"><div class="info-v">on-wildlife is a simple, private field guide and journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario. Look a species up, read a longer account if you want one, and log what you see. It works offline and installs to your home screen.</div></div><div class="info-row"><div class="info-v">I built it because I wanted one clear place to name what I run into outside and keep a record of it, without ads, accounts, or anything watching over my shoulder. Everything you log stays on this device. There is no server and nothing is tracked. Sensitive spots, like bear sightings, are coarsened before they can go to the optional community layer.</div></div>' +
       '<div class="cell"><span class="cell-body"><span class="cell-title">Species in guide</span></span><span class="cell-value">' + SPECIES.length + '</span></div>' +
       '<button class="cell tap" data-action="version-tap"><span class="cell-body"><span class="cell-title">Version</span></span><span class="cell-value">2.0</span></button>' +
       '<a class="cell tap" href="https://katsuma0.github.io" target="_blank" rel="noopener noreferrer">' +
-      '<span class="cell-emoji">\u{1F464}</span><span class="cell-body"><span class="cell-title">Made by Katsuma Onishi</span>' +
+      '<span class="cell-body"><span class="cell-title">Made by Katsuma Onishi</span>' +
       '<span class="cell-sub">katsuma0.github.io</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       '</div></div>';
     screen({ title: 'More', large: true, body: body });
@@ -977,7 +966,7 @@
     var attrs = 'data-action="' + action + '"';
     if (data) { if (data.cat) attrs += ' data-cat="' + data.cat + '"'; if (data.sub) attrs += ' data-sub="' + data.sub + '"'; }
     return '<button class="cell tap" ' + attrs + '>' +
-      '<span class="cell-emoji">' + emoji + '</span>' +
+      (emoji ? '<span class="cell-emoji">' + emoji + '</span>' : '') +
       '<span class="cell-body"><span class="cell-title">' + esc(title) + '</span>' +
       '<span class="cell-sub">' + esc(sub) + '</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></button>';
