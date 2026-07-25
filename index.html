@@ -16,7 +16,7 @@
 
   <meta name="theme-color" content="#f9f9f9" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#1e1e1e" media="(prefers-color-scheme: dark)" />
-  <meta name="description" content="A simple, iOS-style field journal for logging Ontario wildlife, fish and bird sightings." />
+  <meta name="description" content="A simple, iOS-style field journal for logging Ontario's wildlife, fish, plants, trees, insects and fungi." />
 
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
@@ -30,14 +30,15 @@
   <nav class="tabbar" id="tabbar"><!-- tab bar renders here --></nav>
 
   <div id="sheet-root"><!-- modal sheets mount here --></div>
-  <div id="toast-root"><!-- toasts mount here --></div>
+  <div id="toast-root" role="status" aria-live="polite" aria-atomic="true"><!-- toasts mount here --></div>
 
   <!-- Mapping library (vendored, offline-capable; tiles need a connection) -->
   <script src="vendor/leaflet/leaflet.js"></script>
 
-  <!-- Data (plain globals — no build step needed) -->
+  <!-- Data (plain globals, no build step needed) -->
   <script src="data/categories.js"></script>
   <script src="data/species.js"></script>
+  <script src="data/notes.js"></script>
   <script src="data/learn.js"></script>
   <script src="data/trust.js"></script>
   <script src="data/badges.js"></script>

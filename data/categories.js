@@ -91,10 +91,34 @@ window.CATEGORIES = [
       { id: 'dangerous-invasive', name: 'Dangerous & Invasive', emoji: '☠️' },
     ],
   },
+  {
+    id: 'insects',
+    name: 'Insects',
+    emoji: '\u{1F98B}',
+    color: '#FB8C00',
+    blurb: 'Butterflies, bees & bugs',
+    subs: [
+      { id: 'butterflies-moths', name: 'Butterflies & Moths', emoji: '\u{1F98B}' },
+      { id: 'dragonflies', name: 'Dragonflies & Damselflies', emoji: '\u{1FAB0}' },
+      { id: 'bees-wasps', name: 'Bees & Wasps', emoji: '\u{1F41D}' },
+      { id: 'beetles', name: 'Beetles & Fireflies', emoji: '\u{1F41E}' },
+      { id: 'other-insects', name: 'Other Insects', emoji: '\u{1F997}' },
+    ],
+  },
+  {
+    id: 'fungi',
+    name: 'Fungi',
+    emoji: '\u{1F344}',
+    color: '#8D6E63',
+    blurb: 'Mushrooms, look, don’t eat',
+    flora: true,
+    subs: [
+      { id: 'edible', name: 'Edible (with great care)', emoji: '\u{1F344}' },
+      { id: 'poisonous', name: 'Poisonous & Deadly', emoji: '☠️' },
+      { id: 'other-fungi', name: 'Other Fungi', emoji: '\u{1F344}' },
+    ],
+  },
 ];
 
 /* Categories planned for a future release (shown greyed-out in Explore). */
-window.COMING_SOON = [
-  { id: 'insects', name: 'Insects & Butterflies', emoji: '\u{1F98B}', color: '#FB8C00' },
-  { id: 'fungi', name: 'Mushrooms & Fungi', emoji: '\u{1F344}', color: '#8D6E63' },
-];
+window.COMING_SOON = [];

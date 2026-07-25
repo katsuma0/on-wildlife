@@ -1,6 +1,6 @@
 /* Collectible naturalist badges. Each badge's test() runs against a small
    context object (built in app.js from the user's log). Nature-themed, earned
-   through genuine use — plus one secret "easter egg" badge. */
+   through genuine use, plus one secret "easter egg" badge. */
 window.BADGES = [
   { id: 'first', name: 'First Steps', emoji: '\u{1F331}', desc: 'Log your first encounter.', test: function (c) { return c.total >= 1; } },
   { id: 'five', name: 'Getting Started', emoji: '\u{1F50D}', desc: 'Log 5 encounters.', test: function (c) { return c.total >= 5; } },
@@ -9,7 +9,7 @@ window.BADGES = [
   { id: 'species10', name: 'Collector', emoji: '\u{1F43E}', desc: 'Log 10 different species.', test: function (c) { return c.species >= 10; } },
   { id: 'species25', name: 'Seasoned Spotter', emoji: '\u{1F396}️', desc: 'Log 25 different species.', test: function (c) { return c.species >= 25; } },
   { id: 'species50', name: 'Ontario Expert', emoji: '\u{1F31F}', desc: 'Log 50 different species.', test: function (c) { return c.species >= 50; } },
-  { id: 'allcats', name: 'Well-Rounded', emoji: '\u{1F308}', desc: 'Log a species in every category.', test: function (c) { return c.catsN >= 7; } },
+  { id: 'allcats', name: 'Well-Rounded', emoji: '\u{1F308}', desc: 'Log a species in all nine categories.', test: function (c) { return c.catsN >= 9; } },
   { id: 'angler', name: 'Angler', emoji: '\u{1F3A3}', desc: 'Log 5 fish.', test: function (c) { return c.fish >= 5; } },
   { id: 'master-angler', name: 'Master Angler', emoji: '\u{1F41F}', desc: 'Log 15 fish.', test: function (c) { return c.fish >= 15; } },
   { id: 'release', name: 'Catch & Release Hero', emoji: '\u{267B}️', desc: 'Release 10 caught fish.', test: function (c) { return c.released >= 10; } },
