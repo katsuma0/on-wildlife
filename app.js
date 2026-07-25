@@ -946,6 +946,9 @@
       '<div class="info-row"><div class="info-v">Ontario Wildlife Log is a simple, private field journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario.</div></div>' +
       '<div class="cell"><span class="cell-body"><span class="cell-title">Species in guide</span></span><span class="cell-value">' + SPECIES.length + '</span></div>' +
       '<button class="cell tap" data-action="version-tap"><span class="cell-body"><span class="cell-title">Version</span></span><span class="cell-value">2.0</span></button>' +
+      '<a class="cell tap" href="https://katsuma0.github.io" target="_blank" rel="noopener noreferrer">' +
+      '<span class="cell-emoji">\u{1F464}</span><span class="cell-body"><span class="cell-title">Made by Katsuma Onishi</span>' +
+      '<span class="cell-sub">katsuma0.github.io</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       '</div></div>';
     screen({ title: 'More', large: true, body: body });
   }
