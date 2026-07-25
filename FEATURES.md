@@ -19,7 +19,7 @@ you find across Ontario. Everything below is built and working.
 
 ## The field guide
 
-- 580 fact-checked Ontario species across 9 categories: Mammals, Birds, Reptiles,
+- 678 fact-checked Ontario species across 9 categories: Mammals, Birds, Reptiles,
   Amphibians, Fish, Trees, Plants, Insects, and Fungi. Each has ID tips, habitat,
   best seasons, a fact, conservation status, and safety cautions.
 - Species at Risk are flagged, using SARO and COSEWIC context.
