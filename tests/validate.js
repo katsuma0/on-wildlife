@@ -30,7 +30,7 @@ function rel(p) { return path.join(ROOT, p); }
 console.log('\n[1] Syntax (node --check)');
 var JS_FILES = [
   'app.js', 'service-worker.js', 'server/server.js',
-  'data/species.js', 'data/categories.js', 'data/learn.js', 'data/trust.js', 'data/badges.js',
+  'data/species.js', 'data/notes.js', 'data/categories.js', 'data/learn.js', 'data/trust.js', 'data/badges.js',
   'tests/validate.js',
 ];
 JS_FILES.forEach(function (f) {

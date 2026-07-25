@@ -818,6 +818,17 @@
       info('Did you know', s.fact) +
       '</div></div>';
 
+    // Optional longer account, in the style of a field-guide entry, for those who want it.
+    var noteText = (window.SPECIES_NOTES && SPECIES_NOTES[s.id]) || '';
+    if (noteText) {
+      var paras = noteText.split(/\n\n+/).map(function (pp) { return '<p>' + esc(pp) + '</p>'; }).join('');
+      body += '<details class="notes"><summary>' +
+        '<span class="cell-emoji">\u{1F4D6}</span>' +
+        '<span class="cell-body"><span class="cell-title">In depth</span><span class="cell-sub">A longer read, if you want it</span></span>' +
+        '<span class="chevron">' + I.chevron + '</span></summary>' +
+        '<div class="notes-body">' + paras + '</div></details>';
+    }
+
     body += '<div class="group"><div class="list">' +
       '<div class="cell"><span class="cell-body"><span class="cell-title">Category</span></span>' +
       '<span class="cell-value">' + esc(c ? c.name : '') + (sub ? ' · ' + esc(sub.name) : '') + '</span></div>' +
