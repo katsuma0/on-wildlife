@@ -33,7 +33,7 @@ const BASE = process.env.BASE || 'http://localhost:8000/index.html';
     ok('Escape recorded consent (seenPrivacy=true)', consent);
   }
 
-  await page.evaluate(() => { location.hash = '#/log'; });
+  await page.evaluate(() => { location.hash = '#/explore'; });
   await page.waitForTimeout(300);
   const cur = await page.$$eval('#tabbar .tab', els => els.filter(e => e.getAttribute('aria-current') === 'page').map(e => e.textContent.trim()));
   ok('exactly one tab has aria-current=page', cur.length === 1, 'tabs=' + JSON.stringify(cur));
