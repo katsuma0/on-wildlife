@@ -646,7 +646,7 @@
       body += recentGroup('Recent', recentIn(function () { return true; }, 6));
     }
 
-    screen({ title: 'on-wildlife', large: true, version: 'v2.2', subtitle: 'A field guide to Ontario’s wildlife, and your own journal of it.', body: body });
+    screen({ title: 'on-wildlife', large: true, version: 'v2.3', subtitle: 'A field guide to Ontario’s wildlife, and your own journal of it.', body: body });
   }
 
   /* ============================================================= SEARCH */
@@ -2022,48 +2022,68 @@
     };
     renderSheet();
   }
-  function wrapText(g, text, x, y, maxW, lh) {
-    var words = String(text).split(' '), line = '', lines = [];
-    words.forEach(function (w) {
-      var test = line ? line + ' ' + w : w;
-      if (g.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test;
-    });
-    if (line) lines.push(line);
-    var startY = y - (lines.length - 1) * lh / 2;
-    lines.forEach(function (l, i) { g.fillText(l, x, startY + i * lh); });
+  /* ------------------------------------------------ Share (unified card) */
+  // A compact, self-contained item that travels inside the share link, so a
+  // recipient sees the exact same encounter with no server and nothing tracked.
+  function entryShareItem(e) {
+    var sp = e.speciesId ? byId[e.speciesId] : null;
+    var it = { t: 'wl', n: e.speciesName, e: e.emoji || '\u{1F43E}', cat: e.cat, ev: e.evidence, w: e.when };
+    if (sp && sp.sci) it.sci = sp.sci;
+    if (e.count > 1) it.c = e.count;
+    if (e.notes) it.note = e.notes.length > 200 ? e.notes.slice(0, 197) + '…' : e.notes;
+    if (e.lat != null && !e.sensitiveLoc) { it.lat = +e.lat.toFixed(3); it.lng = +e.lng.toFixed(3); }
+    else if (e.lat != null) it.prot = 1;
+    if (e.fish) { it.fish = 1; if (e.fish.length != null) { it.len = e.fish.length; it.unit = e.fish.units === 'imperial' ? 'in' : 'cm'; } if (e.fish.caught) it.rel = e.fish.released ? 1 : 0; }
+    return it;
+  }
+  function evidenceLabel(ev) { return ev === 'caught' ? 'Caught' : ev === 'heard' ? 'Heard' : ev === 'tracks' ? 'Tracks' : 'Seen'; }
+  // Item -> OnShare card params. Sender and recipient both build the card this
+  // way, so the picture is identical on either end.
+  function wildlifeCard(it) {
+    var cm = catMeta(it.cat);
+    var chips = [{ label: evidenceLabel(it.ev) }];
+    if (cm) chips.push({ label: cm.name });
+    if (it.c) chips.push({ label: '×' + it.c });
+    if (it.fish && it.len != null) chips.push({ label: it.len + ' ' + (it.unit || 'cm') });
+    if (it.fish && it.rel != null) chips.push({ label: it.rel ? 'Released' : 'Kept' });
+    var meta = fmtDay(it.w);
+    if (it.lat != null && it.lng != null) meta += ' · ' + it.lat.toFixed(2) + ', ' + it.lng.toFixed(2);
+    else if (it.prot) meta += ' · location protected';
+    return {
+      eyebrow: 'on-wildlife', kicker: 'Field note', emoji: it.e || '\u{1F43E}',
+      title: it.n, subtitle: it.sci || (cm ? cm.name : ''),
+      chips: chips.slice(0, 4), meta: meta
+    };
   }
   function shareEntry(id) {
     var e = null; for (var i = 0; i < app.entries.length; i++) if (app.entries[i].id === id) { e = app.entries[i]; break; }
     if (!e) return;
-    var sp = e.speciesId ? byId[e.speciesId] : null;
-    var W = 1080, H = 1080, canvas = document.createElement('canvas');
-    canvas.width = W; canvas.height = H; var g = canvas.getContext('2d');
-    var grad = g.createLinearGradient(0, 0, 0, H); grad.addColorStop(0, '#2f8f5b'); grad.addColorStop(1, '#0e6b3d');
-    g.fillStyle = grad; g.fillRect(0, 0, W, H);
-    g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.font = '340px "Apple Color Emoji","Segoe UI Emoji",sans-serif';
-    try { g.fillText(e.emoji || '\u{1F43E}', W / 2, 360); } catch (er) {}
-    g.fillStyle = '#fff'; g.font = '700 84px -apple-system,system-ui,sans-serif';
-    wrapText(g, e.speciesName, W / 2, 636, W - 160, 92);
-    if (sp) { g.fillStyle = 'rgba(255,255,255,.85)'; g.font = 'italic 40px -apple-system,system-ui,serif'; g.fillText(sp.sci, W / 2, 762); }
-    g.fillStyle = 'rgba(255,255,255,.92)'; g.font = '40px -apple-system,system-ui,sans-serif';
-    var loc = e.lat != null ? (e.sensitiveLoc ? 'Location protected' : (e.lat.toFixed(2) + ', ' + e.lng.toFixed(2))) : '';
-    g.fillText(fmtDay(e.when) + (loc ? '  ·  ' + loc : ''), W / 2, 842);
-    g.fillStyle = 'rgba(255,255,255,.9)'; g.font = '600 38px -apple-system,system-ui,sans-serif';
-    g.fillText('\u{1F43E}  Ontario Wildlife Log', W / 2, 992);
-    canvas.toBlob(function (blob) {
-      if (!blob) { toast('Could not create image'); return; }
-      var file = null;
-      try { file = new File([blob], 'sighting.png', { type: 'image/png' }); } catch (er) {}
-      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({ files: [file], title: e.speciesName, text: 'I spotted a ' + e.speciesName + ' in Ontario! \u{1F43E}' }).catch(function () {});
-      } else {
-        var url = URL.createObjectURL(blob), a = document.createElement('a');
-        a.href = url; a.download = 'wildlife-sighting.png'; document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-        toast('Saved sighting image');
-      }
-    }, 'image/png');
+    if (!window.OnShare) { toast('Sharing is not available'); return; }
+    var item = entryShareItem(e);
+    OnShare.share({ card: wildlifeCard(item), text: 'I spotted a ' + e.speciesName + ' in Ontario.', item: item })
+      .then(function (r) { if (r === 'fallback') toast('Link copied, card saved'); });
+  }
+  // #/shared/<data> : render an encounter someone sent, straight from the link.
+  function viewShared(data) {
+    var it = window.OnShare && OnShare.decode(data || '');
+    if (!it || it.t !== 'wl') {
+      screen({ title: 'Shared', back: '#/explore', backText: 'Explore', large: true,
+        body: '<div class="hpad"><p class="empty">This shared link could not be opened. It may be from a newer version of the app.</p></div>' });
+      return;
+    }
+    var card = wildlifeCard(it);
+    var body =
+      '<div class="hpad shared-recv">' +
+        '<div class="shared-card-wrap"><img id="shared-card-img" class="shared-card" alt="Shared ' + esc(card.title) + ' encounter"></div>' +
+        (it.note ? '<p class="shared-note">“' + esc(it.note) + '”</p>' : '') +
+      '</div>' +
+      '<div class="hpad"><a class="btn btn-primary btn-block" href="#/mylog">Start your own log</a></div><div class="spacer"></div>' +
+      '<div class="hpad"><a class="btn btn-tinted btn-block" href="#/explore">Explore Ontario wildlife</a></div>';
+    screen({ title: 'Shared with you', back: '#/explore', backText: 'Explore', large: true,
+      subtitle: 'A wildlife encounter, shared with you', body: body });
+    OnShare.makeCard(card).then(function (blob) {
+      if (!blob) return; var img = $('#shared-card-img'); if (img) img.src = URL.createObjectURL(blob);
+    });
   }
   function deleteEntry(id) {
     var removed = app.entries.filter(function (e) { return e.id === id; })[0];
@@ -2195,6 +2215,7 @@
     else if (r === 'learn') { if (parts[1]) viewLearn(parts[1]); else viewLearnHub(); }
     else if (r === 'resources') viewResources();
     else if (r === 'more') viewMore();
+    else if (r === 'shared') viewShared(parts[1]);
     else viewExplore();
     renderTabs();
   }
@@ -2415,6 +2436,7 @@
   function boot() {
     loadSettings();
     applyTheme();
+    if (window.OnShare) OnShare.config({ app: 'on-wildlife', base: 'https://katsuma0.github.io/on-wildlife/', accent: '#14804a' });
     Store.load().then(function (entries) {
       app.entries = entries || [];
       return Store.loadHazards();
