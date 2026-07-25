@@ -696,6 +696,12 @@
       '</div>';
     body += '<div id="search-results"></div>';
     body += '<div id="explore-cats">';
+    var atRiskN = SPECIES.filter(function (s) { return s.atRisk; }).length;
+    body += '<div class="group" style="margin-top:6px"><div class="list">' +
+      '<a class="cell tap" href="#/atrisk"><span class="cell-emoji">\u{1F6E1}️</span>' +
+      '<span class="cell-body"><span class="cell-title">Species at Risk</span>' +
+      '<span class="cell-sub">' + atRiskN + ' in Ontario, flagged through the guide</span></span>' +
+      '<span class="chevron">' + I.chevron + '</span></a></div></div>';
     body += '<div class="group-header hpad" style="margin-top:6px">Ontario Wildlife</div>';
     body += '<div class="card-grid">';
     CATEGORIES.forEach(function (c) {
@@ -740,6 +746,20 @@
     });
   }
 
+  function viewAtRisk() {
+    var list = SPECIES.filter(function (s) { return s.atRisk; });
+    var logged = loggedIdSet();
+    var body = '<p class="article-intro">Ontario species assessed as Special Concern, Threatened, Endangered or extirpated under SARO and COSEWIC. When you log one, its exact location is kept private on your phone and coarsened if you ever share it.</p>';
+    CATEGORIES.forEach(function (c) {
+      var rows = sortSpecies(list.filter(function (s) { return s.cat === c.id; }));
+      if (!rows.length) return;
+      body += '<div class="group"><div class="group-header">' + c.emoji + ' ' + esc(c.name) + ' (' + rows.length + ')</div><div class="list">';
+      rows.forEach(function (s) { body += speciesCell(s, { loggedIds: logged, sub: '<i>' + esc(s.sci) + '</i>', right: statusBadge(s) }); });
+      body += '</div></div>';
+    });
+    body += '<div class="hpad"><a class="btn btn-tinted btn-block" href="#/learn/contribute">How your sightings help</a></div><div class="spacer"></div>';
+    screen({ title: 'Species at Risk', back: '#/explore', backText: 'Guide', body: body });
+  }
   function viewCategory(catId) {
     var c = catMeta(catId);
     if (!c) return viewExplore();
@@ -2081,6 +2101,7 @@
       else if (parts[1]) viewCategory(parts[1]);
       else viewExplore();
     }
+    else if (r === 'atrisk') viewAtRisk();
     else if (r === 'species') viewSpecies(parts[1]);
     else if (r === 'map') viewMap();
     else if (r === 'mylog') viewMyLog();
