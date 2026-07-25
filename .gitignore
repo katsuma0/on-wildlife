@@ -4,3 +4,4 @@ server/data.json
 server/data.json.bak
 server/data.json.tmp
 *.log
+.notes-tmp/
