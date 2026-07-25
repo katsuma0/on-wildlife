@@ -1,6 +1,6 @@
 {
-  "name": "Ontario Wildlife Log",
-  "short_name": "Wildlife Log",
+  "name": "on-wildlife",
+  "short_name": "on-wildlife",
   "description": "A simple, iOS-style field journal for logging Ontario's wildlife, fish, plants, trees, insects and fungi.",
   "start_url": "./index.html",
   "scope": "./",

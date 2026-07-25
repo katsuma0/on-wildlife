@@ -52,7 +52,7 @@ const BASE = process.env.BASE || 'http://localhost:8000/index.html';
   await page.waitForTimeout(500);
   ok('entry saved (sheet closed)', !(await page.$('#sheet.show')));
 
-  await page.evaluate(() => { location.hash = '#/log'; });
+  await page.evaluate(() => { location.hash = '#/mylog'; });
   await page.waitForTimeout(400);
   let entryCount = await page.$$eval('[data-action="open-entry"]', els => els.length);
   ok('one entry in log after save', entryCount === 1, 'count=' + entryCount);
@@ -71,7 +71,7 @@ const BASE = process.env.BASE || 'http://localhost:8000/index.html';
   await page.click('[data-action="save-entry"]');
   await page.waitForTimeout(500);
 
-  await page.evaluate(() => { location.hash = '#/log'; });
+  await page.evaluate(() => { location.hash = '#/mylog'; });
   await page.waitForTimeout(400);
   entryCount = await page.$$eval('[data-action="open-entry"]', els => els.length);
   ok('still one entry after edit (in-place)', entryCount === 1, 'count=' + entryCount);
@@ -88,10 +88,10 @@ const BASE = process.env.BASE || 'http://localhost:8000/index.html';
   }));
   ok('persisted note updated in place', persistedNote === 'edited note beta', 'note=' + persistedNote);
 
-  await page.evaluate(() => { location.hash = '#/explore'; });
+  await page.evaluate(() => { location.hash = '#/search'; });
   await page.waitForTimeout(300);
-  const exLabel = await page.getAttribute('#explore-search', 'aria-label');
-  ok('explore search has aria-label', exLabel === 'Search species', 'label=' + exLabel);
+  const exLabel = await page.getAttribute('#uni-search', 'aria-label');
+  ok('search screen input has aria-label', exLabel === 'Search', 'label=' + exLabel);
 
   const toastLive = await page.getAttribute('#toast-root', 'aria-live');
   ok('toast-root aria-live=polite', toastLive === 'polite');
