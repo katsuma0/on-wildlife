@@ -237,6 +237,65 @@
 
   /* --------------------------------------------------------- Screen frame
      Builds a nav bar + optional large title + body, and wires scroll fade. */
+  // ---- iOS-style navigation transitions ----
+  var TAB_ROOTS = { log: 1, explore: 1, map: 1, mylog: 1, more: 1 };
+  function reduceMotion() { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
+  // Decide push vs pop vs tab-switch vs same-screen re-render from the hash + a stack.
+  function navDirection() {
+    if (!app.nav) app.nav = { stack: [] };
+    var hash = location.hash || '#/log';
+    var parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
+    var top = parts[0] || 'log';
+    var s = app.nav.stack;
+    if (parts.length <= 1 && TAB_ROOTS[top]) {           // a bottom-tab root
+      var same = s.length && s[s.length - 1] === hash;
+      app.nav.stack = [hash];
+      return same ? 'none' : 'tab';
+    }
+    var idx = s.lastIndexOf(hash);
+    if (idx >= 0 && idx === s.length - 1) return 'none';  // same screen, a re-render
+    if (idx >= 0) { s.length = idx + 1; return 'pop'; }   // returning to an earlier screen
+    s.push(hash); if (s.length > 50) s.shift();
+    return 'push';
+  }
+  // Mount new screen HTML with the right transition. Push/pop overlay two screens
+  // briefly; tab and re-render just swap in place (the .screen fade handles it).
+  function mountScreen(html, dir) {
+    var appEl = $('#app');
+    var existing = appEl.querySelectorAll('.screen');
+    if (existing.length > 1) { for (var i = 0; i < existing.length - 1; i++) existing[i].remove(); appEl.classList.remove('nav-animating'); }
+    var oldScreen = appEl.querySelector('.screen');
+    if (!oldScreen || dir === 'none' || dir === 'tab' || reduceMotion()) {
+      appEl.innerHTML = html; window.scrollTo(0, 0); return;
+    }
+    var side = dir === 'push' ? 'sc-from-right' : 'sc-from-left';
+    var tmp = document.createElement('div'); tmp.innerHTML = html;
+    var newScreen = tmp.firstElementChild;
+    if (!newScreen) { appEl.innerHTML = html; window.scrollTo(0, 0); return; }
+    newScreen.classList.add('sc-anim', side);
+    var sy = window.scrollY || window.pageYOffset || 0;
+    appEl.classList.add('nav-animating');
+    oldScreen.classList.add('sc-anim');
+    oldScreen.style.top = (-sy) + 'px';                  // freeze old content in place while page scrolls to 0
+    appEl.appendChild(newScreen);
+    window.scrollTo(0, 0);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        newScreen.classList.remove(side);
+        oldScreen.classList.add(dir === 'push' ? 'sc-exit-left' : 'sc-exit-right');
+      });
+    });
+    var done = false;
+    var cleanup = function () {
+      if (done) return; done = true;
+      if (oldScreen && oldScreen.parentNode) oldScreen.parentNode.removeChild(oldScreen);
+      appEl.classList.remove('nav-animating');
+      newScreen.classList.remove('sc-anim'); newScreen.style.top = '';
+      updateNav();
+    };
+    var t = setTimeout(cleanup, 420);
+    newScreen.addEventListener('transitionend', function h(e) { if (e.propertyName === 'transform') { clearTimeout(t); newScreen.removeEventListener('transitionend', h); cleanup(); } });
+  }
   function screen(cfg) {
     var navLeft = cfg.back
       ? '<div class="nav-left"><a class="nav-btn bold" href="' + esc(cfg.back) + '">' + I.back + esc(cfg.backText || 'Back') + '</a></div>'
@@ -253,8 +312,7 @@
         (cfg.subtitle ? '<div class="subtitle">' + esc(cfg.subtitle) + '</div>' : '') + '</div>'
       : '';
     var tail = cfg.bare ? '' : '<div class="spacer-lg"></div>';
-    $('#app').innerHTML = '<div class="screen">' + nav + large + cfg.body + tail + '</div>';
-    window.scrollTo(0, 0);
+    mountScreen('<div class="screen">' + nav + large + cfg.body + tail + '</div>', navDirection());
     updateNav();
   }
   function updateNav() {

@@ -144,6 +144,16 @@ img { max-width: 100%; }
   to { opacity: 1; transform: none; }
 }
 
+/* iOS push/pop navigation transitions. Two screens overlay while the incoming one
+   slides in and the outgoing one parallaxes off and dims, like a UINavigationController. */
+#app.nav-animating { position: relative; overflow: hidden; }
+#app.nav-animating .screen { position: absolute; top: 0; left: 0; width: 100%; }
+.screen.sc-anim { animation: none; transition: transform 0.34s var(--ease), opacity 0.34s var(--ease); will-change: transform; }
+.screen.sc-from-right { transform: translateX(100%); }
+.screen.sc-from-left { transform: translateX(-100%); }
+.screen.sc-exit-left { transform: translateX(-26%); opacity: 0.55; }
+.screen.sc-exit-right { transform: translateX(100%); }
+
 /* --------------------------------------------------------- Navigation bar */
 .nav {
   position: sticky;
