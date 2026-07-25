@@ -953,6 +953,16 @@
       '<a class="cell tap" href="#/privacy"><span class="cell-emoji">\u{1F512}</span><span class="cell-body"><span class="cell-title">Privacy</span><span class="cell-sub">Your data is private, on this device</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       '</div></div>';
 
+    body += '<div class="group"><div class="group-header">More from the Ontario outdoors</div><div class="list">' +
+      '<a class="cell tap" href="https://katsuma0.github.io/on-camp/" target="_blank" rel="noopener noreferrer">' +
+      '<span class="cell-emoji">\u{1F3D5}️</span><span class="cell-body"><span class="cell-title">ON Camp</span>' +
+      '<span class="cell-sub">Rate Ontario Parks campsites</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      '<a class="cell tap" href="https://katsuma0.github.io/on-fishing/" target="_blank" rel="noopener noreferrer">' +
+      '<span class="cell-emoji">\u{1F3A3}</span><span class="cell-body"><span class="cell-title">ON Fishing</span>' +
+      '<span class="cell-sub">Zones, seasons and catch limits</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      '</div>' +
+      '<div class="group-footer">Three field guides for Ontario, one look. Take all three.</div></div>';
+
     body += '<div class="group"><div class="group-header">About</div><div class="list">' +
       '<div class="info-row"><div class="info-v">Ontario Wildlife Log is a simple, private field journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario.</div></div>' +
       '<div class="cell"><span class="cell-body"><span class="cell-title">Species in guide</span></span><span class="cell-value">' + SPECIES.length + '</span></div>' +
