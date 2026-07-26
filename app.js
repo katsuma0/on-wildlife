@@ -2448,7 +2448,9 @@
       route();
       maybePrivacyBanner();
     });
-    if ('serviceWorker' in navigator) {
+    // Only over http(s): inside the native iOS shell the files are bundled
+    // locally and a service worker would just serve stale copies.
+    if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
       window.addEventListener('load', function () {
         navigator.serviceWorker.register('service-worker.js').catch(function () {});
       });
