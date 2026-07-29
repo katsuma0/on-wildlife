@@ -29,7 +29,7 @@ function rel(p) { return path.join(ROOT, p); }
 // ---- 1. syntax ----
 console.log('\n[1] Syntax (node --check)');
 var JS_FILES = [
-  'app.js', 'service-worker.js', 'server/server.js',
+  'app.js', 'share.js', 'service-worker.js', 'server/server.js',
   'data/species.js', 'data/notes.js', 'data/categories.js', 'data/learn.js', 'data/trust.js', 'data/badges.js',
   'tests/validate.js',
 ];
@@ -86,8 +86,28 @@ try {
   if (swMissing.length) bad('precached shell file missing', swMissing.join(', ')); else ok('all ' + localPaths.length + ' precached shell files exist');
 } catch (e) { bad('service worker', e.message); }
 
-// ---- 5. community server round-trip ----
-console.log('\n[5] Community server round-trip');
+// ---- 5. share module ----
+console.log('\n[5] Share module');
+try {
+  global.window = global.window || {};
+  require(rel('share.js'));
+  var OS = global.window.OnShare;
+  if (!OS) { bad('OnShare defined', 'window.OnShare missing'); }
+  else {
+    var need = ['config', 'encode', 'decode', 'link', 'makeCard', 'share'];
+    var miss = need.filter(function (m) { return typeof OS[m] !== 'function'; });
+    if (miss.length) bad('OnShare API', 'missing ' + miss.join(', ')); else ok('OnShare exposes ' + need.join('/'));
+    var sample = { t: 'wl', n: 'Moose', x: 'ábc/+=' };
+    var round = OS.decode(OS.encode(sample));
+    if (round && round.n === 'Moose' && round.x === 'ábc/+=') ok('encode/decode round-trips (unicode-safe)'); else bad('encode/decode', JSON.stringify(round));
+    if (/#\/shared\//.test(OS.link({ t: 'wl' }))) ok('link builds a #/shared/ deep link'); else bad('link format', OS.link({ t: 'wl' }));
+  }
+  var idx = fs.readFileSync(rel('index.html'), 'utf8');
+  if (/share\.js/.test(idx) && idx.indexOf('share.js') < idx.indexOf('app.js')) ok('index.html loads share.js before app.js'); else bad('index.html share.js', 'missing or after app.js');
+} catch (e) { bad('share module load', e.message); }
+
+// ---- 6. community server round-trip ----
+console.log('\n[6] Community server round-trip');
 function reqJSON(opts, body) {
   return new Promise(function (resolve, reject) {
     var r = http.request(opts, function (res) {
