@@ -204,7 +204,10 @@ img { max-width: 100%; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 60%;
+  /* 50%, not 60%: a centred title 60% wide starts at 80px, which is where the
+     back button ends. At 50% there is always a gap, and a title too long for it
+     truncates the way iOS truncates rather than colliding. */
+  max-width: 50%;
   transition: opacity 0.2s;
 }
 /* On large-title screens the inline title stays hidden until you scroll past
@@ -219,8 +222,12 @@ img { max-width: 100%; }
   align-items: center;
   gap: 2px;
 }
-.nav-left { left: 4px; }
+.nav-left { left: 4px; max-width: 42%; }
 .nav-right { right: 8px; }
+/* Belt and braces for the back label: JS already swaps a long one for "Back",
+   and this keeps a medium one from ever reaching the centred title. */
+.nav-btn { min-width: 0; }
+.nav-btn .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .nav-btn {
   color: var(--tint);
   font-size: 17px;
@@ -261,6 +268,18 @@ img { max-width: 100%; }
   padding: 3px 9px;
   align-self: center;
   -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+/* Fitts: the chip is deliberately small, but the thing you aim at should not be.
+   An invisible overlay grows the hit area to 44px without touching the look. */
+.large-title .ver::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 44px;
+  transform: translateY(-50%);
 }
 .large-title .ver:active { opacity: 0.6; }
 .large-title .subtitle { color: var(--label-2); font-size: 15px; margin-top: 2px; max-width: 34em; }
@@ -437,9 +456,11 @@ button.cell {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 36px;
-  padding: 0 15px;
-  border-radius: 18px;
+  /* 44px so a filter is easy to hit one-handed with a glove on, which is the
+     situation this app is actually used in. */
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 22px;
   background: var(--fill-strong);
   color: var(--label);
   font-size: 15px;
@@ -459,8 +480,14 @@ button.cell {
 }
 .seg-opt {
   flex: 1;
+  /* Fitts: a segment is wide but was only 36px tall, which is a thin thing to
+     hit while walking. Flex centring holds the label while the segment grows. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
   text-align: center;
-  padding: 9px 8px;
+  padding: 6px 8px;
   border-radius: 7px;
   font-size: 13px;
   font-weight: 500;
@@ -657,7 +684,59 @@ textarea.notes {
   border-radius: var(--radius-card);
   padding: 14px 12px;
   text-align: center;
+  display: block;
 }
+a.stat { color: inherit; text-decoration: none; }
+a.stat:active { background: var(--fill); }
+
+/* -------------------------------------------------- Journal: the life list
+   The headline of the Journal. One big honest number, and a bar that says how
+   much of Ontario's guide is still out there. It is never padded and never
+   nags: the count is simply the truth, and the gap is the invitation. */
+.lifecard {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-card);
+  padding: 18px 18px 16px;
+  margin-top: 4px;
+}
+.lifecard-n {
+  font-size: 46px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -1.4px;
+  color: var(--tint);
+  font-variant-numeric: tabular-nums;
+}
+.lifecard-l { font-size: 15px; color: var(--label); margin-top: 5px; }
+.lifecard .riskbar { margin-top: 13px; }
+.lifecard .riskbar-fill { background: var(--tint); }
+.lifecard-f { font-size: 13px; color: var(--label-2); margin-top: 7px; }
+
+/* The lifer mark. Small, set in the tint, and only ever on the one encounter
+   that first put a species on the list. */
+.pill-new {
+  display: inline-block;
+  vertical-align: 2px;
+  margin-left: 7px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--tint);
+  color: var(--on-tint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* A species you have already logged, seen while browsing the guide. A tick, not
+   a badge: the guide is a checklist you work quietly, not a scoreboard. */
+.seen-tick {
+  display: inline-flex;
+  vertical-align: 1px;
+  margin-left: 6px;
+  color: var(--tint);
+}
+.seen-tick svg { width: 13px; height: 13px; display: block; }
 .stat .n { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; color: var(--tint); }
 .stat .l { font-size: 12px; color: var(--label-2); margin-top: 2px; }
 
