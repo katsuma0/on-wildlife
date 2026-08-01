@@ -196,24 +196,6 @@ window.LEARN = {
         { label: 'Ontario: Guide to Eating Ontario Fish', url: 'https://www.ontario.ca/page/eating-ontario-fish', note: 'Meal limits by fish, size and location' }
       ]
     },
-    'boat-safety': {
-      id: 'boat-safety', emoji: '\u{1F6E5}️', title: 'Boating Safety', tint: '#1565C0',
-      subtitle: 'Simple rules for a safe day on the water',
-      intro: 'Most boating tragedies in Ontario involve cold water and an unworn lifejacket. A little preparation keeps a good day safe.',
-      sections: [
-        { h: 'Wear your lifejacket', p: 'Carry a Canadian-approved lifejacket or PFD for every person aboard, and actually wear it. Most boating drownings are people who were not wearing one.' },
-        { h: 'Cold water is the real danger', p: 'Ontario water is cold most of the year. A sudden fall in causes an involuntary gasp and rapid loss of muscle control. Dress for the water temperature, not the air.' },
-        { h: 'Carry the required gear', p: 'Bring the safety equipment your boat’s size requires: a bailer or pump, a buoyant heaving line, a sound signalling device, navigation lights, and a fire extinguisher where needed. Operating a motorized boat requires proof of competency, usually the Pleasure Craft Operator Card. Renters can instead complete the rental company’s pre-departure safety checklist.' },
-        { h: 'Before you go', bullets: [
-          'Check the weather and forecast.',
-          'Tell someone your route and return time.',
-          'Never mix alcohol or cannabis with boating.'
-        ] }
-      ],
-      links: [
-        { label: 'Transport Canada: Safe Boating Guide', url: 'https://tc.canada.ca/en/marine-transportation/marine-safety/safe-boating-guide', note: 'Rules, required gear and the operator card' }
-      ]
-    },
     'birding-how': {
       id: 'birding-how', emoji: '\u{1F430}', title: 'How to Birdwatch', tint: '#5E35B1',
       subtitle: 'Patience, quiet, and good timing',

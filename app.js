@@ -646,7 +646,7 @@
       body += recentGroup('Recent', recentIn(function () { return true; }, 6));
     }
 
-    screen({ title: 'on-wildlife', large: true, version: 'v2.3', subtitle: 'A field guide to Ontario’s wildlife, and your own journal of it.', body: body });
+    screen({ title: 'on-wildlife', large: true, version: 'v2.4', subtitle: 'A field guide to Ontario’s wildlife, and your own journal of it.', body: body });
   }
 
   /* ============================================================= SEARCH */
@@ -780,7 +780,6 @@
       learnCell('', 'Handling and releasing fish', 'Keep released fish alive', 'fish-handling') +
       learnCell('', 'Protect the water', 'Stop aquatic invasive species spreading', 'water-care') +
       learnCell('', 'Is it safe to eat?', 'Eating your catch the healthy way', 'fish-eating') +
-      learnCell('', 'Boating safety', 'Lifejackets, cold water and gear', 'boat-safety') +
       learnCell('', 'How to birdwatch', 'Patience, quiet and good timing', 'birding-how') +
       learnCell('', 'Trail etiquette', 'Share the trail, protect the wild', 'trail-etiquette') +
       learnCell('', 'Trail safety', 'Come home from every hike', 'trail-safety') +
@@ -999,10 +998,10 @@
     body += '<div class="group"><div class="group-header">About</div><div class="list">' +
       '<div class="info-row"><div class="info-v">on-wildlife is a simple, private field guide and journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario. Look a species up, read a longer account if you want one, and log what you see. It works offline and installs to your home screen.</div></div><div class="info-row"><div class="info-v">I built it because I wanted one clear place to name what I run into outside and keep a record of it, without ads, accounts, or anything watching over my shoulder. Everything you log stays on this device. There is no server and nothing is tracked. Sensitive spots, like bear sightings, are coarsened before they can go to the optional community layer.</div></div>' +
       '<div class="cell"><span class="cell-body"><span class="cell-title">Species in guide</span></span><span class="cell-value">' + SPECIES.length + '</span></div>' +
-      '<button class="cell tap" data-action="version-tap"><span class="cell-body"><span class="cell-title">Version</span></span><span class="cell-value">2.2</span></button>' +
+      '<button class="cell tap" data-action="version-tap"><span class="cell-body"><span class="cell-title">Version</span></span><span class="cell-value">2.4</span></button>' +
       '<a class="cell tap" href="https://katsuma0.github.io" target="_blank" rel="noopener noreferrer">' +
-      '<span class="cell-body"><span class="cell-title">Made by Katsuma Onishi</span>' +
-      '<span class="cell-sub">katsuma0.github.io</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      '<span class="cell-body"><span class="cell-title">Made by Katsuma Onishi</span></span>' +
+      '<span class="chevron">' + I.chevron + '</span></a>' +
       '</div></div>';
     screen({ title: 'More', large: true, body: body });
   }
@@ -1056,7 +1055,9 @@
     if (!el) return;
     if (!window.L) { el.innerHTML = '<div class="map-msg">Map couldn’t load.</div>'; return; }
     if (app.map) { try { app.map.remove(); } catch (e) {} app.map = null; }
-    var map = L.map(el, { zoomControl: true, attributionControl: true }).setView([50.0, -85.0], 5);
+    // No +/- buttons: they cover the top-left corner of the map and pinch and
+    // scroll wheel zoom already cover both touch and desktop.
+    var map = L.map(el, { zoomControl: false, attributionControl: true }).setView([50.0, -85.0], 5);
     app.map = map;
     var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
