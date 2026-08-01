@@ -13,6 +13,7 @@
     mylog: '<svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h9l5 5v13a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/><path d="M16.5 4.4V9.5H21"/><path d="M10.5 14.5l1.8 1.8 3.4-3.6"/></svg>',
     more: '<svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="7" cy="14" r="1.6" fill="currentColor" stroke="none"/><circle cx="14" cy="14" r="1.6" fill="currentColor" stroke="none"/><circle cx="21" cy="14" r="1.6" fill="currentColor" stroke="none"/></svg>',
     chevron: '<svg viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l6 6-6 6"/></svg>',
+    check: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.4l3.4 3.4L12 3.6"/></svg>',
     back: '<svg viewBox="0 0 12 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 1 2 10l8 9"/></svg>',
     search: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg>',
     tabsearch: '<svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12.5" cy="12.5" r="8"/><path d="M18.5 18.5 23 23"/></svg>',
@@ -53,7 +54,7 @@
 
   var app = {
     entries: [], hazards: [],
-    settings: { units: 'metric', theme: 'auto', homeMode: 'all', photos: false, seenPrivacy: false, seenInstall: false, community: false, communityUrl: '', badges: [] },
+    settings: { units: 'metric', theme: 'auto', homeMode: 'all', photos: false, seenPrivacy: false, seenInstall: false, community: false, communityUrl: '', badges: [], journalView: 'timeline', lifeSort: 'recent' },
     draft: null, hdraft: null, ready: false, map: null, mapFilter: 'all', placeMode: null
   };
 
@@ -245,7 +246,9 @@
     return '<a class="cell tap" href="#/species/' + esc(s.id) + '">' +
       '<span class="cell-emoji">' + s.emoji + '</span>' +
       '<span class="cell-body"><span class="cell-title">' + esc(s.name) +
-      (logged ? ' <span class="badge badge-info" style="vertical-align:1px">logged</span>' : '') +
+      // Browsing the guide doubles as working a checklist, so a species you have
+      // logged wears a quiet tick rather than a loud badge.
+      (logged ? '<span class="seen-tick" role="img" aria-label="in your journal">' + I.check + '</span>' : '') +
       '</span><span class="cell-sub">' + sub + '</span></span>' +
       right + '</a>';
   }
@@ -259,7 +262,7 @@
   /* --------------------------------------------------------- Screen frame
      Builds a nav bar + optional large title + body, and wires scroll fade. */
   // ---- iOS-style navigation transitions ----
-  var TAB_ROOTS = { explore: 1, search: 1, map: 1, learn: 1, more: 1 };
+  var TAB_ROOTS = { explore: 1, search: 1, map: 1, journal: 1, more: 1 };
   function reduceMotion() { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
   // Decide push vs pop vs tab-switch vs same-screen re-render from the hash + a stack.
   function navDirection() {
@@ -317,11 +320,33 @@
     var t = setTimeout(cleanup, 420);
     newScreen.addEventListener('transitionend', function h(e) { if (e.propertyName === 'transform') { clearTimeout(t); newScreen.removeEventListener('transitionend', h); cleanup(); } });
   }
+  function backLabel(t) { return String(t == null ? 'Back' : t); }
+  /* iOS swaps a back label for the word "Back" when the real one will not fit
+     beside the title. Character counts cannot predict that, since it depends on
+     how wide the title itself renders, so measure the two once the screen is in
+     the DOM. Without this, "Waterfowl & Water Birds" runs under "Common Loon". */
+  function fitBackLabel() {
+    // Mid push/pop both the outgoing and incoming screens carry an id="nav", so
+    // scope to the newest screen or this measures the one on its way out. The
+    // incoming screen is still translated aside, which moves the label and the
+    // title together and so leaves the comparison between them valid.
+    var screens = document.querySelectorAll('#app .screen');
+    var root = screens[screens.length - 1];
+    if (!root) return;
+    var left = root.querySelector('.nav-left'), title = root.querySelector('.nav-title');
+    if (!left || !title) return;
+    var lbl = left.querySelector('.lbl');
+    if (!lbl || lbl.getAttribute('data-fit')) return;
+    if (left.getBoundingClientRect().right + 8 > title.getBoundingClientRect().left) {
+      lbl.textContent = 'Back';
+      lbl.setAttribute('data-fit', '1');
+    }
+  }
   function screen(cfg) {
     var navLeft = cfg.back
-      ? '<div class="nav-left"><a class="nav-btn bold" href="' + esc(cfg.back) + '">' + I.back + esc(cfg.backText || 'Back') + '</a></div>'
+      ? '<div class="nav-left"><a class="nav-btn bold" href="' + esc(cfg.back) + '">' + I.back + '<span class="lbl">' + esc(backLabel(cfg.backText)) + '</span></a></div>'
       : cfg.backAction
-        ? '<div class="nav-left"><button class="nav-btn bold" data-action="nav-back">' + I.back + esc(cfg.backText || 'Back') + '</button></div>'
+        ? '<div class="nav-left"><button class="nav-btn bold" data-action="nav-back">' + I.back + '<span class="lbl">' + esc(backLabel(cfg.backText)) + '</span></button></div>'
         : (cfg.navLeft ? '<div class="nav-left">' + cfg.navLeft + '</div>' : '');
     var navRight = cfg.navRight ? '<div class="nav-right">' + cfg.navRight + '</div>' : '';
     var nav = '<div class="nav' + (cfg.large ? ' has-large' : '') + '" id="nav">' +
@@ -335,6 +360,7 @@
       : '';
     var tail = cfg.bare ? '' : '<div class="spacer-lg"></div>';
     mountScreen('<div class="screen">' + nav + large + cfg.body + tail + '</div>', navDirection());
+    fitBackLabel();
     updateNav();
   }
   function updateNav() {
@@ -394,6 +420,9 @@
   }
 
   function stat(n, l) { return '<div class="stat"><div class="n">' + n + '</div><div class="l">' + esc(l) + '</div></div>'; }
+  // Same tile, but the whole card is the tap target rather than a small link,
+  // so all three are comfortably bigger than a thumb.
+  function statLink(n, l) { return '<a class="stat tap" href="#/stats"><div class="n">' + n + '</div><div class="l">' + esc(l) + '</div></a>'; }
   function catsSeen() { var m = {}; app.entries.forEach(function (e) { if (e.cat) m[e.cat] = 1; }); return Object.keys(m).length; }
   function learnCell(emoji, title, sub, topicId) {
     return '<a class="cell tap" href="#/learn/' + esc(topicId) + '">' +
@@ -581,22 +610,33 @@
     });
   }
 
-  function entryCell(e) {
-    var meta = e.speciesId ? byId[e.speciesId] : null;
-    var sub = fmtDay(e.when) + ' · ' + fmtTime(e.when);
-    var extra = [];
-    if (e.count > 1) extra.push('×' + e.count);
-    if (e.evidence === 'heard') extra.push('heard');
-    if (e.evidence === 'tracks') extra.push('signs');
-    if (e.fish && e.fish.caught) extra.push(e.fish.released ? 'caught · released' : 'caught');
-    if (extra.length) sub += ' · ' + extra.join(' · ');
+  /* opts.hideDay drops the date when the row already sits under a day header.
+     opts.lifer marks the encounter that first put this species on the life list. */
+  function entryCell(e, opts) {
+    opts = opts || {};
+    var parts = [];
+    if (!opts.hideDay) parts.push(fmtDay(e.when));
+    parts.push(fmtTime(e.when));
+    if (e.evidence === 'heard') parts.push('Heard');
+    else if (e.evidence === 'tracks') parts.push('Tracks');
+    // "Caught" is left off when Kept or Released follows, which already says it.
+    else if (e.evidence === 'caught' && !(e.fish && e.fish.caught)) parts.push('Caught');
+    if (e.count > 1) parts.push('×' + e.count);
+    if (e.fish) {
+      if (e.fish.length != null) parts.push(e.fish.length + ' ' + (e.fish.units === 'imperial' ? 'in' : 'cm'));
+      if (e.fish.caught) parts.push(e.fish.released ? 'Released' : 'Kept');
+      if (e.fish.water) parts.push(e.fish.water);
+    }
+    if (e.bird && e.bird.behavior) parts.push(e.bird.behavior);
+    if (e.lat != null) { var pl = placeOf(e); if (pl && pl.key.indexOf('park:') === 0) parts.push(pl.name); }
     var thumb = e.photo
       ? '<img class="thumb" src="' + e.photo + '" alt="">'
       : '<span class="cell-emoji">' + (e.emoji || '\u{1F43E}') + '</span>';
     return '<button type="button" class="cell tap" data-action="open-entry" data-id="' + esc(e.id) + '">' +
       thumb +
-      '<span class="cell-body"><span class="cell-title">' + esc(e.speciesName) + '</span>' +
-      '<span class="cell-sub">' + esc(sub) + '</span></span>' +
+      '<span class="cell-body"><span class="cell-title">' + esc(e.speciesName) +
+      (opts.lifer ? '<span class="pill-new">New</span>' : '') + '</span>' +
+      '<span class="cell-sub">' + esc(parts.join(' · ')) + '</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></button>';
   }
 
@@ -646,7 +686,7 @@
       body += recentGroup('Recent', recentIn(function () { return true; }, 6));
     }
 
-    screen({ title: 'on-wildlife', large: true, version: 'v2.3', subtitle: 'A field guide to Ontario’s wildlife, and your own journal of it.', body: body });
+    screen({ title: 'on-wildlife', large: true, version: 'v2.5', subtitle: 'A field guide to Ontario’s wildlife, and your own journal of it.', body: body });
   }
 
   /* ============================================================= SEARCH */
@@ -780,7 +820,6 @@
       learnCell('', 'Handling and releasing fish', 'Keep released fish alive', 'fish-handling') +
       learnCell('', 'Protect the water', 'Stop aquatic invasive species spreading', 'water-care') +
       learnCell('', 'Is it safe to eat?', 'Eating your catch the healthy way', 'fish-eating') +
-      learnCell('', 'Boating safety', 'Lifejackets, cold water and gear', 'boat-safety') +
       learnCell('', 'How to birdwatch', 'Patience, quiet and good timing', 'birding-how') +
       learnCell('', 'Trail etiquette', 'Share the trail, protect the wild', 'trail-etiquette') +
       learnCell('', 'Trail safety', 'Come home from every hike', 'trail-safety') +
@@ -812,16 +851,24 @@
   function viewCategory(catId) {
     var c = catMeta(catId);
     if (!c) return viewExplore();
+    var logged = loggedIdSet();
+    var catTotal = speciesInCat(catId).length;
+    var catSeen = speciesInCat(catId).filter(function (s) { return logged[s.id]; }).length;
     var body = '<div class="group">';
     body += '<div class="group-header">' + esc(c.name) + '</div><div class="list">';
     c.subs.forEach(function (sub) {
-      var n = speciesInSub(catId, sub.id).length;
+      var list = speciesInSub(catId, sub.id);
+      var seen = list.filter(function (s) { return logged[s.id]; }).length;
       body += '<a class="cell tap" href="#/explore/' + esc(catId) + '/' + esc(sub.id) + '">' +
         '<span class="cell-emoji">' + sub.emoji + '</span>' +
-        '<span class="cell-body"><span class="cell-title">' + esc(sub.name) + '</span></span>' +
-        '<span class="cell-value">' + n + '</span><span class="chevron">' + I.chevron + '</span></a>';
+        '<span class="cell-body"><span class="cell-title">' + esc(sub.name) + '</span>' +
+        (seen ? '<span class="cell-sub">' + seen + ' of ' + list.length + ' in your journal</span>' : '') + '</span>' +
+        '<span class="cell-value">' + list.length + '</span><span class="chevron">' + I.chevron + '</span></a>';
     });
-    body += '</div></div>';
+    body += '</div>';
+    // Goal gradient: a real, honest count of how far through this group you are.
+    if (catSeen) body += '<div class="group-footer">You have logged ' + catSeen + ' of the ' + catTotal + ' ' + esc(c.name.toLowerCase()) + ' in the guide.</div>';
+    body += '</div>';
     screen({ title: c.name, back: '#/explore', backText: 'Guide', body: body });
   }
 
@@ -832,7 +879,9 @@
     var logged = loggedIdSet();
     var body = '<div class="group"><div class="list">';
     list.forEach(function (s) { body += speciesCell(s, { loggedIds: logged }); });
-    body += '</div><div class="group-footer">' + list.length + ' species · most commonly seen first</div></div>';
+    var seenN = list.filter(function (s) { return logged[s.id]; }).length;
+    body += '</div><div class="group-footer">' + list.length + ' species · most commonly seen first' +
+      (seenN ? ' · ' + seenN + ' in your journal' : '') + '</div></div>';
     screen({ title: sub.name, back: '#/explore/' + catId, backText: c.name, body: body });
   }
 
@@ -841,7 +890,6 @@
     var s = byId[id];
     if (!s) return viewExplore();
     var c = catMeta(s.cat), sub = subMeta(s.cat, s.sub);
-    var count = app.entries.filter(function (e) { return e.speciesId === s.id; }).length;
 
     var body = '<div class="hero">' +
       '<div id="sp-photo" class="sp-photo-wrap"></div>' +
@@ -856,6 +904,23 @@
 
     body += '<div class="hpad" style="margin-top:12px">' +
       '<button class="btn btn-primary btn-block" data-action="open-log" data-species="' + esc(s.id) + '">' + I.plus + 'Log this sighting</button></div>';
+
+    // Your record sits right under the log button, because on a species page the
+    // first question a birder or angler asks is "have I had this one?".
+    var mine = app.entries.filter(function (e) { return e.speciesId === s.id; })
+      .sort(function (a, b) { return new Date(a.when) - new Date(b.when); });
+    if (mine.length) {
+      body += '<div class="group"><div class="group-header">Your record</div><div class="list">' +
+        '<div class="cell"><span class="cell-body"><span class="cell-title">Times seen</span></span><span class="cell-value">' + mine.length + '</span></div>' +
+        '<div class="cell"><span class="cell-body"><span class="cell-title">First seen</span></span><span class="cell-value">' + esc(fmtDay(mine[0].when)) + '</span></div>' +
+        (mine.length > 1 ? '<div class="cell"><span class="cell-body"><span class="cell-title">Last seen</span></span><span class="cell-value">' + esc(fmtDay(mine[mine.length - 1].when)) + '</span></div>' : '') +
+        '<a class="cell tap" href="#/journal/species/' + esc(s.id) + '"><span class="cell-body"><span class="cell-title">Open in your journal</span><span class="cell-sub">Every encounter you have logged</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+        '</div></div>';
+    } else {
+      body += '<div class="group"><div class="list">' +
+        '<div class="cell"><span class="cell-body"><span class="cell-title" style="color:var(--label-2)">Not in your journal yet</span></span></div>' +
+        '</div></div>';
+    }
 
     body += '<div class="group"><div class="group-header">Field Notes</div><div class="list">' +
       info('How to identify', s.tips) +
@@ -883,7 +948,6 @@
       '<span class="cell-value">' + esc(c ? c.name : '') + (sub ? ' · ' + esc(sub.name) : '') + '</span></div>' +
       '<div class="cell"><span class="cell-body"><span class="cell-title">Conservation status</span></span>' +
       '<span class="cell-value">' + esc(s.status) + '</span></div>' +
-      (count ? '<div class="cell"><span class="cell-body"><span class="cell-title">Your sightings</span></span><span class="cell-value">' + count + '</span></div>' : '') +
       '</div></div>';
 
     // Learn more, external, reputable sources (photos, range, conservation)
@@ -914,48 +978,254 @@
   }
 
   /* ------------------------------------------------------------ My Log */
-  function viewMyLog() {
-    if (!app.entries.length) {
-      screen({
-        title: 'Journal', large: true, backAction: true, backText: 'Back',
-        body: '<div class="empty"><div class="e">\u{1F4D3}</div><h3>No encounters yet</h3>' +
-          '<p>Your logged sightings will appear here, grouped by day.</p>' +
-          '<div class="spacer"></div><div class="hpad"><button class="btn btn-tinted" data-action="open-log">' + I.plus + 'Log your first</button></div></div>'
-      });
-      return;
+  /* ============================================================== JOURNAL
+     The logbook half of the app. The guide tells you what a thing is; the
+     journal is the record of when you met it. Everything here is derived from
+     app.entries, so there is one store and it cannot drift out of sync. */
+
+  // The earliest entry for each species. That entry is the lifer, the one that
+  // put the species on the life list, and it is the one that wears the NEW pill.
+  function firstEntryBySpecies() {
+    var m = {};
+    app.entries.forEach(function (e) {
+      if (!e.speciesId) return;
+      var cur = m[e.speciesId];
+      if (!cur || new Date(e.when) < new Date(cur.when)) m[e.speciesId] = e;
+    });
+    return m;
+  }
+
+  // One row per species ever logged, newest sighting first.
+  function lifeList() {
+    var m = {};
+    app.entries.forEach(function (e) {
+      if (!e.speciesId) return;
+      var r = m[e.speciesId];
+      if (!r) r = m[e.speciesId] = { id: e.speciesId, name: e.speciesName, emoji: e.emoji, cat: e.cat, count: 0, first: e.when, last: e.when };
+      r.count++;
+      if (new Date(e.when) < new Date(r.first)) r.first = e.when;
+      if (new Date(e.when) > new Date(r.last)) r.last = e.when;
+    });
+    var out = [];
+    for (var k in m) if (m.hasOwnProperty(k)) out.push(m[k]);
+    return out;
+  }
+
+  function entriesThisYear() {
+    var y = new Date().getFullYear();
+    return app.entries.filter(function (e) { var d = new Date(e.when); return !isNaN(d) && d.getFullYear() === y; }).length;
+  }
+
+  /* Places. An entry only stores coordinates, so a place name has to be inferred.
+     If the sighting falls within ~15km of a provincial park we name the park,
+     otherwise we fall back to a coarse grid cell so nearby sightings still group
+     without ever implying more precision than we have. */
+  function nearestPark(lat, lng) {
+    var parks = (window.ECO && ECO.parks) || [];
+    var best = null, bestD = Infinity;
+    for (var i = 0; i < parks.length; i++) {
+      var p = parks[i];
+      if (p.lat == null || p.lng == null) continue;
+      var dy = (p.lat - lat) * 111;
+      var dx = (p.lng - lng) * 111 * Math.cos(lat * Math.PI / 180);
+      var d = Math.sqrt(dx * dx + dy * dy);
+      if (d < bestD) { bestD = d; best = p; }
     }
-    var uniq = {}; app.entries.forEach(function (e) { if (e.speciesId) uniq[e.speciesId] = 1; });
-    var sorted = app.entries.slice().sort(function (a, b) { return new Date(b.when) - new Date(a.when); });
-    var groups = [], cur = null;
+    return bestD <= 15 ? best : null;
+  }
+  /* The park list is on-camp's, so a big park like Algonquin appears once per
+     campground. Nobody thinks of a weekend as "Pog Lake" and "Rock Lake" and
+     "Raccoon Lake"; they think of it as Algonquin. Those rows carry a region of
+     "Algonquin · Highway 60", where the first segment is the park itself, while a
+     standalone park reads "Central Park · Huntsville" and ends in "Park". So a
+     first segment that is not a bucket label is the real park name to group under. */
+  function parkPlace(p) {
+    var fam = String(p.region || '').split('·')[0].trim();
+    if (fam && !/Park$/i.test(fam)) {
+      return { key: 'park:' + fam.toLowerCase().replace(/[^a-z0-9]+/g, '-'), name: fam, sub: 'Provincial park' };
+    }
+    return { key: 'park:' + p.id, name: p.name, sub: p.region || 'Provincial park' };
+  }
+  function placeOf(e) {
+    if (e.lat == null || e.lng == null) return null;
+    var p = nearestPark(e.lat, e.lng);
+    if (p) return parkPlace(p);
+    var la = Math.round(e.lat * 10) / 10, ln = Math.round(e.lng * 10) / 10;
+    return { key: 'grid:' + la + ',' + ln, name: la.toFixed(1) + ', ' + ln.toFixed(1), sub: 'Around this area' };
+  }
+  function placeGroups() {
+    var m = {};
+    app.entries.forEach(function (e) {
+      var p = placeOf(e); if (!p) return;
+      var g = m[p.key] || (m[p.key] = { key: p.key, name: p.name, sub: p.sub, entries: [], species: {} });
+      g.entries.push(e);
+      if (e.speciesId) g.species[e.speciesId] = 1;
+    });
+    var out = [];
+    for (var k in m) if (m.hasOwnProperty(k)) out.push(m[k]);
+    out.sort(function (a, b) { return b.entries.length - a.entries.length; });
+    return out;
+  }
+
+  // Day-grouped timeline, newest first. Shared by the journal and by the
+  // per-species and per-place views so they all read the same way.
+  function timelineHtml(entries, lifers) {
+    var sorted = entries.slice().sort(function (a, b) { return new Date(b.when) - new Date(a.when); });
+    var html = '', curDay = null;
     sorted.forEach(function (e) {
       var day = fmtDay(e.when);
-      if (!cur || cur.day !== day) { cur = { day: day, items: [] }; groups.push(cur); }
-      cur.items.push(e);
+      if (day !== curDay) {
+        if (curDay !== null) html += '</div></div>';
+        html += '<div class="group"><div class="group-header">' + esc(day) + '</div><div class="list">';
+        curDay = day;
+      }
+      html += entryCell(e, { lifer: lifers && lifers[e.speciesId] === e, hideDay: true });
     });
-    var body = '<div class="stat-grid" style="margin-top:4px">' +
-      stat(app.entries.length, 'Total') + stat(Object.keys(uniq).length, 'Species') + stat(catsSeen(), 'Categories') +
-      '</div>';
-    groups.forEach(function (g) {
-      body += '<div class="group"><div class="group-header">' + esc(g.day) + '</div><div class="list">';
-      g.items.forEach(function (e) { body += entryCell(e); });
-      body += '</div></div>';
-    });
+    if (curDay !== null) html += '</div></div>';
+    return html;
+  }
+
+  function journalEmpty() {
     screen({
-      title: 'Journal', large: true, subtitle: sorted.length + ' encounters logged',
-      backAction: true, backText: 'Back',
-      navRight: '<button class="nav-btn" data-action="open-log" aria-label="Add">' + I.plus + '</button>',
+      title: 'Journal', large: true,
+      subtitle: 'A record of everything you have seen outside.',
+      body: '<div class="empty" style="padding-bottom:24px"><div class="e">\u{1F4D3}</div><h3>Start your life list</h3>' +
+        '<p>Log what you see and it lands here: a timeline of your days outside, a life list of every species you have met, and the places you found them. It all stays on this phone.</p></div>' +
+        '<div class="hpad"><button class="btn btn-primary btn-block" data-action="open-log">' + I.plus + 'Log your first encounter</button></div>' +
+        '<div class="group"><div class="group-footer" style="text-align:center">Ontario has ' + SPECIES.length + ' species in the guide. Nobody sees them all, and that is the fun of it.</div></div>'
+    });
+  }
+
+  function viewJournal() {
+    if (!app.entries.length) return journalEmpty();
+
+    var life = lifeList();
+    var lifers = firstEntryBySpecies();
+    var places = placeGroups();
+    var view = app.settings.journalView || 'timeline';
+    if (view === 'places' && !places.length) view = 'timeline';
+
+    // Zeigarnik: an honest, unfinished count is the thing that pulls you back out.
+    var pct = SPECIES.length ? (life.length / SPECIES.length) * 100 : 0;
+    var body = '<div class="hpad"><div class="lifecard">' +
+      '<div class="lifecard-n">' + life.length + '</div>' +
+      '<div class="lifecard-l">' + (life.length === 1 ? 'species on your life list' : 'species on your life list') + '</div>' +
+      '<span class="riskbar"><span class="riskbar-fill" style="width:' + Math.max(1.5, pct) + '%"></span></span>' +
+      '<div class="lifecard-f">' + life.length + ' of ' + SPECIES.length + ' in the Ontario guide</div>' +
+      '</div></div>';
+
+    body += '<div class="stat-grid" style="margin-top:12px">' +
+      statLink(app.entries.length, app.entries.length === 1 ? 'Encounter' : 'Encounters') +
+      statLink(entriesThisYear(), 'This year') +
+      statLink(catsSeen(), catsSeen() === 1 ? 'Category' : 'Categories') +
+      '</div>';
+
+    body += '<div class="hpad" style="margin-top:14px">' +
+      '<button class="btn btn-primary btn-block" data-action="open-log">' + I.plus + 'Log an encounter</button></div>';
+
+    var segs = [['timeline', 'Timeline'], ['life', 'Life list']];
+    if (places.length) segs.push(['places', 'Places']);
+    body += '<div class="hpad" style="margin-top:16px">' + segHtml('journal-view', view, segs) + '</div>';
+
+    if (view === 'life') {
+      var sort = app.settings.lifeSort === 'az' ? 'az' : 'recent';
+      life.sort(sort === 'az'
+        ? function (a, b) { return a.name.localeCompare(b.name); }
+        : function (a, b) { return new Date(b.last) - new Date(a.last); });
+      body += '<div class="hpad" style="margin-top:12px">' +
+        segHtml('life-sort', sort, [['recent', 'Recently seen'], ['az', 'A to Z']]) + '</div>';
+      body += '<div class="group"><div class="list">';
+      life.forEach(function (r) {
+        var sp = byId[r.id];
+        body += '<a class="cell tap" href="#/journal/species/' + esc(r.id) + '">' +
+          '<span class="cell-emoji">' + (r.emoji || '\u{1F43E}') + '</span>' +
+          '<span class="cell-body"><span class="cell-title">' + esc(r.name) + '</span>' +
+          '<span class="cell-sub">' + (sp ? '<i>' + esc(sp.sci) + '</i> · ' : '') + 'first seen ' + esc(fmtDay(r.first)) + '</span></span>' +
+          '<span class="cell-value">' + (r.count > 1 ? '×' + r.count : '') + '</span>' +
+          '<span class="chevron">' + I.chevron + '</span></a>';
+      });
+      body += '</div><div class="group-footer">' + life.length + (life.length === 1 ? ' species' : ' species') + ' logged. Tap one to read your record of it.</div></div>';
+    } else if (view === 'places') {
+      body += '<div class="group"><div class="list">';
+      places.forEach(function (g) {
+        var ns = Object.keys(g.species).length;
+        body += '<a class="cell tap" href="#/journal/place/' + encodeURIComponent(g.key) + '">' +
+          '<span class="cell-emoji">' + (g.key.indexOf('park:') === 0 ? '\u{1F332}' : '\u{1F4CD}') + '</span>' +
+          '<span class="cell-body"><span class="cell-title">' + esc(g.name) + '</span>' +
+          '<span class="cell-sub">' + g.entries.length + (g.entries.length === 1 ? ' encounter' : ' encounters') + ' · ' + ns + (ns === 1 ? ' species' : ' species') + '</span></span>' +
+          '<span class="chevron">' + I.chevron + '</span></a>';
+      });
+      var placed = places.reduce(function (n, g) { return n + g.entries.length; }, 0);
+      body += '</div><div class="group-footer">' + placed + ' of your ' + app.entries.length + ' encounters have a location. Parks are named when a sighting falls within 15km of one.</div></div>';
+    } else {
+      body += timelineHtml(app.entries, lifers);
+    }
+
+    screen({
+      title: 'Journal', large: true,
+      subtitle: app.entries.length + (app.entries.length === 1 ? ' encounter' : ' encounters') + ' logged, all on this phone.',
+      navRight: '<button class="nav-btn" data-action="open-log" aria-label="Log an encounter">' + I.plus + '</button>',
       body: body
     });
+  }
+
+  /* One species, everything you have recorded of it, and a door into the guide
+     entry for it. This is where the dictionary and the logbook meet. */
+  function viewSpeciesJournal(id) {
+    var mine = app.entries.filter(function (e) { return e.speciesId === id; });
+    if (!mine.length) return viewJournal();
+    var sp = byId[id];
+    var name = sp ? sp.name : mine[0].speciesName;
+    var sorted = mine.slice().sort(function (a, b) { return new Date(a.when) - new Date(b.when); });
+    var first = sorted[0], last = sorted[sorted.length - 1];
+
+    var body = '<div class="hero" style="padding-bottom:6px">' +
+      '<div class="hero-emoji" style="background:' + tintFor(mine[0].cat) + '22">' + (mine[0].emoji || '\u{1F43E}') + '</div>' +
+      '<h1>' + esc(name) + '</h1>' +
+      (sp ? '<div class="sci">' + esc(sp.sci) + '</div>' : '') + '</div>';
+
+    body += '<div class="group"><div class="group-header">Your record</div><div class="list">' +
+      '<div class="cell"><span class="cell-body"><span class="cell-title">Times seen</span></span><span class="cell-value">' + mine.length + '</span></div>' +
+      '<div class="cell"><span class="cell-body"><span class="cell-title">First seen</span></span><span class="cell-value">' + esc(fmtDay(first.when)) + '</span></div>' +
+      (mine.length > 1 ? '<div class="cell"><span class="cell-body"><span class="cell-title">Last seen</span></span><span class="cell-value">' + esc(fmtDay(last.when)) + '</span></div>' : '') +
+      (sp ? '<a class="cell tap" href="#/species/' + esc(sp.id) + '"><span class="cell-body"><span class="cell-title">Read the guide entry</span><span class="cell-sub">Identification, habitat and seasons</span></span><span class="chevron">' + I.chevron + '</span></a>' : '') +
+      '</div></div>';
+
+    body += timelineHtml(mine, null);
+
+    screen({ title: name, back: '#/journal', backText: 'Journal', body: body });
+  }
+
+  function viewJournalPlace(key) {
+    var groups = placeGroups(), g = null;
+    for (var i = 0; i < groups.length; i++) if (groups[i].key === key) { g = groups[i]; break; }
+    if (!g) return viewJournal();
+    var ns = Object.keys(g.species).length;
+    var body = '<div class="group"><div class="list">' +
+      '<div class="cell"><span class="cell-body"><span class="cell-title">' + esc(g.sub) + '</span></span></div>' +
+      '<div class="cell"><span class="cell-body"><span class="cell-title">Species here</span></span><span class="cell-value">' + ns + '</span></div>' +
+      '<div class="cell"><span class="cell-body"><span class="cell-title">Encounters</span></span><span class="cell-value">' + g.entries.length + '</span></div>' +
+      '</div></div>';
+    body += timelineHtml(g.entries, firstEntryBySpecies());
+    screen({ title: g.name, back: '#/journal', backText: 'Journal', body: body });
   }
 
   /* -------------------------------------------------------------- More */
   function viewMore() {
     var body = '';
-    body += '<div class="group"><div class="group-header">Your journal</div><div class="list">' +
-      '<a class="cell tap" href="#/mylog"><span class="cell-body"><span class="cell-title">My encounters</span><span class="cell-sub">' + (app.entries.length ? app.entries.length + (app.entries.length === 1 ? ' encounter logged' : ' encounters logged') : 'Everything you log, by day') + '</span></span><span class="chevron">' + I.chevron + '</span></a>' +
-      '<a class="cell tap" href="#/stats"><span class="cell-body"><span class="cell-title">Stats</span><span class="cell-sub">Your totals and community comparison</span></span><span class="chevron">' + I.chevron + '</span></a>' +
-      moreCell('', 'Export my log', 'Download everything as a file', 'export-data') +
+    // Learn moved out of the tab bar to make room for the Journal, so it lives
+    // here as an ordinary row into the same hub screen.
+    body += '<div class="group"><div class="group-header">Learn</div><div class="list">' +
+      '<a class="cell tap" href="#/learn"><span class="cell-body"><span class="cell-title">Learn and safety</span>' +
+      '<span class="cell-sub">Bears, ticks, ice, water and the rest</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      '<a class="cell tap" href="#/invasives"><span class="cell-body"><span class="cell-title">Invasive species</span>' +
+      '<span class="cell-sub">What to watch for, and how to report it</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       '</div></div>';
+
+    body += '<div class="group"><div class="group-header">Your journal</div><div class="list">' +
+      '<a class="cell tap" href="#/stats"><span class="cell-body"><span class="cell-title">Stats</span><span class="cell-sub">Your totals and guide completion</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      moreCell('', 'Export my log', 'Download everything as a file', 'export-data') +
+      '</div><div class="group-footer">Your encounters live in the Journal tab.</div></div>';
 
     body += '<div class="group"><div class="group-header">Community & Data</div><div class="list">' +
       '<a class="cell tap" href="#/community">' +
@@ -999,10 +1269,10 @@
     body += '<div class="group"><div class="group-header">About</div><div class="list">' +
       '<div class="info-row"><div class="info-v">on-wildlife is a simple, private field guide and journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario. Look a species up, read a longer account if you want one, and log what you see. It works offline and installs to your home screen.</div></div><div class="info-row"><div class="info-v">I built it because I wanted one clear place to name what I run into outside and keep a record of it, without ads, accounts, or anything watching over my shoulder. Everything you log stays on this device. There is no server and nothing is tracked. Sensitive spots, like bear sightings, are coarsened before they can go to the optional community layer.</div></div>' +
       '<div class="cell"><span class="cell-body"><span class="cell-title">Species in guide</span></span><span class="cell-value">' + SPECIES.length + '</span></div>' +
-      '<button class="cell tap" data-action="version-tap"><span class="cell-body"><span class="cell-title">Version</span></span><span class="cell-value">2.2</span></button>' +
+      '<button class="cell tap" data-action="version-tap"><span class="cell-body"><span class="cell-title">Version</span></span><span class="cell-value">2.5</span></button>' +
       '<a class="cell tap" href="https://katsuma0.github.io" target="_blank" rel="noopener noreferrer">' +
-      '<span class="cell-body"><span class="cell-title">Made by Katsuma Onishi</span>' +
-      '<span class="cell-sub">katsuma0.github.io</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      '<span class="cell-body"><span class="cell-title">Made by Katsuma Onishi</span></span>' +
+      '<span class="chevron">' + I.chevron + '</span></a>' +
       '</div></div>';
     screen({ title: 'More', large: true, body: body });
   }
@@ -1056,7 +1326,9 @@
     if (!el) return;
     if (!window.L) { el.innerHTML = '<div class="map-msg">Map couldn’t load.</div>'; return; }
     if (app.map) { try { app.map.remove(); } catch (e) {} app.map = null; }
-    var map = L.map(el, { zoomControl: true, attributionControl: true }).setView([50.0, -85.0], 5);
+    // No +/- buttons: they cover the top-left corner of the map and pinch and
+    // scroll wheel zoom already cover both touch and desktop.
+    var map = L.map(el, { zoomControl: false, attributionControl: true }).setView([50.0, -85.0], 5);
     app.map = map;
     var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
@@ -1684,14 +1956,19 @@
     body += '<div class="group" style="margin-top:6px"><div class="group-header">What did you see?</div><div class="list">' +
       speciesRow + '</div></div>';
 
-    // Details
-    body += '<div class="group"><div class="group-header">Details</div><div class="list">';
+    // How you saw it. Kept apart from where and when so no single group asks the
+    // eye to hold more than a couple of things at once.
+    body += '<div class="group"><div class="group-header">How did you see it?</div><div class="list">';
     body += '<div class="field"><span class="field-label">Observation</span><div style="flex:1"></div>' +
       '<div style="width:' + (isFish ? '150' : '210') + 'px">' + evHtml + '</div></div>';
     body += '<div class="field"><span class="field-label">How many</span><div style="flex:1"></div>' +
       '<div class="stepper"><button data-action="count" data-d="-1">−</button><div class="sep"></div>' +
       '<div class="val" id="count-val">' + d.count + '</div>' +
       '<div class="sep"></div><button data-action="count" data-d="1">+</button></div></div>';
+    body += '</div></div>';
+
+    // Where and when
+    body += '<div class="group"><div class="group-header">Where and when</div><div class="list">';
     body += '<div class="field"><span class="field-label">When</span>' +
       '<input type="datetime-local" id="f-when" aria-label="Date and time seen" value="' + esc(d.when) + '"></div>';
     body += '<button class="cell tap" data-action="use-location">' +
@@ -1923,6 +2200,16 @@
     if (d.cat === 'birds') entry.bird = { behavior: (d._behavior || '').trim() };
     if (entry.lat != null && isSensitive(entry.speciesId)) entry.sensitiveLoc = true;
 
+    // Work out whether this is a lifer before the entry joins the list, or the
+    // entry itself would count as the prior record and no save would ever be new.
+    var isLifer = false, lifeNumber = 0;
+    if (!d._editId && entry.speciesId) {
+      var seen = {};
+      app.entries.forEach(function (x) { if (x.speciesId) seen[x.speciesId] = 1; });
+      isLifer = !seen[entry.speciesId];
+      if (isLifer) lifeNumber = Object.keys(seen).length + 1;
+    }
+
     var editing = !!d._editId, prevIdx = -1, prevEntry = null;
     if (editing) {
       for (var ei = 0; ei < app.entries.length; ei++) if (app.entries[ei].id === entry.id) { prevIdx = ei; prevEntry = app.entries[ei]; break; }
@@ -1935,7 +2222,9 @@
       if (!editing) Community.post(communityPayload(entry));
       haptic();
       closeSheet();
-      toast((editing ? '✓ Updated ' : '✓ Logged ') + entry.speciesName);
+      // The peak of the whole flow: the first time you record a species, say so.
+      if (isLifer) toast('New species. That is #' + lifeNumber + ' on your life list.');
+      else toast((editing ? '✓ Updated ' : '✓ Logged ') + entry.speciesName);
       setTimeout(function () { route(); }, 120);
       if (!editing) setTimeout(checkNewBadges, 1400);
     }).catch(function () {
@@ -2156,6 +2445,9 @@
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
     map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="m9 4-6 2v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',
     learn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H18a2 2 0 0 1 2 2v13H6a2 2 0 0 0-2 2z"/><path d="M20 19a2 2 0 0 0-2 2H6"/></svg>',
+    /* A notebook with a ribbon marker: this is a logbook, and the ribbon says
+       it is yours and it is open partway through. */
+    journal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M9 3v8l2.5-1.8L14 11V3"/></svg>',
     more: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>'
   };
   function renderTabs() {
@@ -2164,7 +2456,7 @@
       ['explore', '#/explore', 'Guide', TABICON.guide],
       ['search', '#/search', 'Search', TABICON.search],
       ['map', '#/map', 'Map', TABICON.map],
-      ['learn', '#/learn', 'Learn', TABICON.learn],
+      ['journal', '#/journal', 'Journal', TABICON.journal],
       ['more', '#/more', 'More', TABICON.more]
     ];
     var html = '';
@@ -2178,10 +2470,13 @@
     var h = location.hash.replace(/^#\//, '');
     if (h.indexOf('search') === 0 || h.indexOf('park') === 0) return 'search';
     if (h.indexOf('map') === 0) return 'map';
-    if (h.indexOf('learn') === 0 || h.indexOf('alerts') === 0 || h.indexOf('invasives') === 0 || h.indexOf('roads') === 0) return 'learn';
-    if (h.indexOf('more') === 0 || h.indexOf('resources') === 0 || h.indexOf('trust') === 0 ||
-        h.indexOf('privacy') === 0 || h.indexOf('community') === 0 || h.indexOf('mylog') === 0 ||
-        h.indexOf('badges') === 0 || h.indexOf('stats') === 0) return 'more';
+    // Everything that is a record of what you have seen belongs to the Journal tab.
+    if (h.indexOf('journal') === 0 || h.indexOf('mylog') === 0 || h.indexOf('stats') === 0 ||
+        h.indexOf('badges') === 0) return 'journal';
+    // Learn now lives inside More, so its screens highlight More.
+    if (h.indexOf('learn') === 0 || h.indexOf('alerts') === 0 || h.indexOf('invasives') === 0 || h.indexOf('roads') === 0 ||
+        h.indexOf('more') === 0 || h.indexOf('resources') === 0 || h.indexOf('trust') === 0 ||
+        h.indexOf('privacy') === 0 || h.indexOf('community') === 0) return 'more';
     if (h.indexOf('explore') === 0 || h.indexOf('species') === 0 || h.indexOf('atrisk') === 0 ||
         h.indexOf('log') === 0) return 'explore';
     return 'explore';
@@ -2204,7 +2499,14 @@
     else if (r === 'search') viewSearch();
     else if (r === 'park') viewParkEco(parts[1]);
     else if (r === 'map') viewMap();
-    else if (r === 'mylog') viewMyLog();
+    else if (r === 'journal') {
+      if (parts[1] === 'species' && parts[2]) viewSpeciesJournal(parts[2]);
+      else if (parts[1] === 'place' && parts[2]) viewJournalPlace(decodeURIComponent(parts[2]));
+      else viewJournal();
+    }
+    // #/mylog is where the journal used to live. Old links and share cards still
+    // point at it, so it stays as an alias rather than a dead route.
+    else if (r === 'mylog') viewJournal();
     else if (r === 'alerts') viewAlerts();
     else if (r === 'community') viewCommunity();
     else if (r === 'invasives') viewInvasives();
@@ -2290,6 +2592,16 @@
         app.mapFilter = t.getAttribute('data-f');
         { var mc = $('#map-chips'); if (mc) mc.innerHTML = mapChips(); }
         renderMapMarkers();
+        break;
+      case 'journal-view':
+        ev.preventDefault();
+        app.settings.journalView = t.getAttribute('data-v'); saveSettings();
+        viewJournal();
+        break;
+      case 'life-sort':
+        ev.preventDefault();
+        app.settings.lifeSort = t.getAttribute('data-v'); saveSettings();
+        viewJournal();
         break;
       case 'map-locate': ev.preventDefault(); mapLocate(false); break;
       case 'place-center': {
