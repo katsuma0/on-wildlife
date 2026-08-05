@@ -1273,6 +1273,9 @@
       '<a class="cell tap" href="https://katsuma0.github.io" target="_blank" rel="noopener noreferrer">' +
       '<span class="cell-body"><span class="cell-title">Made by Katsuma Onishi</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></a>' +
+      '<a class="cell tap" href="https://katsuma.ca/" target="_blank" rel="noopener noreferrer">' +
+      '<span class="cell-body"><span class="cell-title">katsuma.ca</span></span>' +
+      '<span class="chevron">' + I.chevron + '</span></a>' +
       '</div></div>';
     screen({ title: 'More', large: true, body: body });
   }
