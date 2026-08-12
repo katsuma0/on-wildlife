@@ -908,7 +908,9 @@ textarea.notes {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
   max-width: 640px;
   margin: 0 auto;
-  max-height: 92vh;
+  /* dvh, not vh: on iOS Safari vh includes the collapsed toolbar area, which
+     pushed the sheet top off screen once the keyboard opened. */
+  max-height: calc(100dvh - var(--sa-top) - 12px);
   display: flex;
   flex-direction: column;
   background: var(--bg);
@@ -931,6 +933,13 @@ textarea.notes {
 }
 .sheet-nav .t { font-size: 17px; font-weight: 600; }
 .sheet-body { overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: calc(24px + var(--sa-bottom)); }
+
+/* While a sheet or the species picker is open the page behind must not move.
+   JS stores scrollY, pins the body at that offset, and restores it on close.
+   Without this, iOS Safari pans the page when the keyboard opens and the top
+   of the sheet ends up out of reach. */
+html.sheet-lock, html.sheet-lock body { overflow: hidden; }
+html.sheet-lock body { position: fixed; left: 0; right: 0; width: 100%; }
 
 /* ---------------------------------------------------------- Species hero */
 .hero {
@@ -955,6 +964,29 @@ textarea.notes {
 .hero h1 { margin: 0; font-size: var(--fs-title1); line-height: var(--lh-title1); font-weight: 700; letter-spacing: var(--ls-title1); }
 .hero .sci { color: var(--label-2); font-style: italic; font-size: 15px; margin-top: 2px; }
 .hero .badges { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 12px; }
+
+/* Destructive rows (Reset all data): red label, same geometry */
+.ios-row--danger .ios-row-title { color: var(--red); }
+
+/* Category page: pinned live filter + sticky subcategory headers.
+   The filter pins directly under the sticky nav; each subcategory header
+   sticks just below the filter as its group scrolls past. */
+.cat-filter {
+  position: sticky;
+  top: calc(var(--nav-h) + var(--sa-top));
+  z-index: 20;
+  background: var(--bg);
+  padding: 2px 0 6px;
+}
+.cat-filter .searchbar { margin-top: 4px; margin-bottom: 0; }
+.cat-sub-header {
+  position: sticky;
+  top: calc(var(--nav-h) + var(--sa-top) + 48px);
+  z-index: 10;
+  background: var(--bg);
+  padding-top: 6px;
+  margin-top: -6px;
+}
 
 /* Card grid (Explore categories) */
 .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 4px 16px 8px; }
@@ -1182,6 +1214,31 @@ a.stat:active { background: var(--card-pressed); }
   -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
 }
 .map-note[hidden] { display: none; }
+
+/* Fishing integration: the open-season pill, the parks pin colour and the
+   zone-number labels the fishing-zones map layer draws. Tokens only. */
+.badge-open {
+  background: color-mix(in srgb, var(--green) 18%, transparent);
+  color: color-mix(in srgb, var(--green) 55%, var(--label));
+}
+.pin-park { background: var(--purple); }
+.zone-label-wrap { background: none; border: 0; }
+.zone-label {
+  display: inline-block;
+  transform: translate(-50%, -50%);
+  min-width: 26px;
+  text-align: center;
+  padding: 3px 7px;
+  border-radius: 100px;
+  background: var(--card);
+  color: var(--label);
+  font-size: var(--fs-footnote);
+  line-height: var(--lh-footnote);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  box-shadow: var(--shadow-float);
+  pointer-events: none;
+}
 
 /* Leaflet teardrop pins built from divIcons */
 .pin-wrap { background: none; border: 0; }

@@ -30,7 +30,7 @@ function rel(p) { return path.join(ROOT, p); }
 console.log('\n[1] Syntax (node --check)');
 var JS_FILES = [
   'app.js', 'share.js', 'service-worker.js', 'server/server.js',
-  'data/species.js', 'data/notes.js', 'data/categories.js', 'data/learn.js', 'data/trust.js', 'data/badges.js',
+  'data/species.js', 'data/notes.js', 'data/categories.js', 'data/learn.js', 'data/trust.js', 'data/badges.js', 'data/regulations.js',
   'tests/validate.js',
 ];
 JS_FILES.forEach(function (f) {
@@ -65,6 +65,22 @@ try {
   var malformed = S.filter(function (r) { return !r.name || !r.sci || typeof r.atRisk !== 'boolean' || !Array.isArray(r.seasons); });
   if (malformed.length) bad('malformed records', String(malformed.length)); else ok('all records well-formed');
 } catch (e) { bad('species DB load', e.message); }
+
+// ---- 2b. fishing regulations (folded in from on-fishing) ----
+console.log('\n[2b] Fishing regulations');
+try {
+  var regSrc = fs.readFileSync(rel('data/regulations.js'), 'utf8');
+  var REGx = new Function(regSrc + '\n;return REG;')();
+  if (!REGx || typeof REGx !== 'object') { bad('regulations parse', 'REG global missing'); }
+  else {
+    ok('data/regulations.js parses and exposes REG');
+    var zoneIds = Object.keys(REGx);
+    if (zoneIds.length === 20) ok('zone count = 20'); else bad('zone count', 'got ' + zoneIds.length);
+    var badZone = zoneIds.filter(function (z) { return !Array.isArray(REGx[z].species_regulations); });
+    if (badZone.length) bad('zones missing species_regulations', badZone.join(', '));
+    else ok('every zone carries species_regulations');
+  }
+} catch (e) { bad('regulations load', e.message); }
 
 // ---- 3. manifest ----
 console.log('\n[3] Manifest');

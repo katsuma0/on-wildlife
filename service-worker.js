@@ -1,7 +1,7 @@
 /* Ontario Wildlife Log, offline service worker.
    Precaches the app shell so the app opens and works with no connection.
    Bump CACHE when any shell file changes to roll the cache forward. */
-var CACHE = 'owl-v28';
+var CACHE = 'owl-v29';
 var SHELL = [
   './',
   './index.html',
@@ -16,6 +16,7 @@ var SHELL = [
   './data/trust.js',
   './data/badges.js',
   './data/ecosystem.js',
+  './data/regulations.js',
   './manifest.webmanifest',
   './vendor/leaflet/leaflet.js',
   './vendor/leaflet/images/marker-icon.png',
@@ -68,7 +69,27 @@ self.addEventListener('fetch', function (e) {
   var req = e.request;
   if (req.method !== 'GET') return;
   var url = new URL(req.url);
-  if (url.origin !== self.location.origin) return; // don't touch cross-origin (e.g. tiles/APIs)
+  if (url.origin !== self.location.origin) {
+    // One cross-origin exception: the fishing-zone boundary geojson (a large,
+    // rarely-changing payload) is runtime-cached so the zones layer works
+    // offline after its first load. Other cross-origin traffic (tiles, APIs)
+    // stays untouched.
+    if (url.hostname === 'ws.lioservices.lrc.gov.on.ca') {
+      e.respondWith(
+        caches.match(req).then(function (cached) {
+          if (cached) return cached;
+          return fetch(req).then(function (res) {
+            if (res && res.status === 200) {
+              var copy = res.clone();
+              caches.open(CACHE).then(function (c) { c.put(req, copy); });
+            }
+            return res;
+          });
+        })
+      );
+    }
+    return;
+  }
 
   // Cache-first for the app shell; fall back to network and cache new GETs.
   e.respondWith(
