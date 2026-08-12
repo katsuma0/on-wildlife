@@ -515,16 +515,17 @@
   // Sticky chrome for root screens: 44px circular avatar on the left, 44px
   // circular glass buttons (log + search) on the right. The 34px large title
   // stays in the flow below this bar.
-  function iosHeaderHtml() {
+  function iosHeaderHtml(noActions) {
     return '<header class="ios-header"><div class="ios-header-row">' +
       '<a class="ios-avatar" id="header-avatar" href="#/account" aria-label="Account">' + avatarInner() + '</a>' +
       // the brand name only shows on big screens; the desktop layer in
       // ios.css owns its visibility
       '<span class="ios-brand">on-wildlife</span>' +
-      '<div class="ios-header-actions">' +
+      // screens that carry their own tools (Map, More) skip the pair
+      (noActions ? '' : '<div class="ios-header-actions">' +
       '<button class="ios-glass-btn" type="button" data-action="open-log" aria-label="Log an encounter">' + spriteIcon('plus') + '</button>' +
       '<a class="ios-glass-btn" href="#/search" aria-label="Search">' + spriteIcon('search') + '</a>' +
-      '</div></div></header>';
+      '</div>') + '</div></header>';
   }
   /* One settings-style row in the new system. opts: href or action (or neither
      for a static row), tile: [colour, icon], title, sub, value, chevron:false,
@@ -548,6 +549,113 @@
     return '<div class="' + cls + '">' + lead + body + tail + '</div>';
   }
   function sectionTitle(t) { return '<h2 class="ios-section-title">' + esc(t) + '</h2>'; }
+
+  /* ---- sections, the github home way: a named card of rows whose owner
+     picks what is in it and in what order, from the ellipsis edit sheet.
+     Saved per section under settings.sections as [{id, on}]. ---- */
+  var SECTION_DEFS = {
+    'guide-cats': { title: 'Ontario Wildlife', items: function () { return CATEGORIES.map(function (c) { return { id: c.id, label: c.name, emoji: c.emoji }; }); } },
+    'more-learn': { title: 'Learn', items: function () { return [
+      { id: 'learn', label: 'Learn and safety' },
+      { id: 'invasives', label: 'Invasive species' }
+    ]; } },
+    'more-journal': { title: 'Your journal', items: function () { return [
+      { id: 'stats', label: 'Stats' }
+    ]; } },
+    'more-community': { title: 'Community and data', items: function () { return [
+      { id: 'community', label: 'Community' },
+      { id: 'resources', label: 'Ontario and Canada resources' },
+      { id: 'trust', label: 'Data reliability' },
+      { id: 'privacy', label: 'Privacy' }
+    ]; } }
+  };
+  // saved order first (dropping ids the app no longer has), then anything new
+  function sectionOrder(key) {
+    var defs = SECTION_DEFS[key].items();
+    var saved = (app.settings.sections || {})[key] || [];
+    var out = [], seen = {};
+    saved.forEach(function (s) {
+      for (var i = 0; i < defs.length; i++) {
+        if (defs[i].id === s.id && !seen[s.id]) { seen[s.id] = 1; out.push({ def: defs[i], on: s.on !== false }); }
+      }
+    });
+    defs.forEach(function (d) { if (!seen[d.id]) out.push({ def: d, on: true }); });
+    return out;
+  }
+  function sectionHead(key) {
+    var t = SECTION_DEFS[key].title;
+    return '<div class="sec-head"><h2 class="ios-section-title">' + esc(t) + '</h2>' +
+      '<button type="button" class="sec-edit" data-action="edit-section" data-key="' + key + '" aria-label="Edit ' + esc(t) + '">' + spriteIcon('ellipsis') + '</button></div>';
+  }
+  function openSectionEditor(key) {
+    app._secKey = key;
+    app._secDraft = sectionOrder(key).map(function (r) { return { id: r.def.id, on: r.on }; });
+    var defs = {};
+    SECTION_DEFS[key].items().forEach(function (d) { defs[d.id] = d; });
+    var body = '<div class="group"><div class="list" id="sec-rows">';
+    app._secDraft.forEach(function (r) {
+      var d = defs[r.id];
+      body += '<div class="secedit-row' + (r.on ? ' on' : '') + '" data-id="' + esc(r.id) + '">' +
+        '<button type="button" class="secedit-check" data-action="sec-toggle" data-id="' + esc(r.id) + '" role="checkbox" aria-checked="' + (r.on ? 'true' : 'false') + '" aria-label="Include ' + esc(d.label) + '">' + spriteIcon('check') + '</button>' +
+        (d.emoji ? '<span class="secedit-tile">' + d.emoji + '</span>' : '') +
+        '<span class="secedit-label">' + esc(d.label) + '</span>' +
+        '<span class="secedit-handle" data-drag="' + esc(r.id) + '" aria-hidden="true">' + spriteIcon('grip') + '</span>' +
+        '</div>';
+    });
+    body += '</div></div><p class="ios-group-foot">Drag the handle to reorder. Unchecked rows leave the page, not the app.</p>';
+    var html = '<div class="scrim" data-action="close-sheet"></div>' +
+      '<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Edit ' + esc(SECTION_DEFS[key].title) + '"><div class="sheet-grabber"></div>' +
+      '<div class="sheet-nav"><span style="width:44px"></span><span class="t">Edit ' + esc(SECTION_DEFS[key].title) + '</span>' +
+      '<button class="nav-btn bold" data-action="sec-done">Done</button></div>' +
+      '<div class="sheet-body">' + body + '</div></div>';
+    $('#sheet-root').innerHTML = html;
+    requestAnimationFrame(function () { var s = $('#sheet'); if (s) s.classList.add('show'); var sc = $('.scrim'); if (sc) sc.classList.add('show'); });
+    afterSheetOpen();
+    wireSecDrag();
+  }
+  // pointer-drag reorder: the row follows the finger, siblings swap under it
+  function wireSecDrag() {
+    var list = $('#sec-rows'); if (!list) return;
+    var row = null, startY = 0, activeId = null;
+    function place(ev) { row.style.transform = 'translateY(' + (ev.clientY - startY) + 'px)'; }
+    list.addEventListener('pointerdown', function (ev) {
+      if (row) return;   // one drag at a time; a second finger is ignored
+      var h = ev.target.closest('[data-drag]'); if (!h) return;
+      row = h.closest('.secedit-row');
+      startY = ev.clientY;
+      activeId = ev.pointerId;
+      row.classList.add('dragging');
+      try { h.setPointerCapture(ev.pointerId); } catch (e) {}
+      ev.preventDefault();
+    });
+    list.addEventListener('pointermove', function (ev) {
+      if (!row || ev.pointerId !== activeId) return;
+      place(ev);
+      var sibs = [].slice.call(list.children);
+      var i = sibs.indexOf(row);
+      var r = row.getBoundingClientRect();
+      var prev = sibs[i - 1], next = sibs[i + 1];
+      if (prev && r.top + r.height / 2 < prev.getBoundingClientRect().top + prev.offsetHeight / 2) {
+        list.insertBefore(row, prev);
+        startY -= prev.offsetHeight;
+        place(ev);
+      } else if (next && r.top + r.height / 2 > next.getBoundingClientRect().top + next.offsetHeight / 2) {
+        list.insertBefore(next, row);
+        startY += next.offsetHeight;
+        place(ev);
+      }
+    });
+    function drop(ev) {
+      if (!row || (ev && ev.pointerId !== activeId)) return;
+      row.style.transform = '';
+      row.classList.remove('dragging');
+      var order = [].map.call(list.children, function (r) { return r.getAttribute('data-id'); });
+      app._secDraft.sort(function (a, b) { return order.indexOf(a.id) - order.indexOf(b.id); });
+      row = null; activeId = null;
+    }
+    list.addEventListener('pointerup', drop);
+    list.addEventListener('pointercancel', drop);
+  }
 
   /* --------------------------------------------------------- Screen frame
      Builds a nav bar + optional large title + body, and wires scroll fade. */
@@ -636,7 +744,7 @@
     var nav;
     if (cfg.header) {
       // Root screens carry the shared iOS header instead of a nav-bar row.
-      nav = iosHeaderHtml();
+      nav = iosHeaderHtml(cfg.actions === false);
     } else {
       var navLeft = cfg.back
         ? '<div class="nav-left"><a class="nav-btn bold" href="' + esc(cfg.back) + '">' + I.back + '<span class="lbl">' + esc(backLabel(cfg.backText)) + '</span></a></div>'
@@ -958,19 +1066,12 @@
   /* ----------------------------------------------------------- Explore */
   function viewExplore() {
     var uniq = {}; app.entries.forEach(function (e) { if (e.speciesId) uniq[e.speciesId] = 1; });
+    // search and log both live in the top right corner now, so the page
+    // itself is sections, the way the github app's home reads
     var body = '';
-    // A real inline search directly under the title: same universal index as
-    // the full search screen, results render in place as you type.
-    body += '<div class="searchbar" style="margin-top:2px">' + I.search +
-      '<input type="search" id="explore-search" aria-label="Search the guide" placeholder="Search species, categories, or a park" autocomplete="off" autocorrect="off" autocapitalize="none">' +
-      '</div>';
-    body += '<div id="explore-results"></div>';
-    body += '<div id="explore-home">';
     if (isIosSafari() && !app.settings.seenInstall) {
       body += '<div class="wrap-note" style="align-items:flex-start;margin-top:2px"><span class="i">\u{1F4F2}</span><span><b>Add to Home Screen</b> to use this like a real app, fullscreen and offline. Tap the <b>Share</b> button, then <b>Add to Home Screen</b>. <button data-action="dismiss-install" style="padding:0;font-weight:600;color:var(--tint);background:none">Got it</button></span></div>';
     }
-    body += '<div class="hpad" style="margin-top:6px">' +
-      '<button class="btn btn-primary btn-block" data-action="open-log">' + I.plus + 'Log</button></div>';
     body += seasonalCard();
 
     var atRiskN = SPECIES.filter(function (s) { return s.atRisk; }).length;
@@ -980,26 +1081,26 @@
       '<span class="cell-sub">' + atRiskN + ' flagged in the guide</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></a></div></div>';
 
-    body += sectionTitle('Ontario Wildlife');
-    body += '<div class="card-grid">';
-    CATEGORIES.forEach(function (c) {
-      var count = speciesInCat(c.id).length;
-      body += '<a class="cat-card" href="#/explore/' + esc(c.id) + '">' +
-        '<div class="ce">' + c.emoji + '</div>' +
-        '<div><div class="cn">' + esc(c.name) + '</div>' +
-        '<div class="cc">' + count + ' species</div></div></a>';
+    body += sectionHead('guide-cats');
+    body += '<div class="group"><div class="list">';
+    sectionOrder('guide-cats').forEach(function (r) {
+      if (!r.on) return;
+      var count = speciesInCat(r.def.id).length;
+      body += '<a class="cell tap" href="#/explore/' + esc(r.def.id) + '">' +
+        '<span class="cell-emoji">' + r.def.emoji + '</span>' +
+        '<span class="cell-body"><span class="cell-title">' + esc(r.def.label) + '</span>' +
+        '<span class="cell-sub">' + count + ' species</span></span>' +
+        '<span class="chevron">' + I.chevron + '</span></a>';
     });
-    body += '</div>';
+    body += '</div></div>';
     if (COMING_SOON.length) {
-      body += sectionTitle('Coming Soon');
-      body += '<div class="card-grid">';
+      body += sectionTitle('Coming Soon') + '<div class="group"><div class="list">';
       COMING_SOON.forEach(function (c) {
-        body += '<div class="cat-card soon">' +
-          '<div class="ce">' + c.emoji + '</div>' +
-          '<div><div class="cn">' + esc(c.name) + '</div>' +
-          '<div class="cc">In a future update</div></div></div>';
+        body += '<div class="cell"><span class="cell-emoji">' + c.emoji + '</span>' +
+          '<span class="cell-body"><span class="cell-title">' + esc(c.name) + '</span>' +
+          '<span class="cell-sub">In a future update</span></span></div>';
       });
-      body += '</div>';
+      body += '</div></div>';
     }
     if (app.entries.length) {
       body += '<div class="stat-grid" style="margin-top:14px">' +
@@ -1007,10 +1108,8 @@
         stat(Object.keys(uniq).length, 'Species') + stat(catsSeen(), 'Categories') + '</div>';
       body += recentGroup('Recent', recentIn(function () { return true; }, 6));
     }
-    body += '</div>';
 
-    screen({ title: 'on-wildlife', large: true, header: true, version: 'v3.4', subtitle: 'Ontario’s wildlife, and your journal of it.', body: body });
-    wireLiveSearch('explore-search', 'explore-results', ['explore-home']);
+    screen({ title: 'on-wildlife', large: true, header: true, version: 'v3.5', subtitle: 'Ontario’s wildlife, and your journal of it.', body: body });
   }
 
   /* ============================================================= SEARCH */
@@ -1694,9 +1793,6 @@
       statLink(catsSeen(), catsSeen() === 1 ? 'Category' : 'Categories') +
       '</div>';
 
-    body += '<div class="hpad" style="margin-top:14px">' +
-      '<button class="btn btn-primary btn-block" data-action="open-log">' + I.plus + 'Log an encounter</button></div>';
-
     var segs = [['timeline', 'Timeline'], ['life', 'Life list']];
     if (places.length) segs.push(['places', 'Places']);
     body += '<div class="hpad" style="margin-top:16px">' + segHtml('journal-view', view, segs) + '</div>';
@@ -1814,8 +1910,6 @@
       stat(Object.keys(spSet).length, 'Species caught') +
       stat(thisYear, 'This year') +
       stat(bigLabel, 'Biggest') + '</div>';
-    body += '<div class="hpad" style="margin-top:10px">' +
-      '<button class="btn btn-primary btn-block" data-action="open-log" data-cat="fish">' + I.plus + 'Log a catch</button></div>';
     body += '<div class="group"><div class="list">' +
       '<a class="cell tap" href="#/zones"><span class="cell-emoji">\u{1F3A3}</span>' +
       '<span class="cell-body"><span class="cell-title">What is open now</span>' +
@@ -1848,8 +1942,6 @@
       stat(Object.keys(yearSet).length, 'This year') +
       '<div class="stat"><div class="n stat-name">' + (latest ? esc(latest.name) : '–') + '</div><div class="l">Latest lifer</div></div>' +
       '</div>';
-    body += '<div class="hpad" style="margin-top:10px">' +
-      '<button class="btn btn-primary btn-block" data-action="open-log" data-cat="birds">' + I.plus + 'Log a bird</button></div>';
     body += '<div class="group"><div class="list">' +
       '<a class="cell tap" href="#/explore/birds"><span class="cell-emoji">\u{1F426}</span>' +
       '<span class="cell-body"><span class="cell-title">Birds in the guide</span>' +
@@ -1906,25 +1998,34 @@
   }
 
   /* -------------------------------------------------------------- More */
+  // every More row by id, so the section system can order and hide them
+  function moreRow(id) {
+    switch (id) {
+      case 'learn': return iosRow({ href: '#/learn', tile: ['blue', 'book'], title: 'Learn and safety', sub: 'Bears, ticks, roads, water' });
+      case 'invasives': return iosRow({ href: '#/invasives', tile: ['orange', 'alert'], title: 'Invasive species', sub: 'Spot it, report it' });
+      case 'stats': return iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: 'Stats', sub: 'Your numbers' });
+      case 'community': return iosRow({ href: '#/community', tile: ['green', 'globe'], title: 'Community', sub: (Community.on() ? 'Sharing on · see nearby activity' : app.settings.communityUrl ? 'Connected · sharing off' : 'What’s near you this week') });
+      case 'resources': return iosRow({ href: '#/resources', tile: ['blue', 'link-out'], title: 'Ontario and Canada resources', sub: 'Trusted sites' });
+      case 'trust': return iosRow({ href: '#/trust', tile: ['graphite', 'shield'], title: 'Data reliability', sub: 'Anomaly detection, a demo' });
+      case 'privacy': return iosRow({ href: '#/privacy', tile: ['grey', 'lock'], title: 'Privacy', sub: 'Private, on this phone' });
+    }
+    return '';
+  }
+  function moreSection(key, foot) {
+    var rows = sectionOrder(key).filter(function (r) { return r.on; });
+    // an emptied section keeps its head, or the way back in disappears
+    if (!rows.length) return sectionHead(key) + '<p class="ios-group-foot">Everything here is hidden. The edit button brings rows back.</p>';
+    return sectionHead(key) + '<nav class="ios-group">' +
+      rows.map(function (r) { return moreRow(r.def.id); }).join('') + '</nav>' +
+      (foot ? '<p class="ios-group-foot">' + foot + '</p>' : '');
+  }
   function viewMore() {
     var body = '';
     // Learn moved out of the tab bar to make room for the Journal, so it lives
     // here as an ordinary row into the same hub screen.
-    body += sectionTitle('Learn') + '<nav class="ios-group">' +
-      iosRow({ href: '#/learn', tile: ['blue', 'book'], title: 'Learn and safety', sub: 'Bears, ticks, roads, water' }) +
-      iosRow({ href: '#/invasives', tile: ['orange', 'alert'], title: 'Invasive species', sub: 'Spot it, report it' }) +
-      '</nav>';
-
-    body += sectionTitle('Your journal') + '<nav class="ios-group">' +
-      iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: 'Stats', sub: 'Your numbers' }) +
-      '</nav><p class="ios-group-foot">Your encounters live in the Journal tab.</p>';
-
-    body += sectionTitle('Community and data') + '<nav class="ios-group">' +
-      iosRow({ href: '#/community', tile: ['green', 'globe'], title: 'Community', sub: (Community.on() ? 'Sharing on · see nearby activity' : app.settings.communityUrl ? 'Connected · sharing off' : 'What’s near you this week') }) +
-      iosRow({ href: '#/resources', tile: ['blue', 'link-out'], title: 'Ontario and Canada resources', sub: 'Trusted sites' }) +
-      iosRow({ href: '#/trust', tile: ['graphite', 'shield'], title: 'Data reliability', sub: 'Anomaly detection, a demo' }) +
-      iosRow({ href: '#/privacy', tile: ['grey', 'lock'], title: 'Privacy', sub: 'Private, on this phone' }) +
-      '</nav>';
+    body += moreSection('more-learn');
+    body += moreSection('more-journal', 'Your encounters live in the Journal tab.');
+    body += moreSection('more-community');
 
     body += sectionTitle('Appearance') + appearancePanel() +
       '<div class="ios-group">' +
@@ -1952,10 +2053,10 @@
       '<div class="info-row"><div class="info-v">ON Fishing is now part of ON Wildlife: the fishing zones live on the map, every fish page carries its seasons and limits, and your catch log shows up in the journal.</div></div>' +
       iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: 'on-fishing, the solo site', sub: 'The standalone zone map stays up' }) +
       iosRow({ title: 'Species in guide', value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: 'Version', value: '3.4', chevron: false }) +
+      iosRow({ action: 'version-tap', title: 'Version', value: '3.5', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca', sub: 'Apps, projects and the rest' }) +
       '</div>';
-    screen({ title: 'More', large: true, header: true, body: body });
+    screen({ title: 'More', large: true, header: true, actions: false, body: body });
   }
   /* ------------------------------------------------------------ Account */
   function viewAccount() {
@@ -1985,7 +2086,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: 'Visibility', value: (Community.on() ? 'Sharing on' : 'Sharing off') }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: 'Stats' }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: 'Export my log' }) +
-      iosRow({ title: 'Version', value: '3.4', chevron: false }) +
+      iosRow({ title: 'Version', value: '3.5', chevron: false }) +
       '</nav>';
 
     screen({ title: 'Account', backAction: true, backText: 'Back', body: body });
@@ -2036,7 +2137,7 @@
           '<button class="fab fab-bear" data-action="report-bear" aria-label="Report bear">\u{1F43B}</button>' +
         '</div>' +
       '</div>';
-    screen({ title: 'Map', header: true, body: body, bare: true });
+    screen({ title: 'Map', header: true, actions: false, body: body, bare: true });
     ensureLeaflet(initMap);
   }
   /* Leaflet is 45KB compressed and only the Map tab needs it, so it stays out
@@ -2984,7 +3085,11 @@
     if (sc) sc.classList.remove('show');
     clearSheetA11y();
     unlockScroll();
-    setTimeout(function () { $('#sheet-root').innerHTML = ''; }, 320);
+    setTimeout(function () {
+      // a sheet opened during the close animation must not be wiped
+      var s2 = $('#sheet');
+      if (!s2 || !s2.classList.contains('show')) $('#sheet-root').innerHTML = '';
+    }, 320);
   }
 
   /* ---- Species picker (nested sheet) ---- */
@@ -3688,6 +3793,21 @@
         break;
       }
       case 'set-units': ev.preventDefault(); app.settings.units = t.getAttribute('data-val'); saveSettings(); viewMore(); break;
+      case 'edit-section': ev.preventDefault(); openSectionEditor(t.getAttribute('data-key')); break;
+      case 'sec-toggle': ev.preventDefault(); (function () {
+        var id = t.getAttribute('data-id');
+        app._secDraft.forEach(function (r) { if (r.id === id) r.on = !r.on; });
+        var rowEl = t.closest('.secedit-row');
+        if (rowEl) {
+          rowEl.classList.toggle('on');
+          t.setAttribute('aria-checked', rowEl.classList.contains('on') ? 'true' : 'false');
+        }
+      })(); break;
+      case 'sec-done': ev.preventDefault(); (function () {
+        app.settings.sections = app.settings.sections || {};
+        app.settings.sections[app._secKey] = app._secDraft;
+        saveSettings(); closeSheet(); route();
+      })(); break;
       case 'appear-theme': ev.preventDefault(); setAppearance('theme', t.getAttribute('data-v')); viewMore(); break;
       case 'appear-palette': ev.preventDefault(); setAppearance('palette', t.getAttribute('data-v')); viewMore(); break;
       case 'appear-size': ev.preventDefault(); setAppearance('size', t.getAttribute('data-v')); viewMore(); break;
