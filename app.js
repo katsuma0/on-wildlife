@@ -54,7 +54,7 @@
 
   var app = {
     entries: [], hazards: [],
-    settings: { units: 'metric', theme: 'auto', homeMode: 'all', photos: false, seenPrivacy: false, seenInstall: false, community: false, communityUrl: '', badges: [], journalView: 'timeline', lifeSort: 'recent', displayName: '' },
+    settings: { units: 'metric', theme: 'auto', homeMode: 'all', photos: false, seenPrivacy: false, seenInstall: false, community: false, communityUrl: '', badges: [], journalView: 'timeline', lifeSort: 'recent', journalFilter: 'all', mapLayers: { wildlife: true, parks: false, zones: false }, displayName: '' },
     draft: null, hdraft: null, ready: false, map: null, mapFilter: 'all', placeMode: null
   };
 
@@ -133,8 +133,36 @@
       if (s && typeof s === 'object') { for (var k in s) if (s.hasOwnProperty(k)) app.settings[k] = s[k]; }
     } catch (e) {}
     if (!Array.isArray(app.settings.badges)) app.settings.badges = [];
+    if (!app.settings.mapLayers || typeof app.settings.mapLayers !== 'object') {
+      app.settings.mapLayers = { wildlife: true, parks: false, zones: false };
+    }
   }
   function saveSettings() { try { localStorage.setItem('owl-settings', JSON.stringify(app.settings)); } catch (e) {} }
+  /* ---- Shared profile -------------------------------------------------
+     The three outdoors apps live on one origin, so localStorage is shared.
+     The display name lives under one JSON key, 'outdoors-profile' (shape
+     {name: string}), that every app reads and writes. On first run after
+     this update we silently migrate from the old per-app keys. */
+  function loadProfile() {
+    var p = null;
+    try { p = JSON.parse(localStorage.getItem('outdoors-profile') || 'null'); } catch (e) {}
+    if (!p || typeof p.name !== 'string') {
+      var name = '';
+      try {
+        name = (app.settings.displayName || '').trim() ||
+          (localStorage.getItem('oncamp-name') || '').trim() ||
+          (localStorage.getItem('onfish-name') || '').trim();
+      } catch (e) {}
+      p = { name: name };
+      try { localStorage.setItem('outdoors-profile', JSON.stringify(p)); } catch (e) {}
+    }
+    app.profile = p;
+  }
+  function profileName() { return ((app.profile && app.profile.name) || '').trim(); }
+  function saveProfileName(name) {
+    app.profile = { name: String(name == null ? '' : name).trim() };
+    try { localStorage.setItem('outdoors-profile', JSON.stringify(app.profile)); } catch (e) {}
+  }
   function applyTheme() {
     var t = app.settings.theme || 'auto';
     var root = document.documentElement;
@@ -176,6 +204,173 @@
       return s.name.toLowerCase().indexOf(q) >= 0 || s.sci.toLowerCase().indexOf(q) >= 0;
     }).slice(0, 40);
   }
+
+  /* ------------------------------------------------ Fishing regulations
+     on-fishing folded in: data/regulations.js rides along verbatim (the REG
+     global), and the season parsing below is fishing's own open/closed logic,
+     ported faithfully so both sites always agree on what is open today. */
+  var REGS = (typeof REG !== 'undefined') ? REG : (window.REG || {});
+  var REG_ZONES = [];
+  (function () { for (var z = 1; z <= 20; z++) if (REGS[z]) REG_ZONES.push(z); })();
+  var REG_MONTHS = { january: 0, february: 1, march: 2, april: 3, may: 4, june: 5, july: 6, august: 7, september: 8, october: 9, november: 10, december: 11 };
+  var REG_WD = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
+  var REG_ORD = { first: 1, '1st': 1, second: 2, '2nd': 2, third: 3, '3rd': 3, fourth: 4, '4th': 4, fifth: 5, '5th': 5 };
+  function regNthWeekday(year, monthIdx, wd, n) {
+    var d = new Date(year, monthIdx, 1), count = 0;
+    while (d.getMonth() === monthIdx) { if (d.getDay() === wd) { count++; if (count === n) return new Date(d); } d.setDate(d.getDate() + 1); }
+    return null;
+  }
+  function regParseToken(tok, year) {
+    tok = tok.trim().toLowerCase();
+    if (/before|after/.test(tok)) return null;
+    if (/labour day/.test(tok)) return regNthWeekday(year, 8, 1, 1);
+    var m = tok.match(/^(first|second|third|fourth|fifth|1st|2nd|3rd|4th|5th)\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\s+in\s+([a-z]+)/);
+    if (m && REG_ORD[m[1]] != null && REG_WD[m[2]] != null && REG_MONTHS[m[3]] != null) return regNthWeekday(year, REG_MONTHS[m[3]], REG_WD[m[2]], REG_ORD[m[1]]);
+    m = tok.match(/^([a-z]+)\s+(\d{1,2})/);
+    if (m && REG_MONTHS[m[1]] != null) return new Date(year, REG_MONTHS[m[1]], parseInt(m[2], 10));
+    return null;
+  }
+  function regRangesOf(season, year) {
+    var s = season.toLowerCase();
+    if (/open all year/.test(s)) return { allyear: 'open' };
+    if (/closed all year/.test(s)) return { allyear: 'closed' };
+    var ranges = [], unknown = false;
+    season.split(/\s+and\s+/i).forEach(function (part) {
+      var i = part.toLowerCase().indexOf(' to ');
+      if (i < 0) { unknown = true; return; }
+      var a = regParseToken(part.slice(0, i), year), b = regParseToken(part.slice(i + 4), year);
+      if (!a || !b) { unknown = true; return; }
+      ranges.push([new Date(a.getFullYear(), a.getMonth(), a.getDate()),
+                   new Date(b.getFullYear(), b.getMonth(), b.getDate(), 23, 59, 59)]);
+    });
+    return { ranges: ranges, unknown: unknown };
+  }
+  function seasonStatus(season) {
+    if (!season) return { status: 'unknown' };
+    var now = new Date(), year = now.getFullYear(), r = regRangesOf(season, year);
+    if (r.allyear) return { status: r.allyear };
+    var open = false, activeEnd = null, nextStart = null;
+    r.ranges.forEach(function (range) {
+      var a = range[0], b = range[1];
+      if (now >= a && now <= b) { open = true; if (!activeEnd || b < activeEnd) activeEnd = b; }
+      if (a > now && (!nextStart || a < nextStart)) nextStart = a;
+    });
+    var DAY = 86400000;
+    if (open) {
+      var days = activeEnd ? Math.ceil((activeEnd - now) / DAY) : null;
+      return { status: 'open', soon: (days != null && days <= 14) ? { type: 'closing', days: days } : null };
+    }
+    if (r.ranges.length) {
+      var days2 = nextStart ? Math.ceil((nextStart - now) / DAY) : null;
+      return { status: 'closed', soon: (days2 != null && days2 <= 14) ? { type: 'opening', days: days2 } : null };
+    }
+    return { status: 'unknown' };
+  }
+  /* One popularity order in every zone (fishing's), closed species first. */
+  var REG_ORDER = ['Largemouth and Smallmouth Bass combined', 'Largemouth Bass', 'Smallmouth Bass',
+    'Walleye and Sauger combined', 'Northern Pike', 'Yellow Perch', 'Sunfish', 'Crappie', 'Muskellunge',
+    'Lake Trout', 'Lake Trout and Splake', 'Brook Trout', 'Rainbow Trout', 'Brown Trout and Rainbow Trout',
+    'Brown Trout', 'Splake', 'Lake Whitefish', 'Channel Catfish', 'Atlantic Salmon', 'Pacific Salmon',
+    'Lake Herring (Cisco)', 'Lake Sturgeon', 'Aggregate Limits for Trout and Salmon'];
+  var REG_ORDER_IX = {}; REG_ORDER.forEach(function (n, i) { REG_ORDER_IX[n] = i; });
+  function regRankName(a, b) {
+    var ia = REG_ORDER_IX[a] != null ? REG_ORDER_IX[a] : 900, ib = REG_ORDER_IX[b] != null ? REG_ORDER_IX[b] : 900;
+    return ia - ib || a.localeCompare(b);
+  }
+  function regBySpecies(a, b) {
+    var ca = seasonStatus(a.season).status === 'closed' ? 0 : 1;
+    var cb = seasonStatus(b.season).status === 'closed' ? 0 : 1;
+    return ca - cb || regRankName(a.species, b.species);
+  }
+  function regStatusLabel(st) { return st === 'open' ? 'Open' : st === 'closed' ? 'Closed' : 'Check'; }
+  function regStatusBadge(st) {
+    var cls = st === 'open' ? 'badge-open' : st === 'closed' ? 'badge-danger' : 'badge-info';
+    return '<span class="badge ' + cls + '" style="flex-shrink:0">' + regStatusLabel(st) + '</span>';
+  }
+  /* Wildlife fish species id -> the substrings fishing matches regulation
+     names on. Only the gamefish both apps carry; anything else shows nothing. */
+  var FISH_REG_MATCH = {
+    'walleye': ['walleye'],
+    'sauger': ['sauger'],
+    'largemouth-bass': ['largemouth'],
+    'smallmouth-bass': ['smallmouth'],
+    'northern-pike': ['northern pike'],
+    'muskellunge': ['muskellunge'],
+    'yellow-perch': ['yellow perch'],
+    'black-crappie': ['crappie'],
+    'white-crappie': ['crappie'],
+    'bluegill': ['sunfish'],
+    'pumpkinseed': ['sunfish'],
+    'rock-bass': ['sunfish'],
+    'brook-trout': ['brook trout'],
+    'brown-trout': ['brown trout'],
+    'rainbow-trout': ['rainbow trout'],
+    'lake-trout': ['lake trout'],
+    'splake': ['splake'],
+    'atlantic-salmon': ['atlantic salmon'],
+    'chinook-salmon': ['pacific salmon'],
+    'coho-salmon': ['pacific salmon'],
+    'pink-salmon': ['pacific salmon'],
+    'channel-catfish': ['channel catfish'],
+    'lake-whitefish': ['lake whitefish'],
+    'cisco': ['lake herring'],
+    'lake-sturgeon': ['lake sturgeon']
+  };
+  var _regMap = null;
+  function regSpeciesMap() {
+    if (_regMap) return _regMap;
+    _regMap = {};
+    REG_ZONES.forEach(function (z) {
+      (REGS[z].species_regulations || []).forEach(function (r) {
+        (_regMap[r.species] = _regMap[r.species] || {})[z] = { season: r.season, limits: r.limits };
+      });
+    });
+    return _regMap;
+  }
+  /* Faithful port of fishing's fishRegInfo zone merge: a species can be
+     regulated alone in one zone and as a combined group in another, so its
+     zones come from every regulation name its matchers hit. */
+  function fishRegForSpecies(id) {
+    var matchers = FISH_REG_MATCH[id];
+    if (!matchers || !REG_ZONES.length) return null;
+    var map = regSpeciesMap(), merged = {}, regNames = [], any = false;
+    Object.keys(map).forEach(function (n) {
+      if (/^aggregate limits/i.test(n)) return;
+      var s = n.toLowerCase(), hit = false;
+      for (var i = 0; i < matchers.length; i++) if (s.indexOf(matchers[i]) >= 0) { hit = true; break; }
+      if (!hit) return;
+      var touched = false;
+      REG_ZONES.forEach(function (z) {
+        if (map[n][z] && !merged[z]) { merged[z] = { rec: map[n][z], reg: n }; touched = true; any = true; }
+      });
+      if (touched) regNames.push(n);
+    });
+    return any ? { merged: merged, regNames: regNames } : null;
+  }
+  /* Reverse door: a regulation name back to the wildlife species page. */
+  function wlSpeciesForReg(regName) {
+    var s = regName.toLowerCase();
+    for (var id in FISH_REG_MATCH) {
+      if (!FISH_REG_MATCH.hasOwnProperty(id) || !byId[id]) continue;
+      var m = FISH_REG_MATCH[id];
+      for (var i = 0; i < m.length; i++) if (s.indexOf(m[i]) >= 0) return id;
+    }
+    return null;
+  }
+  /* ON Fishing's catch-log species names -> wildlife species ids. */
+  var ONFISH_NAME_TO_WL = {
+    'walleye': 'walleye', 'sauger': 'sauger',
+    'largemouth bass': 'largemouth-bass', 'smallmouth bass': 'smallmouth-bass',
+    'northern pike': 'northern-pike', 'muskellunge': 'muskellunge',
+    'yellow perch': 'yellow-perch', 'crappie': 'black-crappie',
+    'bluegill and pumpkinseed': 'bluegill', 'rock bass': 'rock-bass',
+    'brook trout': 'brook-trout', 'brown trout': 'brown-trout',
+    'rainbow trout': 'rainbow-trout', 'lake trout': 'lake-trout',
+    'splake': 'splake', 'atlantic salmon': 'atlantic-salmon',
+    'chinook and coho salmon': 'chinook-salmon', 'channel catfish': 'channel-catfish',
+    'lake whitefish': 'lake-whitefish', 'cisco (lake herring)': 'cisco',
+    'lake sturgeon': 'lake-sturgeon'
+  };
 
   /* --------------------------------------------------------- Date format */
   function startOfDay(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
@@ -255,7 +450,7 @@
 
   function loggedIdSet() {
     var m = {};
-    app.entries.forEach(function (e) { if (e.speciesId) m[e.speciesId] = true; });
+    journalEntries().forEach(function (e) { if (e.speciesId) m[e.speciesId] = true; });
     return m;
   }
 
@@ -263,10 +458,10 @@
   function spriteIcon(name) {
     return '<svg aria-hidden="true"><use href="assets/icons.svg#' + name + '"/></svg>';
   }
-  // The avatar shows the first letter of the display name, or a person glyph
-  // until a name is set.
+  // The avatar shows the first letter of the shared profile name, or a person
+  // glyph until a name is set.
   function avatarInner() {
-    var n = (app.settings.displayName || '').trim();
+    var n = profileName();
     return n ? esc(n.charAt(0).toUpperCase()) : spriteIcon('user');
   }
   // Sticky chrome for root screens: 44px circular avatar on the left, 44px
@@ -291,7 +486,7 @@
       (opts.sub ? '<span class="ios-row-sub">' + esc(opts.sub) + '</span>' : '') + '</span>';
     var tail = (opts.value != null ? '<span class="ios-row-value">' + esc(String(opts.value)) + '</span>' : '') +
       (opts.chevron === false ? '' : '<span class="ios-chevron" aria-hidden="true">' + spriteIcon('chevron-right') + '</span>');
-    var cls = 'ios-row' + (opts.tile ? '' : ' ios-row--plain');
+    var cls = 'ios-row' + (opts.tile ? '' : ' ios-row--plain') + (opts.danger ? ' ios-row--danger' : '');
     if (opts.action) {
       return '<button type="button" class="' + cls + '" data-action="' + esc(opts.action) + '">' + lead + body + tail + '</button>';
     }
@@ -409,7 +604,12 @@
         (cfg.subtitle ? '<div class="subtitle">' + esc(cfg.subtitle) + '</div>' : '') + '</div>'
       : '';
     var tail = cfg.bare ? '' : '<div class="spacer-lg"></div>';
-    mountScreen('<div class="screen">' + nav + large + cfg.body + tail + '</div>', navDirection());
+    // The stack always advances, but browser-driven navigation (native swipe,
+    // back/forward) renders with no animation of ours on top of Safari's.
+    var dir = navDirection();
+    if (app._browserNav && (dir === 'push' || dir === 'pop')) dir = 'none';
+    app._browserNav = false;
+    mountScreen('<div class="screen">' + nav + large + cfg.body + tail + '</div>', dir);
     fitBackLabel();
     updateNav();
   }
@@ -473,7 +673,7 @@
   // Same tile, but the whole card is the tap target rather than a small link,
   // so all three are comfortably bigger than a thumb.
   function statLink(n, l) { return '<a class="stat tap" href="#/stats"><div class="n">' + n + '</div><div class="l">' + esc(l) + '</div></a>'; }
-  function catsSeen() { var m = {}; app.entries.forEach(function (e) { if (e.cat) m[e.cat] = 1; }); return Object.keys(m).length; }
+  function catsSeen() { var m = {}; journalEntries().forEach(function (e) { if (e.cat) m[e.cat] = 1; }); return Object.keys(m).length; }
   function learnCell(emoji, title, sub, topicId) {
     return '<a class="cell tap" href="#/learn/' + esc(topicId) + '">' +
       (emoji ? '<span class="cell-emoji">' + emoji + '</span>' : '') +
@@ -677,6 +877,8 @@
       if (e.fish.caught) parts.push(e.fish.released ? 'Released' : 'Kept');
       if (e.fish.water) parts.push(e.fish.water);
     }
+    if (e.fishZone) parts.push('Zone ' + e.fishZone);
+    if (e.external === 'onfish') parts.push('ON Fishing');
     if (e.bird && e.bird.behavior) parts.push(e.bird.behavior);
     if (e.lat != null) { var pl = placeOf(e); if (pl && pl.key.indexOf('park:') === 0) parts.push(pl.name); }
     var thumb = e.photo
@@ -694,6 +896,13 @@
   function viewExplore() {
     var uniq = {}; app.entries.forEach(function (e) { if (e.speciesId) uniq[e.speciesId] = 1; });
     var body = '';
+    // A real inline search directly under the title: same universal index as
+    // the full search screen, results render in place as you type.
+    body += '<div class="searchbar" style="margin-top:2px">' + I.search +
+      '<input type="search" id="explore-search" aria-label="Search the guide" placeholder="Search species, categories, or a park" autocomplete="off" autocorrect="off" autocapitalize="none">' +
+      '</div>';
+    body += '<div id="explore-results"></div>';
+    body += '<div id="explore-home">';
     if (isIosSafari() && !app.settings.seenInstall) {
       body += '<div class="wrap-note" style="align-items:flex-start;margin-top:2px"><span class="i">\u{1F4F2}</span><span><b>Add to Home Screen</b> to use this like a real app, fullscreen and offline. Tap the <b>Share</b> button, then <b>Add to Home Screen</b>. <button data-action="dismiss-install" style="padding:0;font-weight:600;color:var(--tint);background:none">Got it</button></span></div>';
     }
@@ -735,11 +944,75 @@
         stat(Object.keys(uniq).length, 'Species') + stat(catsSeen(), 'Categories') + '</div>';
       body += recentGroup('Recent', recentIn(function () { return true; }, 6));
     }
+    body += '</div>';
 
-    screen({ title: 'on-wildlife', large: true, header: true, version: 'v3.0', subtitle: 'A field guide to Ontario’s wildlife, and your own journal of it.', body: body });
+    screen({ title: 'on-wildlife', large: true, header: true, version: 'v3.1', subtitle: 'A field guide to Ontario’s wildlife, and your own journal of it.', body: body });
+    wireLiveSearch('explore-search', 'explore-results', ['explore-home']);
   }
 
   /* ============================================================= SEARCH */
+  // The one universal search index: categories, provincial parks and species.
+  // Shared by the full search screen and the Guide home's inline field, so the
+  // two always agree. Returns '' for an empty query.
+  function searchResultsHtml(q) {
+    q = (q || '').trim();
+    if (!q) return '';
+    var html = '';
+    // Categories that match
+    var qq = q.toLowerCase();
+    var catHits = CATEGORIES.filter(function (c) { return c.name.toLowerCase().indexOf(qq) >= 0; });
+    if (catHits.length) {
+      html += '<div class="group"><div class="group-header">Categories</div><div class="list">';
+      catHits.forEach(function (c) {
+        html += '<a class="cell tap" href="#/explore/' + esc(c.id) + '"><span class="cell-emoji">' + c.emoji + '</span>' +
+          '<span class="cell-body"><span class="cell-title">' + esc(c.name) + '</span>' +
+          '<span class="cell-sub">' + speciesInCat(c.id).length + ' species</span></span>' +
+          '<span class="chevron">' + I.chevron + '</span></a>';
+      });
+      html += '</div></div>';
+    }
+    // Provincial parks (from the shared ecosystem data)
+    var parkHits = (window.ECO ? window.ECO.parks : []).filter(function (p) { return p.name.toLowerCase().indexOf(qq) >= 0; }).slice(0, 8);
+    if (parkHits.length) {
+      html += '<div class="group"><div class="group-header">Parks</div><div class="list">';
+      parkHits.forEach(function (p) {
+        var loc = (p.region || '').split(' · ').slice(1).join(' · ') || p.region;
+        html += '<a class="cell tap" href="#/park/' + esc(p.id) + '"><span class="cell-emoji">\u{1F3DE}️</span>' +
+          '<span class="cell-body"><span class="cell-title">' + esc(p.name) + '</span>' +
+          '<span class="cell-sub">' + esc(loc) + '</span></span>' +
+          '<span class="chevron">' + I.chevron + '</span></a>';
+      });
+      html += '</div></div>';
+    }
+    var list = searchSpecies(q);
+    if (!list.length && !catHits.length && !parkHits.length) {
+      return '<div class="empty"><div class="e">\u{1F50D}</div><h3>No matches</h3><p>Try another name.</p></div>';
+    }
+    if (list.length) {
+      var logged = loggedIdSet();
+      html += '<div class="group"><div class="group-header">Species</div><div class="list">';
+      list.forEach(function (s) { html += speciesCell(s, { loggedIds: logged, sub: '<i>' + esc(s.sci) + '</i> · ' + esc(catMeta(s.cat).name) }); });
+      html += '</div></div>';
+    }
+    return html;
+  }
+  // Wire a search input to render results live into a container, showing an
+  // optional hint element only while the query is empty.
+  function wireLiveSearch(inputId, resultsId, hideIds) {
+    var input = $('#' + inputId); if (!input) return;
+    input.addEventListener('input', function () {
+      var res = $('#' + resultsId); if (!res) return;
+      var q = input.value;
+      var others = (hideIds || []).map(function (id) { return $('#' + id); });
+      if (!q.trim()) {
+        res.innerHTML = '';
+        others.forEach(function (el) { if (el) el.style.display = ''; });
+        return;
+      }
+      others.forEach(function (el) { if (el) el.style.display = 'none'; });
+      res.innerHTML = searchResultsHtml(q);
+    });
+  }
   function viewSearch() {
     var body = '<div class="searchbar">' + I.search +
       '<input type="search" id="uni-search" aria-label="Search" placeholder="Search species, categories, or a park" autocomplete="off" autocorrect="off" autocapitalize="none">' +
@@ -748,54 +1021,9 @@
     body += '<div id="search-hint" class="empty" style="padding-top:40px"><div class="e">' + I.search + '</div>' +
       '<h3>Search the guide</h3><p>Find any of Ontario’s ' + SPECIES.length + ' species by name, jump to a category, or look up a provincial park to see the wildlife around it. Your search stays on this device.</p></div>';
     screen({ title: 'Search', large: true, backAction: true, backText: 'Back', body: body });
-    var input = $('#uni-search'); if (!input) return;
-    input.focus();
-    input.addEventListener('input', function () {
-      var q = input.value;
-      var res = $('#search-results');
-      var hint = $('#search-hint');
-      if (!q.trim()) { res.innerHTML = ''; if (hint) hint.style.display = ''; return; }
-      if (hint) hint.style.display = 'none';
-      var html = '';
-      // Categories that match
-      var catHits = CATEGORIES.filter(function (c) { return c.name.toLowerCase().indexOf(q.trim().toLowerCase()) >= 0; });
-      if (catHits.length) {
-        html += '<div class="group"><div class="group-header">Categories</div><div class="list">';
-        catHits.forEach(function (c) {
-          html += '<a class="cell tap" href="#/explore/' + esc(c.id) + '"><span class="cell-emoji">' + c.emoji + '</span>' +
-            '<span class="cell-body"><span class="cell-title">' + esc(c.name) + '</span>' +
-            '<span class="cell-sub">' + speciesInCat(c.id).length + ' species</span></span>' +
-            '<span class="chevron">' + I.chevron + '</span></a>';
-        });
-        html += '</div></div>';
-      }
-      // Provincial parks (from the shared ecosystem data)
-      var qq = q.trim().toLowerCase();
-      var parkHits = (window.ECO ? window.ECO.parks : []).filter(function (p) { return p.name.toLowerCase().indexOf(qq) >= 0; }).slice(0, 8);
-      if (parkHits.length) {
-        html += '<div class="group"><div class="group-header">Parks</div><div class="list">';
-        parkHits.forEach(function (p) {
-          var loc = (p.region || '').split(' · ').slice(1).join(' · ') || p.region;
-          html += '<a class="cell tap" href="#/park/' + esc(p.id) + '"><span class="cell-emoji">\u{1F3DE}️</span>' +
-            '<span class="cell-body"><span class="cell-title">' + esc(p.name) + '</span>' +
-            '<span class="cell-sub">' + esc(loc) + '</span></span>' +
-            '<span class="chevron">' + I.chevron + '</span></a>';
-        });
-        html += '</div></div>';
-      }
-      var list = searchSpecies(q);
-      if (!list.length && !catHits.length && !parkHits.length) {
-        res.innerHTML = '<div class="empty"><div class="e">\u{1F50D}</div><h3>No matches</h3><p>Try another name.</p></div>';
-        return;
-      }
-      if (list.length) {
-        var logged = loggedIdSet();
-        html += '<div class="group"><div class="group-header">Species</div><div class="list">';
-        list.forEach(function (s) { html += speciesCell(s, { loggedIds: logged, sub: '<i>' + esc(s.sci) + '</i> · ' + esc(catMeta(s.cat).name) }); });
-        html += '</div></div>';
-      }
-      res.innerHTML = html;
-    });
+    // No autofocus: the keyboard comes up when the person taps the field.
+    // Autofocusing made iOS Safari pan the page and hide the top of the screen.
+    wireLiveSearch('uni-search', 'search-results', ['search-hint']);
   }
 
   // A provincial park as a wildlife destination: the fish in its waters (exact,
@@ -898,41 +1126,63 @@
     body += '<div class="hpad"><a class="btn btn-tinted btn-block" href="#/learn/contribute">How your sightings help</a></div><div class="spacer"></div>';
     screen({ title: 'Species at Risk', back: '#/explore', backText: 'Guide', body: body });
   }
-  function viewCategory(catId) {
+  /* One flat page per category: every species, grouped by subcategory under
+     sticky headers, with a pinned filter that narrows the list live. The old
+     #/explore/<cat>/<sub> route survives as an alias that scrolls to its group. */
+  function categoryListHtml(c, logged, q) {
+    q = (q || '').trim().toLowerCase();
+    var html = '';
+    c.subs.forEach(function (sub) {
+      var list = sortSpecies(speciesInSub(c.id, sub.id));
+      if (q) {
+        list = list.filter(function (s) {
+          return s.name.toLowerCase().indexOf(q) >= 0 || s.sci.toLowerCase().indexOf(q) >= 0;
+        });
+      }
+      if (!list.length) return;
+      html += '<div class="group" id="sub-' + esc(sub.id) + '">' +
+        '<div class="group-header cat-sub-header">' + esc(sub.name) + '</div><div class="list">';
+      list.forEach(function (s) { html += speciesCell(s, { loggedIds: logged }); });
+      html += '</div></div>';
+    });
+    if (!html) html = '<div class="empty"><div class="e">\u{1F50D}</div><h3>No matches</h3><p>Try another name.</p></div>';
+    return html;
+  }
+  function viewCategory(catId, subId) {
     var c = catMeta(catId);
     if (!c) return viewExplore();
     var logged = loggedIdSet();
     var catTotal = speciesInCat(catId).length;
     var catSeen = speciesInCat(catId).filter(function (s) { return logged[s.id]; }).length;
-    var body = '<div class="group">';
-    body += '<div class="group-header">' + esc(c.name) + '</div><div class="list">';
-    c.subs.forEach(function (sub) {
-      var list = speciesInSub(catId, sub.id);
-      var seen = list.filter(function (s) { return logged[s.id]; }).length;
-      body += '<a class="cell tap" href="#/explore/' + esc(catId) + '/' + esc(sub.id) + '">' +
-        '<span class="cell-emoji">' + sub.emoji + '</span>' +
-        '<span class="cell-body"><span class="cell-title">' + esc(sub.name) + '</span>' +
-        (seen ? '<span class="cell-sub">' + seen + ' of ' + list.length + ' in your journal</span>' : '') + '</span>' +
-        '<span class="cell-value">' + list.length + '</span><span class="chevron">' + I.chevron + '</span></a>';
-    });
-    body += '</div>';
+    var body = '<div class="cat-filter"><div class="searchbar">' + I.search +
+      '<input type="search" id="cat-filter-input" aria-label="Filter ' + esc(c.name.toLowerCase()) + '" placeholder="Filter ' + esc(c.name.toLowerCase()) + '" autocomplete="off" autocorrect="off" autocapitalize="none">' +
+      '</div></div>';
+    // Fish carry regulations now, so the category leads with the zones door.
+    if (catId === 'fish' && REG_ZONES.length) {
+      body += '<div class="group" style="margin-top:2px"><div class="list">' +
+        '<a class="cell tap" href="#/zones"><span class="cell-emoji">\u{1F3A3}</span>' +
+        '<span class="cell-body"><span class="cell-title">Fishing zones and seasons</span>' +
+        '<span class="cell-sub">What is open right now, in all 20 zones</span></span>' +
+        '<span class="chevron">' + I.chevron + '</span></a></div></div>';
+    }
+    body += '<div id="cat-list">' + categoryListHtml(c, logged, '') + '</div>';
     // Goal gradient: a real, honest count of how far through this group you are.
-    if (catSeen) body += '<div class="group-footer">You have logged ' + catSeen + ' of the ' + catTotal + ' ' + esc(c.name.toLowerCase()) + ' in the guide.</div>';
-    body += '</div>';
+    body += '<div class="group" style="margin-top:0"><div class="group-footer">' + catTotal + ' species, most commonly seen first within each section.' +
+      (catSeen ? ' You have logged ' + catSeen + ' of the ' + catTotal + ' ' + esc(c.name.toLowerCase()) + ' in the guide.' : '') + '</div></div>';
     screen({ title: c.name, back: '#/explore', backText: 'Guide', body: body });
-  }
-
-  function viewSub(catId, subId) {
-    var c = catMeta(catId), sub = subMeta(catId, subId);
-    if (!c || !sub) return viewCategory(catId);
-    var list = sortSpecies(speciesInSub(catId, subId));
-    var logged = loggedIdSet();
-    var body = '<div class="group"><div class="list">';
-    list.forEach(function (s) { body += speciesCell(s, { loggedIds: logged }); });
-    var seenN = list.filter(function (s) { return logged[s.id]; }).length;
-    body += '</div><div class="group-footer">' + list.length + ' species · most commonly seen first' +
-      (seenN ? ' · ' + seenN + ' in your journal' : '') + '</div></div>';
-    screen({ title: sub.name, back: '#/explore/' + catId, backText: c.name, body: body });
+    var fi = $('#cat-filter-input');
+    if (fi) fi.addEventListener('input', function () {
+      var box = $('#cat-list'); if (box) box.innerHTML = categoryListHtml(c, logged, fi.value);
+    });
+    // Old subcategory links land here: scroll their group under the pinned filter.
+    if (subId && subMeta(catId, subId)) {
+      setTimeout(function () {
+        var el = document.getElementById('sub-' + subId);
+        if (!el) return;
+        var y = el.getBoundingClientRect().top + (window.scrollY || 0) - 148;
+        window.scrollTo(0, Math.max(0, y));
+      }, 60);
+    }
   }
 
   /* -------------------------------------------------------- Species page */
@@ -957,7 +1207,7 @@
 
     // Your record sits right under the log button, because on a species page the
     // first question a birder or angler asks is "have I had this one?".
-    var mine = app.entries.filter(function (e) { return e.speciesId === s.id; })
+    var mine = journalEntries().filter(function (e) { return e.speciesId === s.id; })
       .sort(function (a, b) { return new Date(a.when) - new Date(b.when); });
     if (mine.length) {
       body += '<div class="group"><div class="group-header">Your record</div><div class="list">' +
@@ -982,6 +1232,10 @@
       info('Did you know', s.fact) +
       '</div></div>';
 
+    // Fishing seasons and limits, straight from the regulations data that
+    // rode over from on-fishing. Species with no regs entry show nothing new.
+    body += speciesFishingGroup(s);
+
     // Optional longer account, in the style of a field-guide entry, for those who want it.
     var noteText = (window.SPECIES_NOTES && SPECIES_NOTES[s.id]) || '';
     if (noteText) {
@@ -1005,8 +1259,9 @@
       speciesLinks(s) +
       '</div><div class="group-footer">Opens external sites in your browser.</div></div>';
 
-    var backHref = (c && sub) ? '#/explore/' + s.cat + '/' + s.sub : '#/explore';
-    screen({ title: s.name, back: backHref, backText: sub ? sub.name : (c ? c.name : 'Back'), body: body });
+    // Categories are flat pages now, so back goes to the category, not a sub page.
+    var backHref = c ? '#/explore/' + s.cat : '#/explore';
+    screen({ title: s.name, back: backHref, backText: c ? c.name : 'Back', body: body });
     applySpeciesPhoto(s);
   }
   function speciesLinks(s) {
@@ -1027,17 +1282,221 @@
       x === 'crepuscular' ? 'Dawn & dusk' : 'Active anytime';
   }
 
+  /* ================================================= FISHING ZONES & REGS */
+  // The Fishing group on a fish species page: status now, the province-wide
+  // default season and limits, and a door into the per-zone list. Everything
+  // shown is a string from the regulations data, never hand-written.
+  function speciesFishingGroup(s) {
+    if (s.cat !== 'fish') return '';
+    var fi = fishRegForSpecies(s.id);
+    if (!fi) return '';
+    var zs = [], openN = 0;
+    REG_ZONES.forEach(function (z) {
+      if (!fi.merged[z]) return;
+      zs.push(z);
+      if (seasonStatus(fi.merged[z].rec.season).status === 'open') openN++;
+    });
+    if (!zs.length) return '';
+    // The province-wide default: the season and limits most zones share.
+    var counts = {}, bestKey = null;
+    zs.forEach(function (z) {
+      var k = fi.merged[z].rec.season + '\n' + fi.merged[z].rec.limits;
+      counts[k] = (counts[k] || 0) + 1;
+      if (bestKey == null || counts[k] > counts[bestKey]) bestKey = k;
+    });
+    var def = bestKey.split('\n');
+    var status = openN
+      ? 'Open now in ' + openN + ' of ' + zs.length + (zs.length === 1 ? ' zone' : ' zones')
+      : 'Closed in every zone right now';
+    var combined = null;
+    for (var i = 0; i < fi.regNames.length; i++) {
+      if (/ combined$| and /i.test(fi.regNames[i])) { combined = fi.regNames[i]; break; }
+    }
+    return '<div class="group"><div class="group-header">Fishing</div><div class="list">' +
+      '<div class="cell"><span class="cell-emoji">\u{1F3A3}</span>' +
+      '<span class="cell-body"><span class="cell-title">' + esc(status) + '</span>' +
+      '<span class="cell-sub">Computed for today from the Ontario regulations</span></span>' +
+      regStatusBadge(openN ? 'open' : 'closed') + '</div>' +
+      info('Season, most zones', def[0]) +
+      info('Limits, most zones', def[1]) +
+      (combined ? info('Shared limit', 'Regulated as ' + combined + ', so the season and catch limit are shared, not separate per species.') : '') +
+      '<a class="cell tap" href="#/fishing/' + esc(s.id) + '">' +
+      '<span class="cell-body"><span class="cell-title">Zones and seasons</span>' +
+      '<span class="cell-sub">Every zone, open or closed right now</span></span>' +
+      '<span class="chevron">' + I.chevron + '</span></a>' +
+      '</div><div class="group-footer">S is the sport licence limit and C the conservation licence limit. Zones and waterbodies can differ, so check yours before you fish.</div></div>';
+  }
+  // Per-species zone list: every zone that regulates it, open or closed now.
+  function viewSpeciesZones(id) {
+    var s = byId[id];
+    if (!s) return viewExplore();
+    var fi = fishRegForSpecies(id);
+    if (!fi) { location.replace('#/species/' + id); return; }
+    var open = 0, total = 0, rows = '';
+    REG_ZONES.forEach(function (z) {
+      var m = fi.merged[z];
+      if (!m) return;
+      total++;
+      var ss = seasonStatus(m.rec.season);
+      if (ss.status === 'open') open++;
+      rows += '<a class="cell tap" href="#/zones/' + z + '">' +
+        '<span class="cell-body"><span class="cell-title">Zone ' + z + '</span>' +
+        '<span class="cell-sub" style="white-space:normal">' + esc(m.rec.season) + '</span>' +
+        '<span class="cell-sub" style="white-space:normal">' + esc(m.rec.limits) + '</span></span>' +
+        regStatusBadge(ss.status) + '</a>';
+    });
+    var body = '<p class="article-intro">' + esc(s.name) + ' is ' +
+      (open ? 'open right now in ' + open + ' of ' + total + ' fisheries management zones.' : 'closed in every zone right now.') +
+      ' Seasons and limits come from the Ontario fishing regulations summary.</p>' +
+      '<div class="group"><div class="group-header">Seasons by zone</div><div class="list">' + rows + '</div>' +
+      '<div class="group-footer">S is the sport licence limit and C the conservation licence limit. Tap a zone for its full rules.</div></div>';
+    screen({ title: 'Zones and seasons', back: '#/species/' + id, backText: s.name, body: body });
+  }
+  // The 20 fisheries management zones, with how many species are open today.
+  function viewZones() {
+    var body = '<p class="article-intro">Ontario splits recreational fishing into 20 fisheries management zones, each with its own seasons and limits. The rules here are the same ones the on-fishing app carries, and they work offline.</p>';
+    body += '<div class="group"><div class="list">';
+    for (var z = 1; z <= 20; z++) {
+      var d = REGS[z];
+      if (!d) {
+        body += '<div class="cell"><span class="cell-body"><span class="cell-title">Zone ' + z + '</span><span class="cell-sub">No data</span></span></div>';
+        continue;
+      }
+      var open = 0, total = 0;
+      (d.species_regulations || []).forEach(function (r) {
+        if (/^aggregate limits/i.test(r.species)) return;
+        total++;
+        if (seasonStatus(r.season).status === 'open') open++;
+      });
+      body += '<a class="cell tap" href="#/zones/' + z + '">' +
+        '<span class="cell-body"><span class="cell-title">Zone ' + z + '</span>' +
+        '<span class="cell-sub">' + open + ' of ' + total + ' species open now</span></span>' +
+        '<span class="chevron">' + I.chevron + '</span></a>';
+    }
+    body += '</div><div class="group-footer">Season status is computed for today. Always confirm against the official summary before you fish.</div></div>';
+    screen({ title: 'Fishing zones', backAction: true, backText: 'Back', body: body });
+  }
+  // One zone: species and limits (closed first, then by popularity, exactly
+  // fishing's ordering), the special-rules waters, and the general notes.
+  function viewZone(zRaw) {
+    var z = parseInt(zRaw, 10);
+    var d = REGS[z];
+    if (!d) return viewZones();
+    var sp = (d.species_regulations || []).slice().sort(regBySpecies);
+    var open = 0, total = 0;
+    sp.forEach(function (r) {
+      if (/^aggregate limits/i.test(r.species)) return;
+      total++;
+      if (seasonStatus(r.season).status === 'open') open++;
+    });
+    var body = '<p class="article-intro">' + open + ' of ' + total + ' species are open in Zone ' + z + ' right now. Closed seasons are listed first.</p>';
+    body += '<div class="group"><div class="group-header">Species and limits</div><div class="list">';
+    sp.forEach(function (r) {
+      var ss = seasonStatus(r.season);
+      var wl = wlSpeciesForReg(r.species);
+      var inner = '<span class="cell-body"><span class="cell-title" style="white-space:normal">' + esc(r.species) + '</span>' +
+        '<span class="cell-sub" style="white-space:normal">' + esc(r.season) + '</span>' +
+        '<span class="cell-sub" style="white-space:normal">' + esc(r.limits) + '</span></span>' +
+        regStatusBadge(ss.status);
+      body += wl
+        ? '<a class="cell tap" href="#/species/' + esc(wl) + '">' + inner + '</a>'
+        : '<div class="cell">' + inner + '</div>';
+    });
+    body += '</div><div class="group-footer">S is the sport licence limit and C the conservation licence limit. Tap a species for its guide page.</div></div>';
+    var wb = d.waterbody_exceptions || [];
+    if (wb.length) {
+      body += '<div class="group"><div class="group-header">Waters with special rules (' + wb.length + ')</div><div class="list">';
+      wb.forEach(function (w) {
+        body += '<div class="info-row"><div class="info-k">' + esc(w.waterbody) + '</div>' +
+          (w.rules && w.rules.length ? '<div class="info-v">' + w.rules.map(esc).join('<br>') + '</div>' : '') + '</div>';
+      });
+      body += '</div></div>';
+    }
+    var gi = (d.general_info || []).filter(Boolean);
+    if (gi.length) {
+      body += '<div class="group"><div class="group-header">General information</div><div class="list">';
+      gi.forEach(function (t) { body += '<div class="info-row"><div class="info-v">' + esc(t) + '</div></div>'; });
+      body += '</div></div>';
+    }
+    screen({ title: 'Zone ' + z, backAction: true, backText: 'Zones', body: body });
+  }
+
   /* ------------------------------------------------------------ My Log */
   /* ============================================================== JOURNAL
      The logbook half of the app. The guide tells you what a thing is; the
      journal is the record of when you met it. Everything here is derived from
      app.entries, so there is one store and it cannot drift out of sync. */
 
+  /* ---- ON Fishing catch log --------------------------------------------
+     The three apps share one origin, so ON Fishing's catch log sits in the
+     same localStorage. Each catch becomes a read-only journal entry here:
+     wildlife-logged fish stay exactly as they are, catches carry their own
+     onfish- ids so nothing ever double counts, and edits or deletes happen
+     in ON Fishing, not here. Parsed defensively: a bad record is skipped. */
+  function loadFishCatches() {
+    var raw = [];
+    try { raw = JSON.parse(localStorage.getItem('onfish-catchlog') || '[]'); } catch (e) { raw = []; }
+    if (!Array.isArray(raw)) raw = [];
+    var out = [];
+    raw.forEach(function (c, i) {
+      if (!c || typeof c !== 'object' || !c.sp || !c.when) return;
+      var d = new Date(c.when); if (isNaN(d.getTime())) return;
+      var wlId = ONFISH_NAME_TO_WL[String(c.sp).toLowerCase()] || null;
+      var sp = wlId ? byId[wlId] : null;
+      var len = (c.len != null && c.len !== '' && isFinite(parseFloat(c.len))) ? parseFloat(c.len) : null;
+      out.push({
+        id: 'onfish-' + String(c.id || i),
+        speciesId: sp ? sp.id : null,
+        speciesName: sp ? sp.name : String(c.sp),
+        cat: 'fish', sub: sp ? sp.sub : '',
+        emoji: sp ? sp.emoji : '\u{1F41F}',
+        evidence: 'caught', count: 1,
+        when: d.toISOString(),
+        lat: null, lng: null,
+        notes: typeof c.notes === 'string' ? c.notes : '',
+        photo: null, bird: null,
+        fish: {
+          caught: true, released: !!c.rel, length: len, weight: null,
+          bait: '', water: typeof c.water === 'string' ? c.water : '',
+          units: c.unit === 'in' ? 'imperial' : 'metric'
+        },
+        fishZone: (typeof c.z === 'number' && isFinite(c.z)) ? c.z : null,
+        external: 'onfish'
+      });
+    });
+    return out;
+  }
+  // The one journal: wildlife encounters plus the read-only ON Fishing catches.
+  function journalEntries() { return app.entries.concat(app.fishCatches || []); }
+  function findEntry(id) {
+    var all = journalEntries();
+    for (var i = 0; i < all.length; i++) if (all[i].id === id) return all[i];
+    return null;
+  }
+  /* ---- Journal category filter (persisted) ---- */
+  function journalFilter() {
+    var f = app.settings.journalFilter;
+    return (f === 'fish' || f === 'birds' || f === 'mammals' || f === 'other') ? f : 'all';
+  }
+  function matchesJournalFilter(cat) {
+    var f = journalFilter();
+    if (f === 'all') return true;
+    if (f === 'other') return cat !== 'fish' && cat !== 'birds' && cat !== 'mammals';
+    return cat === f;
+  }
+  function journalFilterChips() {
+    var cur = journalFilter(), h = '';
+    [['all', 'All'], ['fish', 'Fish'], ['birds', 'Birds'], ['mammals', 'Mammals'], ['other', 'Other']].forEach(function (o) {
+      h += '<button class="chip' + (cur === o[0] ? ' on' : '') + '" aria-pressed="' + (cur === o[0] ? 'true' : 'false') + '" data-action="journal-filter" data-f="' + o[0] + '">' + o[1] + '</button>';
+    });
+    return '<div class="chip-row" style="padding-top:8px">' + h + '</div>';
+  }
+
   // The earliest entry for each species. That entry is the lifer, the one that
   // put the species on the life list, and it is the one that wears the NEW pill.
   function firstEntryBySpecies() {
     var m = {};
-    app.entries.forEach(function (e) {
+    journalEntries().forEach(function (e) {
       if (!e.speciesId) return;
       var cur = m[e.speciesId];
       if (!cur || new Date(e.when) < new Date(cur.when)) m[e.speciesId] = e;
@@ -1045,10 +1504,11 @@
     return m;
   }
 
-  // One row per species ever logged, newest sighting first.
+  // One row per species ever logged, newest sighting first. A first-ever
+  // species from either source (wildlife log or ON Fishing catch) is the lifer.
   function lifeList() {
     var m = {};
-    app.entries.forEach(function (e) {
+    journalEntries().forEach(function (e) {
       if (!e.speciesId) return;
       var r = m[e.speciesId];
       if (!r) r = m[e.speciesId] = { id: e.speciesId, name: e.speciesName, emoji: e.emoji, cat: e.cat, count: 0, first: e.when, last: e.when };
@@ -1063,7 +1523,7 @@
 
   function entriesThisYear() {
     var y = new Date().getFullYear();
-    return app.entries.filter(function (e) { var d = new Date(e.when); return !isNaN(d) && d.getFullYear() === y; }).length;
+    return journalEntries().filter(function (e) { var d = new Date(e.when); return !isNaN(d) && d.getFullYear() === y; }).length;
   }
 
   /* Places. An entry only stores coordinates, so a place name has to be inferred.
@@ -1105,7 +1565,7 @@
   }
   function placeGroups() {
     var m = {};
-    app.entries.forEach(function (e) {
+    journalEntries().forEach(function (e) {
       var p = placeOf(e); if (!p) return;
       var g = m[p.key] || (m[p.key] = { key: p.key, name: p.name, sub: p.sub, entries: [], species: {} });
       g.entries.push(e);
@@ -1147,7 +1607,8 @@
   }
 
   function viewJournal() {
-    if (!app.entries.length) return journalEmpty();
+    var all = journalEntries();
+    if (!all.length) return journalEmpty();
 
     var life = lifeList();
     var lifers = firstEntryBySpecies();
@@ -1165,7 +1626,7 @@
       '</div></div>';
 
     body += '<div class="stat-grid" style="margin-top:12px">' +
-      statLink(app.entries.length, app.entries.length === 1 ? 'Encounter' : 'Encounters') +
+      statLink(all.length, all.length === 1 ? 'Encounter' : 'Encounters') +
       statLink(entriesThisYear(), 'This year') +
       statLink(catsSeen(), catsSeen() === 1 ? 'Category' : 'Categories') +
       '</div>';
@@ -1177,8 +1638,12 @@
     if (places.length) segs.push(['places', 'Places']);
     body += '<div class="hpad" style="margin-top:16px">' + segHtml('journal-view', view, segs) + '</div>';
 
+    // The category chips filter both the timeline and the life list.
+    if (view === 'timeline' || view === 'life') body += journalFilterChips();
+
     if (view === 'life') {
       var sort = app.settings.lifeSort === 'az' ? 'az' : 'recent';
+      life = life.filter(function (r) { return matchesJournalFilter(r.cat); });
       life.sort(sort === 'az'
         ? function (a, b) { return a.name.localeCompare(b.name); }
         : function (a, b) { return new Date(b.last) - new Date(a.last); });
@@ -1206,14 +1671,16 @@
           '<span class="chevron">' + I.chevron + '</span></a>';
       });
       var placed = places.reduce(function (n, g) { return n + g.entries.length; }, 0);
-      body += '</div><div class="group-footer">' + placed + ' of your ' + app.entries.length + ' encounters have a location. Parks are named when a sighting falls within 15km of one.</div></div>';
+      body += '</div><div class="group-footer">' + placed + ' of your ' + all.length + ' encounters have a location. Parks are named when a sighting falls within 15km of one.</div></div>';
     } else {
-      body += timelineHtml(app.entries, lifers);
+      var shown = all.filter(function (e) { return matchesJournalFilter(e.cat); });
+      if (shown.length) body += timelineHtml(shown, lifers);
+      else body += '<div class="empty" style="padding-top:32px"><div class="e">\u{1F50D}</div><h3>Nothing in this filter</h3><p>No encounters match. Tap All to see everything.</p></div>';
     }
 
     screen({
       title: 'Journal', large: true, header: true,
-      subtitle: app.entries.length + (app.entries.length === 1 ? ' encounter' : ' encounters') + ' logged, all on this phone.',
+      subtitle: all.length + (all.length === 1 ? ' encounter' : ' encounters') + ' logged, all on this phone.',
       body: body
     });
   }
@@ -1221,7 +1688,7 @@
   /* One species, everything you have recorded of it, and a door into the guide
      entry for it. This is where the dictionary and the logbook meet. */
   function viewSpeciesJournal(id) {
-    var mine = app.entries.filter(function (e) { return e.speciesId === id; });
+    var mine = journalEntries().filter(function (e) { return e.speciesId === id; });
     if (!mine.length) return viewJournal();
     var sp = byId[id];
     var name = sp ? sp.name : mine[0].speciesName;
@@ -1271,7 +1738,6 @@
 
     body += sectionTitle('Your journal') + '<nav class="ios-group">' +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: 'Stats', sub: 'Your totals and guide completion' }) +
-      iosRow({ action: 'export-data', tile: ['grey', 'download'], title: 'Export my log', sub: 'Download everything as a file' }) +
       '</nav><p class="ios-group-foot">Your encounters live in the Journal tab.</p>';
 
     body += sectionTitle('Community and data') + '<nav class="ios-group">' +
@@ -1300,29 +1766,38 @@
       iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: 'on-fishing', sub: 'Zones, seasons and catch limits' }) +
       '</nav><p class="ios-group-foot">Three field guides for Ontario, one look. Take all three.</p>';
 
+    body += sectionTitle('Your data') + '<div class="ios-group">' +
+      iosRow({ action: 'export-data', tile: ['grey', 'download'], title: 'Export my log', sub: 'Download everything as a file' }) +
+      iosRow({ action: 'import-data', tile: ['grey', 'upload'], title: 'Import a backup', sub: 'Restore encounters from an exported file' }) +
+      iosRow({ action: 'reset-data', danger: true, title: 'Reset all data', chevron: false }) +
+      '<input type="file" id="import-input" accept=".json,application/json" style="display:none" aria-hidden="true">' +
+      '</div><p class="ios-group-foot">Import merges by id, so restoring a backup never duplicates an encounter. Reset asks twice before it erases anything.</p>';
+
     body += sectionTitle('About') + '<div class="ios-group">' +
       '<div class="info-row"><div class="info-v">on-wildlife is a simple, private field guide and journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario. Look a species up, read a longer account if you want one, and log what you see. It works offline and installs to your home screen.</div></div><div class="info-row"><div class="info-v">I built it because I wanted one clear place to name what I run into outside and keep a record of it, without ads, accounts, or anything watching over my shoulder. Everything you log stays on this device. There is no server and nothing is tracked. Sensitive spots, like bear sightings, are coarsened before they can go to the optional community layer.</div></div>' +
+      '<div class="info-row"><div class="info-v">ON Fishing is now part of ON Wildlife: the fishing zones live on the map, every fish page carries its seasons and limits, and your catch log shows up in the journal.</div></div>' +
+      iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: 'on-fishing, the solo site', sub: 'The standalone zone map stays up' }) +
       iosRow({ title: 'Species in guide', value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: 'Version', value: '3.0', chevron: false }) +
-      iosRow({ href: 'https://katsuma0.github.io', ext: true, title: 'Made by Katsuma Onishi' }) +
-      iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca' }) +
+      iosRow({ action: 'version-tap', title: 'Version', value: '3.1', chevron: false }) +
+      iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca', sub: 'Apps, projects and the rest' }) +
       '</div>';
     screen({ title: 'More', large: true, header: true, body: body });
   }
   /* ------------------------------------------------------------ Account */
   function viewAccount() {
     var life = lifeList();
+    var all = journalEntries();
     var photosN = app.entries.filter(function (e) { return e.photo; }).length;
     var body = '<div class="ios-avatar account-avatar" id="account-avatar" aria-hidden="true">' + avatarInner() + '</div>';
 
     body += '<div class="ios-group" style="margin-top:8px">' +
       '<div class="field"><label class="field-label" for="display-name">Name</label>' +
-      '<input type="text" id="display-name" placeholder="Your name" autocomplete="off" autocorrect="off" value="' + esc(app.settings.displayName || '') + '"></div>' +
-      '</div><p class="ios-group-foot">Shown as your avatar initial. It never leaves this device.</p>';
+      '<input type="text" id="display-name" placeholder="Your name" autocomplete="off" autocorrect="off" value="' + esc(profileName()) + '"></div>' +
+      '</div><p class="ios-group-foot">Shown as your avatar initial, shared with the other outdoors apps on this device. It never leaves it.</p>';
 
     body += '<div class="stat-grid">' +
       stat(life.length, 'Life list') +
-      stat(app.entries.length, app.entries.length === 1 ? 'Encounter' : 'Encounters') +
+      stat(all.length, all.length === 1 ? 'Encounter' : 'Encounters') +
       stat(entriesThisYear(), 'This year') +
       '</div><div class="spacer"></div>';
 
@@ -1331,7 +1806,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: 'Visibility', value: (Community.on() ? 'Sharing on' : 'Sharing off') }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: 'Stats' }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: 'Export my log' }) +
-      iosRow({ title: 'Version', value: '3.0', chevron: false }) +
+      iosRow({ title: 'Version', value: '3.1', chevron: false }) +
       '</nav>';
 
     screen({ title: 'Account', backAction: true, backText: 'Back', body: body });
@@ -1374,7 +1849,9 @@
       '<div class="map-wrap"><div id="map"></div>' +
         '<div class="map-hint" id="map-hint" role="status" aria-live="polite"></div>' +
         '<div class="map-note" id="map-offline" role="status" aria-live="polite" hidden>Map tiles need a connection. Your pins still show.</div>' +
+        '<div class="map-note" id="map-zones-note" role="status" aria-live="polite" style="bottom:56px" hidden>Fishing zone boundaries need a connection. Your pins still show.</div>' +
         '<div class="map-fabs">' +
+          '<button class="fab" data-action="map-layers" aria-label="Map layers">' + spriteIcon('layers') + '</button>' +
           '<button class="fab fab-locate" data-action="map-locate" aria-label="My location">' + I.crosshair + '</button>' +
           '<button class="fab fab-hazard" data-action="report-hazard" aria-label="Report hazard">⚠️</button>' +
           '<button class="fab fab-bear" data-action="report-bear" aria-label="Report bear">\u{1F43B}</button>' +
@@ -1441,6 +1918,7 @@
     tiles.on('load', function () { var n = $('#map-offline'); if (n) n.hidden = true; });
     tiles.addTo(map);
     renderMapMarkers();
+    applyMapLayers();
     var located = locatedRecords();
     if (located.length) {
       try { map.fitBounds(L.latLngBounds(located.map(function (r) { return [r.lat, r.lng]; })).pad(0.35), { maxZoom: 13 }); } catch (e) {}
@@ -1457,7 +1935,8 @@
   }
   function renderMapMarkers() {
     if (!app.map) return;
-    if (app._layer) { try { app.map.removeLayer(app._layer); } catch (e) {} }
+    if (app._layer) { try { app.map.removeLayer(app._layer); } catch (e) {} app._layer = null; }
+    if (!mapLayerOn('wildlife')) return;
     var group = L.layerGroup();
     locatedRecords().filter(function (r) { return app.mapFilter === 'all' || r.kind === app.mapFilter; }).forEach(function (r) {
       var icon, popup;
@@ -1477,8 +1956,129 @@
     group.addTo(app.map);
     app._layer = group;
   }
+
+  /* ---- Map layers (wildlife pins, provincial parks, fishing zones) ----
+     Choices persist in settings.mapLayers. The zone boundaries come from the
+     exact service and query on-fishing uses, cached in a module variable and
+     runtime-cached by the service worker so they survive offline. */
+  var ZONE_SERVICE = 'https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14';
+  var ZONE_FIELD = 'FISHERIES_MANAGEMENT_ZONE_ID';
+  var ZONE_BOUNDS_URL = ZONE_SERVICE + '/query?where=1%3D1' +
+    '&outFields=' + ZONE_FIELD + ',LOCATION_DESCR' +
+    '&returnGeometry=true&maxAllowableOffset=0.005&geometryPrecision=5&outSR=4326&f=geojson';
+  var _zonesGeo = null, _zonesLoading = false;
+  function mapLayerOn(key) {
+    var m = app.settings.mapLayers || {};
+    return key === 'wildlife' ? m.wildlife !== false : !!m[key];
+  }
+  function cssVar(name) {
+    try { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+    catch (e) { return ''; }
+  }
+  function buildParksLayer() {
+    var group = L.layerGroup();
+    ((window.ECO && ECO.parks) || []).forEach(function (p) {
+      if (p.lat == null || p.lng == null) return;
+      L.marker([p.lat, p.lng], { icon: pinIcon('\u{1F332}', 'pin-park'), title: p.name, alt: p.name })
+        .on('click', function () { location.hash = '#/park/' + p.id; })
+        .addTo(group);
+    });
+    return group;
+  }
+  function drawZonesLayer() {
+    if (!app.map || !_zonesGeo) return;
+    if (app._zonesLayer) { try { app.map.removeLayer(app._zonesLayer); } catch (e) {} app._zonesLayer = null; }
+    var line = cssVar('--tint');
+    var geo = L.geoJSON(_zonesGeo, {
+      style: function () { return { color: line, weight: 1.2, fillColor: line, fillOpacity: 0.12 }; },
+      onEachFeature: function (f, lyr) {
+        lyr.on('click', function () {
+          var z = f.properties && f.properties[ZONE_FIELD];
+          if (z != null) location.hash = '#/zones/' + z;
+        });
+      }
+    });
+    var group = L.layerGroup([geo]);
+    // one zone-number label per zone, at the centre of its combined bounds
+    var bounds = {};
+    geo.eachLayer(function (lyr) {
+      var z = lyr.feature && lyr.feature.properties && lyr.feature.properties[ZONE_FIELD];
+      if (z == null || !lyr.getBounds) return;
+      var b = lyr.getBounds();
+      if (bounds[z]) bounds[z].extend(b);
+      else bounds[z] = L.latLngBounds(b.getSouthWest(), b.getNorthEast());
+    });
+    for (var z in bounds) {
+      if (!bounds.hasOwnProperty(z)) continue;
+      group.addLayer(L.marker(bounds[z].getCenter(), {
+        interactive: false, keyboard: false,
+        icon: L.divIcon({ className: 'zone-label-wrap', html: '<div class="zone-label">' + esc(String(z)) + '</div>', iconSize: [0, 0] })
+      }));
+    }
+    group.addTo(app.map);
+    app._zonesLayer = group;
+  }
+  function ensureZonesLayer() {
+    if (_zonesGeo) { drawZonesLayer(); return; }
+    if (_zonesLoading) return;
+    _zonesLoading = true;
+    fetch(ZONE_BOUNDS_URL).then(function (r) { return r.json(); }).then(function (gj) {
+      _zonesLoading = false;
+      if (!gj || !gj.features) throw new Error('bad geojson');
+      _zonesGeo = gj;
+      if (app.map && mapLayerOn('zones')) drawZonesLayer();
+    }).catch(function () {
+      _zonesLoading = false;
+      // offline-note style, never an error
+      var n = document.getElementById('map-zones-note'); if (n) n.hidden = false;
+    });
+  }
+  function applyMapLayers() {
+    if (!app.map) return;
+    if (mapLayerOn('parks')) {
+      if (!app._parksLayer) app._parksLayer = buildParksLayer();
+      if (!app.map.hasLayer(app._parksLayer)) app._parksLayer.addTo(app.map);
+    } else if (app._parksLayer) {
+      try { app.map.removeLayer(app._parksLayer); } catch (e) {}
+    }
+    if (mapLayerOn('zones')) {
+      if (app._zonesLayer) { if (!app.map.hasLayer(app._zonesLayer)) app._zonesLayer.addTo(app.map); }
+      else ensureZonesLayer();
+    } else {
+      if (app._zonesLayer) { try { app.map.removeLayer(app._zonesLayer); } catch (e) {} }
+      var zn = document.getElementById('map-zones-note'); if (zn) zn.hidden = true;
+    }
+  }
+  function layerSwitchRow(id, label, sub, on) {
+    return '<div class="field"><span class="ios-row-body" style="flex:1"><span class="ios-row-title">' + esc(label) + '</span>' +
+      (sub ? '<span class="ios-row-sub" style="white-space:normal">' + esc(sub) + '</span>' : '') + '</span>' +
+      '<label class="switch"><input type="checkbox" id="' + id + '" aria-label="' + esc(label) + '"' + (on ? ' checked' : '') + '><span class="track"></span><span class="knob"></span></label></div>';
+  }
+  function openLayersSheet() {
+    var body = '<div class="group" style="margin-top:6px"><div class="group-header">Show on the map</div><div class="list">' +
+      layerSwitchRow('layer-wildlife', 'Wildlife pins', 'Your sightings, bears and hazards', mapLayerOn('wildlife')) +
+      layerSwitchRow('layer-parks', 'Provincial parks', 'Tap a pin to open the park page', mapLayerOn('parks')) +
+      layerSwitchRow('layer-zones', 'Fishing zones', 'The 20 fisheries management zones', mapLayerOn('zones')) +
+      '</div><div class="group-footer">Zone boundaries load once from Ontario’s open data service and are kept for offline use. Tap a zone for its seasons and limits.</div></div>';
+    var html = '<div class="scrim" data-action="close-sheet"></div>' +
+      '<div class="sheet" id="sheet"><div class="sheet-grabber"></div>' +
+      '<div class="sheet-nav"><span style="width:44px"></span><span class="t">Layers</span>' +
+      '<button class="nav-btn bold" data-action="close-sheet">Done</button></div>' +
+      '<div class="sheet-body">' + body + '</div></div>';
+    $('#sheet-root').innerHTML = html;
+    requestAnimationFrame(function () { var s = $('#sheet'); if (s) s.classList.add('show'); var sc = $('.scrim'); if (sc) sc.classList.add('show'); });
+    afterSheetOpen();
+  }
+  function setMapLayer(key, on) {
+    if (!app.settings.mapLayers || typeof app.settings.mapLayers !== 'object') app.settings.mapLayers = { wildlife: true, parks: false, zones: false };
+    app.settings.mapLayers[key] = !!on;
+    saveSettings();
+    if (key === 'wildlife') renderMapMarkers();
+    applyMapLayers();
+  }
   function updateMapHint() {
     var el = document.getElementById('map-hint'); if (!el) return;
+    clearTimeout(app._hintTimer);
     if (app.placeMode) {
       el.innerHTML = (app.placeMode === 'bear' ? '🐻 Tap the map where you saw the bear' : '⚠️ Tap the map to place the hazard') +
         ' <button type="button" class="hint-btn" data-action="place-center">or place at map centre</button>';
@@ -1486,6 +2086,8 @@
     } else if (!locatedRecords().length) {
       el.innerHTML = 'No mapped reports yet. Tap 🐻 or ⚠️, then tap the map. Sightings you log with a location show up here too.';
       el.classList.add('show');
+      // informational only, so it steps out of the way after a few seconds
+      app._hintTimer = setTimeout(function () { el.classList.remove('show'); }, 4000);
     } else { el.classList.remove('show'); el.textContent = ''; }
   }
   function mapLocate(silent) {
@@ -1509,10 +2111,29 @@
       '<span class="cell-body"><span class="cell-title" style="color:var(--tint)">' + (has ? 'Location set' : 'Use my location') + '</span>' +
       '<span class="cell-sub">' + (has ? (lat.toFixed(4) + ', ' + lng.toFixed(4)) : 'Tap to capture GPS, or drop a pin on the map') + '</span></span></button>';
   }
+  /* While any sheet (or the species picker riding on one) is open the page
+     behind is scroll-locked: iOS Safari otherwise pans the page when the
+     keyboard opens, pushing the top of the sheet out of reach. The scroll
+     position is stored on lock and restored on unlock. */
+  var _scrollLockY = null;
+  function lockScroll() {
+    if (_scrollLockY != null) return;
+    _scrollLockY = window.scrollY || window.pageYOffset || 0;
+    document.documentElement.classList.add('sheet-lock');
+    document.body.style.top = (-_scrollLockY) + 'px';
+  }
+  function unlockScroll() {
+    if (_scrollLockY == null) return;
+    var y = _scrollLockY; _scrollLockY = null;
+    document.documentElement.classList.remove('sheet-lock');
+    document.body.style.top = '';
+    window.scrollTo(0, y);
+  }
   // Modal accessibility: label the dialog, move focus in, make the rest of the
   // page inert (also traps Tab where supported), and restore focus on close.
   function afterSheetOpen() {
     var s = $('#sheet'); if (!s) return;
+    lockScroll();
     s.setAttribute('role', 'dialog'); s.setAttribute('aria-modal', 'true');
     var t = s.querySelector('.sheet-nav .t, h1, h2');
     if (t) { if (!t.id) t.id = 'sheet-title'; s.setAttribute('aria-labelledby', t.id); }
@@ -1841,24 +2462,31 @@
 
   /* ================================================================= STATS */
   function viewStats() {
-    var c = badgeCtx();
-    if (!c.total) {
+    // Stats read the one merged journal: wildlife encounters plus the
+    // read-only ON Fishing catches sharing this device.
+    var all = journalEntries();
+    var spSet = {}, catSet = {}, perCat = {};
+    all.forEach(function (e) {
+      if (e.speciesId) { spSet[e.speciesId] = 1; (perCat[e.cat] = perCat[e.cat] || {})[e.speciesId] = 1; }
+      if (e.cat) catSet[e.cat] = 1;
+    });
+    var speciesN = Object.keys(spSet).length, catsN = Object.keys(catSet).length;
+    if (!all.length) {
       screen({ title: 'Stats', large: true, subtitle: 'Your field record',
         body: '<div class="empty"><div class="e">\u{1F4CA}</div><h3>No stats yet</h3><p>Log a few encounters and your totals, badges and community comparison will appear here.</p><div class="spacer"></div><div class="hpad"><a class="btn btn-tinted" href="#/log">Start logging</a></div></div>' });
       return;
     }
     var earned = earnedBadgeIds().length;
     var body = '<div class="stat-grid" style="margin-top:4px">' +
-      stat(c.total, 'Encounters') + stat(c.species, 'Species') + stat(c.catsN, 'Categories') + '</div>';
+      stat(all.length, 'Encounters') + stat(speciesN, 'Species') + stat(catsN, 'Categories') + '</div>';
     // Honest personal progress: how much of the Ontario guide you've recorded
-    var perCat = {}; app.entries.forEach(function (e) { if (e.speciesId) (perCat[e.cat] = perCat[e.cat] || {})[e.speciesId] = 1; });
     body += '<div class="group"><div class="group-header">Guide completion</div><div class="list" style="padding:8px 0">';
-    body += progressRow('\u{1F30E} All species', c.species, SPECIES.length);
+    body += progressRow('\u{1F30E} All species', speciesN, SPECIES.length);
     CATEGORIES.forEach(function (cm) {
       var got = perCat[cm.id] ? Object.keys(perCat[cm.id]).length : 0;
       if (got) body += progressRow(cm.emoji + ' ' + cm.name, got, speciesInCat(cm.id).length, cm.color);
     });
-    body += '</div><div class="group-footer">You’ve recorded ' + c.species + ' of Ontario’s ' + SPECIES.length + ' guide species. A live community comparison arrives with the shared layer.</div></div>';
+    body += '</div><div class="group-footer">You’ve recorded ' + speciesN + ' of Ontario’s ' + SPECIES.length + ' guide species, ON Fishing catches included. A live community comparison arrives with the shared layer.</div></div>';
     body += '<div class="group"><div class="list">' +
       '<a class="cell tap" href="#/badges"><span class="cell-emoji">\u{1F3C5}</span><span class="cell-body"><span class="cell-title">Badges</span><span class="cell-sub">' + earned + ' earned</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       '</div></div>';
@@ -2176,6 +2804,7 @@
     if (s) s.classList.remove('show');
     if (sc) sc.classList.remove('show');
     clearSheetA11y();
+    unlockScroll();
     setTimeout(function () { $('#sheet-root').innerHTML = ''; }, 320);
   }
 
@@ -2184,7 +2813,7 @@
     var d = app.draft;
     var startCat = d.cat || 'all';
     var html = '<div class="scrim show" data-action="close-picker"></div>' +
-      '<div class="sheet show" id="picker" role="dialog" aria-modal="true" aria-label="Choose Species" style="height:88vh">' +
+      '<div class="sheet show" id="picker" role="dialog" aria-modal="true" aria-label="Choose Species" style="height:88dvh">' +
       '<div class="sheet-grabber"></div>' +
       '<div class="sheet-nav"><button class="nav-btn" data-action="close-picker">Back</button>' +
       '<span class="t">Choose Species</span><span style="width:44px"></span></div>' +
@@ -2313,8 +2942,10 @@
     // entry itself would count as the prior record and no save would ever be new.
     var isLifer = false, lifeNumber = 0;
     if (!d._editId && entry.speciesId) {
+      // First-ever from either source counts: an ON Fishing catch already on
+      // the life list means logging the same species here is not a lifer.
       var seen = {};
-      app.entries.forEach(function (x) { if (x.speciesId) seen[x.speciesId] = 1; });
+      journalEntries().forEach(function (x) { if (x.speciesId) seen[x.speciesId] = 1; });
       isLifer = !seen[entry.speciesId];
       if (isLifer) lifeNumber = Object.keys(seen).length + 1;
     }
@@ -2348,9 +2979,9 @@
 
   /* ---- Entry detail sheet ---- */
   function openEntry(id) {
-    var e = null;
-    for (var i = 0; i < app.entries.length; i++) if (app.entries[i].id === id) { e = app.entries[i]; break; }
+    var e = findEntry(id);
     if (!e) return;
+    var ro = e.external === 'onfish';   // an ON Fishing catch: read-only here
     var sp = e.speciesId ? byId[e.speciesId] : null;
     var rows = '';
     rows += info('When', fmtDay(e.when) + ' at ' + fmtTime(e.when));
@@ -2365,6 +2996,7 @@
       if (e.fish.water) rows += info('Water body', e.fish.water);
       if (e.fish.caught) rows += info('Kept or released', e.fish.released ? 'Released' : 'Kept');
     }
+    if (e.fishZone) rows += info('Fishing zone', 'Zone ' + e.fishZone);
     if (e.bird && e.bird.behavior) rows += info('Behaviour', e.bird.behavior);
     if (e.notes) rows += info('Notes', e.notes);
 
@@ -2372,12 +3004,13 @@
       '<div class="hero-emoji" style="width:76px;height:76px;font-size:44px;background:' + tintFor(e.cat) + '22">' + (e.emoji || '\u{1F43E}') + '</div>' +
       '<h1>' + esc(e.speciesName) + '</h1>' +
       (sp ? '<div class="sci">' + esc(sp.sci) + '</div>' : '') + '</div>';
+    if (ro) body += '<div class="wrap-note"><span class="i">\u{1F3A3}</span><span>Logged in <b>ON Fishing</b> on this device. It shows here read-only, so edit or delete it over there.</span></div>';
     if (e.photo) body += '<div class="hpad"><img class="entry-photo" src="' + e.photo + '" alt="Photo of your ' + esc(e.speciesName) + ' sighting"></div>';
     body += '<div class="group"><div class="list">' + rows + '</div></div>';
     body += '<div class="hpad"><button class="btn btn-primary btn-block" data-action="share-entry" data-id="' + esc(e.id) + '">' + I.share + 'Share this sighting</button></div><div class="spacer"></div>';
-    body += '<div class="hpad"><button class="btn btn-tinted btn-block" data-action="edit-entry" data-id="' + esc(e.id) + '">Edit encounter</button></div><div class="spacer"></div>';
+    if (!ro) body += '<div class="hpad"><button class="btn btn-tinted btn-block" data-action="edit-entry" data-id="' + esc(e.id) + '">Edit encounter</button></div><div class="spacer"></div>';
     if (sp) body += '<div class="hpad"><a class="btn btn-tinted btn-block" href="#/species/' + esc(sp.id) + '" data-action="close-sheet-nav">View in field guide</a></div><div class="spacer"></div>';
-    body += '<div class="hpad"><button class="btn btn-danger btn-block" data-action="delete-entry" data-id="' + esc(e.id) + '">Delete this encounter</button></div>';
+    if (!ro) body += '<div class="hpad"><button class="btn btn-danger btn-block" data-action="delete-entry" data-id="' + esc(e.id) + '">Delete this encounter</button></div>';
 
     var html = '<div class="scrim" data-action="close-sheet"></div>' +
       '<div class="sheet" id="sheet"><div class="sheet-grabber"></div>' +
@@ -2392,7 +3025,7 @@
   function editEntry(id) {
     var e = null;
     for (var i = 0; i < app.entries.length; i++) if (app.entries[i].id === id) { e = app.entries[i]; break; }
-    if (!e) return;
+    if (!e || e.external) return;   // ON Fishing catches are read-only here
     var sp = e.speciesId ? byId[e.speciesId] : null;
     app.draft = {
       speciesId: e.speciesId || null,
@@ -2454,7 +3087,7 @@
     };
   }
   function shareEntry(id) {
-    var e = null; for (var i = 0; i < app.entries.length; i++) if (app.entries[i].id === id) { e = app.entries[i]; break; }
+    var e = findEntry(id);
     if (!e) return;
     if (!window.OnShare) { toast('Sharing is not available'); return; }
     var item = entryShareItem(e);
@@ -2546,6 +3179,73 @@
     toast('Exported ' + app.entries.length + ' encounters');
   }
 
+  /* ------------------------------------------------------- Data import */
+  // Reads an exported backup, validates the shape, and merges by id into the
+  // store: existing records win, only genuinely new ones are added.
+  function importBackup(file) {
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onerror = function () { toast('Couldn’t read that file'); };
+    reader.onload = function (ev) {
+      var data = null;
+      try { data = JSON.parse(ev.target.result); } catch (e) {}
+      if (!data || data.app !== 'ontario-wildlife-log' || !Array.isArray(data.entries)) {
+        toast('That file isn’t a wildlife log backup'); return;
+      }
+      var have = {}; app.entries.forEach(function (e) { have[e.id] = 1; });
+      var newEntries = data.entries.filter(function (e) {
+        return e && typeof e.id === 'string' && e.id && !have[e.id] &&
+          typeof e.speciesName === 'string' && e.when && !isNaN(new Date(e.when).getTime());
+      });
+      var haveH = {}; app.hazards.forEach(function (h) { haveH[h.id] = 1; });
+      var newHazards = (Array.isArray(data.hazards) ? data.hazards : []).filter(function (h) {
+        return h && typeof h.id === 'string' && h.id && !haveH[h.id] && h.when;
+      });
+      if (!newEntries.length && !newHazards.length) { toast('Nothing new in that backup'); return; }
+      var writes = newEntries.map(function (e) { app.entries.push(e); return Store.put(e); })
+        .concat(newHazards.map(function (h) { app.hazards.push(h); return Store.put(h, 'hazards'); }));
+      Promise.all(writes).then(function () {
+        haptic();
+        var msg = 'Imported ' + newEntries.length + (newEntries.length === 1 ? ' encounter' : ' encounters');
+        if (newHazards.length) msg += ' and ' + newHazards.length + (newHazards.length === 1 ? ' hazard' : ' hazards');
+        toast(msg);
+        route();
+      }).catch(function () { toast('Couldn’t save the import. Storage may be full.'); route(); });
+    };
+    reader.readAsText(file);
+  }
+
+  /* ------------------------------------------------------- Full reset */
+  // Store.clear is fire-and-forget; the reset reloads the page, so it needs a
+  // promise that resolves only when the wipe has really committed.
+  function clearStoreDone(store) {
+    return new Promise(function (resolve) {
+      if (!Store.useIDB) { Store._ls(store); return resolve(); }
+      try {
+        var tx = Store.db.transaction(store, 'readwrite');
+        tx.objectStore(store).clear();
+        tx.oncomplete = tx.onerror = tx.onabort = function () { resolve(); };
+      } catch (e) { resolve(); }
+      Store._ls(store);
+    });
+  }
+  function resetAllData() {
+    app.entries = []; app.hazards = [];
+    var seen = !!app.settings.seenPrivacy;
+    try {
+      localStorage.removeItem('owl-settings');
+      localStorage.removeItem('owl-entries');
+      localStorage.removeItem('owl-hazards');
+      localStorage.removeItem('owl-photos');
+      // The shared 'outdoors-profile' key belongs to all three apps, so a
+      // wildlife reset leaves it alone.
+      localStorage.setItem('owl-settings', JSON.stringify({ seenPrivacy: seen }));
+    } catch (e) {}
+    Promise.all([clearStoreDone('entries'), clearStoreDone('hazards')]).then(function () {
+      location.reload();
+    });
+  }
+
   /* ---------------------------------------------------------- Tab bar */
   // The floating four-item capsule. Glyphs come from the shared sprite so the
   // sibling apps present the exact same footer.
@@ -2579,7 +3279,7 @@
         h.indexOf('more') === 0 || h.indexOf('resources') === 0 || h.indexOf('trust') === 0 ||
         h.indexOf('privacy') === 0 || h.indexOf('community') === 0) return 'more';
     if (h.indexOf('explore') === 0 || h.indexOf('species') === 0 || h.indexOf('atrisk') === 0 ||
-        h.indexOf('log') === 0) return 'explore';
+        h.indexOf('zones') === 0 || h.indexOf('fishing') === 0 || h.indexOf('log') === 0) return 'explore';
     return 'explore';
   }
 
@@ -2587,15 +3287,26 @@
   function route() {
     var parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
     var r = parts[0] || 'log';
+    // Re-read the shared ON Fishing catch log so a catch made in the sibling
+    // app (same origin, same storage) appears without a reload.
+    app.fishCatches = loadFishCatches();
     // Tear down the Leaflet map when navigating away from the Map screen
-    if (r !== 'map' && app.map) { try { app.map.remove(); } catch (e) {} app.map = null; app.placeMode = null; }
+    if (r !== 'map' && app.map) {
+      try { app.map.remove(); } catch (e) {}
+      app.map = null; app.placeMode = null;
+      app._layer = null; app._parksLayer = null; app._zonesLayer = null;
+      clearTimeout(app._hintTimer);
+    }
     if (r === 'log') viewLog();
     else if (r === 'explore') {
-      if (parts[1] && parts[2]) viewSub(parts[1], parts[2]);
-      else if (parts[1]) viewCategory(parts[1]);
+      // #/explore/<cat>/<sub> is an alias of the flat category page that
+      // scrolls to the right group; old links keep working.
+      if (parts[1]) viewCategory(parts[1], parts[2]);
       else viewExplore();
     }
     else if (r === 'atrisk') viewAtRisk();
+    else if (r === 'zones') { if (parts[1]) viewZone(parts[1]); else viewZones(); }
+    else if (r === 'fishing') viewSpeciesZones(parts[1]);
     else if (r === 'species') viewSpecies(parts[1]);
     else if (r === 'search') viewSearch();
     else if (r === 'account') viewAccount();
@@ -2642,31 +3353,18 @@
     }
   });
 
-  // iOS-style swipe from the left edge to go back. Mirrors the nav back button and
-  // rides the same push/pop animation. Ignored when a sheet or picker is open.
-  (function edgeSwipeBack() {
-    var sx = 0, sy = 0, t0 = 0, active = false;
-    function backTarget() {
-      var a = document.querySelector('#nav .nav-left a.nav-btn[href]');
-      if (a) return { href: a.getAttribute('href') };
-      if (document.querySelector('#nav .nav-left button[data-action="nav-back"]')) return { back: true };
-      return null;
-    }
-    document.addEventListener('touchstart', function (e) {
-      if (e.touches.length !== 1 || $('#sheet') || $('#picker-root') || $('#app').classList.contains('nav-animating')) { active = false; return; }
-      var t = e.touches[0];
-      if (t.clientX <= 26) { active = true; sx = t.clientX; sy = t.clientY; t0 = Date.now(); } else active = false;
-    }, { passive: true });
-    document.addEventListener('touchend', function (e) {
-      if (!active) return; active = false;
-      var t = e.changedTouches[0];
-      var dx = t.clientX - sx, dy = Math.abs(t.clientY - sy), dt = Date.now() - t0;
-      if (dx > 55 && dx > dy * 1.6 && dt < 700) {
-        var bt = backTarget(); if (!bt) return;
-        if (bt.href) location.hash = bt.href.replace(/^#/, ''); else history.back();
-      }
-    }, { passive: true });
-  })();
+  /* Browser-driven navigation (back/forward buttons, Safari's own edge swipe)
+     must render without our push/pop animation, or the two animations stack and
+     the screen flashes. An in-app tap on a hash link or back button stamps a
+     short-lived flag; a hashchange that arrives without a fresh stamp is the
+     browser's doing and renders with direction 'none'. Safari's native gesture
+     already drives history, so there is no custom edge-swipe handler any more. */
+  var _tapNavAt = 0;
+  document.addEventListener('click', function (ev) {
+    var el = ev.target && ev.target.closest && ev.target.closest('a[href^="#"], [data-action="nav-back"]');
+    if (el) _tapNavAt = Date.now();
+  }, true);
+  function isUserNav() { return (Date.now() - _tapNavAt) < 700; }
 
   document.addEventListener('click', function (ev) {
     var t = ev.target.closest('[data-action]');
@@ -2707,6 +3405,12 @@
         viewJournal();
         break;
       case 'map-locate': ev.preventDefault(); mapLocate(false); break;
+      case 'map-layers': ev.preventDefault(); openLayersSheet(); break;
+      case 'journal-filter':
+        ev.preventDefault();
+        app.settings.journalFilter = t.getAttribute('data-f'); saveSettings();
+        viewJournal();
+        break;
       case 'place-center': {
         ev.preventDefault();
         if (!app.map || !app.placeMode) break;
@@ -2773,6 +3477,28 @@
         deleteEntry(t.getAttribute('data-id'));
         break;
       case 'export-data': ev.preventDefault(); exportData(); break;
+      case 'import-data': ev.preventDefault(); { var ii = $('#import-input'); if (ii) ii.click(); } break;
+      case 'reset-data': {
+        // Two taps: the first arms the row and relabels it, the second wipes.
+        // A few seconds of inaction disarms it again.
+        ev.preventDefault();
+        if (!app._resetArmed) {
+          app._resetArmed = true;
+          var rl = t.querySelector('.ios-row-title');
+          if (rl) rl.textContent = 'Tap again to erase everything';
+          clearTimeout(app._resetTimer);
+          app._resetTimer = setTimeout(function () {
+            app._resetArmed = false;
+            var rl2 = document.querySelector('[data-action="reset-data"] .ios-row-title');
+            if (rl2) rl2.textContent = 'Reset all data';
+          }, 4000);
+          break;
+        }
+        clearTimeout(app._resetTimer);
+        app._resetArmed = false;
+        resetAllData();
+        break;
+      }
       case 'set-units': ev.preventDefault(); app.settings.units = t.getAttribute('data-val'); saveSettings(); viewMore(); break;
       case 'set-theme': ev.preventDefault(); app.settings.theme = t.getAttribute('data-val'); saveSettings(); applyTheme(); viewMore(); break;
       case 'accept-privacy': ev.preventDefault(); app.settings.seenPrivacy = true; saveSettings(); closeSheet(); break;
@@ -2822,15 +3548,23 @@
       app.settings.photos = !!ev.target.checked; saveSettings();
       toast(ev.target.checked ? 'Reference photos on (fetched from iNaturalist)' : 'Reference photos off');
     }
+    else if (ev.target.id === 'layer-wildlife' || ev.target.id === 'layer-parks' || ev.target.id === 'layer-zones') {
+      setMapLayer(ev.target.id.replace('layer-', ''), ev.target.checked);
+    }
     else if (ev.target.id === 'community-share') {
       app.settings.community = !!ev.target.checked; saveSettings();
       toast(ev.target.checked ? 'Sharing your sightings. Thanks.' : 'Sharing turned off');
     }
     else if (ev.target.id === 'display-name') {
-      app.settings.displayName = ev.target.value.trim(); saveSettings();
+      // One shared profile for all three outdoors apps (see loadProfile).
+      saveProfileName(ev.target.value);
       // The avatar initial follows the name wherever an avatar is on screen.
       var av = document.getElementById('account-avatar'); if (av) av.innerHTML = avatarInner();
       var hv = document.getElementById('header-avatar'); if (hv) hv.innerHTML = avatarInner();
+    }
+    else if (ev.target.id === 'import-input') {
+      importBackup(ev.target.files && ev.target.files[0]);
+      ev.target.value = '';
     }
   });
 
@@ -2853,7 +3587,10 @@
   }
 
   /* -------------------------------------------------------------- Boot */
-  window.addEventListener('hashchange', route);
+  window.addEventListener('hashchange', function () {
+    app._browserNav = !isUserNav();
+    route();
+  });
   /* The "In depth" accounts are 650KB, a third of the whole app, and are only
      read on a species page. Loading them after first paint keeps the first
      screen fast without giving anything up: the species page already renders
@@ -2871,6 +3608,7 @@
 
   function boot() {
     loadSettings();
+    loadProfile();
     applyTheme();
     if (window.OnShare) OnShare.config({ app: 'on-wildlife', base: 'https://katsuma0.github.io/on-wildlife/', accent: '#007AFF' });
     Store.load().then(function (entries) {
