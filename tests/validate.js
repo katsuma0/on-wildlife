@@ -84,6 +84,14 @@ try {
   var localPaths = (shell.match(/'\.\/[^']*'/g) || []).map(function (s) { return s.replace(/'/g, '').replace(/^\.\//, ''); }).filter(Boolean);
   var swMissing = localPaths.filter(function (p) { return p && !fs.existsSync(rel(p)); });
   if (swMissing.length) bad('precached shell file missing', swMissing.join(', ')); else ok('all ' + localPaths.length + ' precached shell files exist');
+  // The redesign ships one stylesheet: assets/ios.css (with Leaflet folded in)
+  // plus the shared icon sprite. The old styles.css must be gone from the shell.
+  if (localPaths.indexOf('assets/ios.css') >= 0 && localPaths.indexOf('assets/icons.svg') >= 0 &&
+      localPaths.indexOf('styles.css') < 0 && localPaths.indexOf('vendor/leaflet/leaflet.css') < 0) {
+    ok('shell precaches assets/ios.css + assets/icons.svg, not the retired stylesheets');
+  } else {
+    bad('shell stylesheet expectations', localPaths.join(', '));
+  }
 } catch (e) { bad('service worker', e.message); }
 
 // ---- 5. share module ----

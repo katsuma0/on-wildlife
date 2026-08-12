@@ -110,7 +110,7 @@ and data scripts load correctly.
 
 ```
 index.html              App shell and iOS/PWA meta tags
-styles.css              iOS design system (light/dark, components)
+assets/ios.css          iOS design system (core tokens + app styles)
 app.js                  SPA: hash routing, IndexedDB journal, map, all screens
 data/
   categories.js         Category and subcategory metadata

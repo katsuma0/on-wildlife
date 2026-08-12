@@ -6,8 +6,8 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f2f2f7",
-  "theme_color": "#f9f9f9",
+  "background_color": "#F2F2F7",
+  "theme_color": "#F2F2F7",
   "categories": ["lifestyle", "utilities", "education"],
   "icons": [
     { "src": "icons/icon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" },

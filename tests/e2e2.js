@@ -37,6 +37,20 @@ const BASE = process.env.BASE || 'http://localhost:8000/index.html';
   await page.waitForTimeout(300);
   const cur = await page.$$eval('#tabbar .tab', els => els.filter(e => e.getAttribute('aria-current') === 'page').map(e => e.textContent.trim()));
   ok('exactly one tab has aria-current=page', cur.length === 1, 'tabs=' + JSON.stringify(cur));
+  const tabCount = await page.$$eval('#tabbar .tab', els => els.length);
+  ok('tab bar has exactly 4 items (Search left the bar)', tabCount === 4, 'count=' + tabCount);
+  const searchTab = await page.$$eval('#tabbar .tab', els => els.some(e => e.getAttribute('data-tab') === 'search'));
+  ok('no search tab in the bar', searchTab === false);
+  const hdr = await page.evaluate(() => {
+    const av = document.querySelector('.ios-header .ios-avatar');
+    const btns = document.querySelectorAll('.ios-header .ios-glass-btn');
+    if (!av || btns.length < 2) return null;
+    const a = av.getBoundingClientRect(), b = btns[0].getBoundingClientRect();
+    return { aw: a.width, ah: a.height, bw: b.width, bh: b.height };
+  });
+  ok('header avatar + glass buttons present at 44px',
+    !!hdr && Math.round(hdr.aw) === 44 && Math.round(hdr.ah) === 44 && Math.round(hdr.bw) === 44 && Math.round(hdr.bh) === 44,
+    JSON.stringify(hdr));
 
   await page.click('[data-action="open-log"]');
   await page.waitForTimeout(300);
