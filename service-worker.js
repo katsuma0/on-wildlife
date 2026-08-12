@@ -1,11 +1,12 @@
 /* Ontario Wildlife Log, offline service worker.
    Precaches the app shell so the app opens and works with no connection.
    Bump CACHE when any shell file changes to roll the cache forward. */
-var CACHE = 'owl-v27';
+var CACHE = 'owl-v28';
 var SHELL = [
   './',
   './index.html',
-  './styles.css',
+  './assets/ios.css',
+  './assets/icons.svg',
   './share.js',
   './app.js',
   './data/categories.js',
@@ -17,7 +18,6 @@ var SHELL = [
   './data/ecosystem.js',
   './manifest.webmanifest',
   './vendor/leaflet/leaflet.js',
-  './vendor/leaflet/leaflet.css',
   './vendor/leaflet/images/marker-icon.png',
   './vendor/leaflet/images/marker-icon-2x.png',
   './vendor/leaflet/images/marker-shadow.png',
