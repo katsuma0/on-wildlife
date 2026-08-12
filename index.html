@@ -48,8 +48,8 @@
       if (save) { try { localStorage.setItem('outdoors-appearance', JSON.stringify(a)); } catch (e) {} }
       if (a.theme === 'light' || a.theme === 'dark') d.setAttribute('data-theme', a.theme);
       if (a.glass === 'off') d.setAttribute('data-glass', 'off');
-      if (a.palette === 'field' || a.palette === 'granite') d.setAttribute('data-palette', a.palette);
-      if (a.face === 'system' || a.face === 'rounded' || a.face === 'serif' || a.face === 'avenir' || a.face === 'mono') d.setAttribute('data-face', a.face);
+      /* this app wears the parks look only: palettes and faces stored by
+         the sibling apps are read but never stamped here */
       if (a.size === 's' || a.size === 'l' || a.size === 'xl') d.setAttribute('data-textsize', a.size);
     })();
   </script>
@@ -68,9 +68,7 @@
           <a class="ios-glass-btn" href="#/search" aria-label="Search"><svg aria-hidden="true"><use href="assets/icons.svg#search"/></svg></a>
         </div>
       </div></header>
-      <div class="large-title"><div class="large-head"><h1>on-wildlife</h1></div>
-        <div class="subtitle">Ontario&rsquo;s wildlife, and your journal of it.</div>
-      </div>
+      <div class="large-title"><div class="large-head"><h1>on-wildlife</h1></div></div>
     </div>
   </div>
 

@@ -138,6 +138,88 @@
     }
   }
   function saveSettings() { try { localStorage.setItem('owl-settings', JSON.stringify(app.settings)); } catch (e) {} }
+
+  /* ------------------------------------------------------------ Language
+     One dictionary, keyed by the English the code already carries, so a
+     missing entry safely falls back to English. Species accounts, safety
+     notes and regulations are reference data and stay in English. */
+  var FR = {
+    'Guide': 'Guide', 'Map': 'Carte', 'Journal': 'Journal', 'Fishing': 'Pêche', 'Birding': 'Oiseaux', 'More': 'Plus',
+    'on-wildlife': 'on-wildlife', 'Account': 'Compte', 'Search': 'Recherche', 'Log an encounter': 'Noter une observation',
+    'This month in Ontario': 'Ce mois-ci en Ontario', 'Ontario Wildlife': 'Faune de l’Ontario', 'Coming Soon': 'À venir',
+    'In a future update': 'Dans une prochaine version', 'Species at Risk': 'Espèces en péril',
+    'flagged in the guide': 'signalées dans le guide', 'species': 'espèces', 'Recent': 'Récent',
+    'Encounter': 'Observation', 'Encounters': 'Observations', 'Species': 'Espèces', 'Categories': 'Catégories',
+    'Mammals': 'Mammifères', 'Birds': 'Oiseaux', 'Reptiles': 'Reptiles', 'Amphibians': 'Amphibiens', 'Fish': 'Poissons',
+    'Trees': 'Arbres', 'Plants': 'Plantes', 'Insects': 'Insectes', 'Fungi': 'Champignons',
+    'See all encounters ›': 'Toutes les observations ›',
+    'Learn': 'Apprendre', 'Learn and safety': 'Apprendre et sécurité', 'Bears, ticks, roads, water': 'Ours, tiques, routes, eau',
+    'Invasive species': 'Espèces envahissantes', 'Spot it, report it': 'Vu? Signalez-le',
+    'Your journal': 'Votre journal', 'Stats': 'Statistiques', 'Your numbers': 'Vos chiffres',
+    'Your encounters live in the Journal tab.': 'Vos observations vivent dans l’onglet Journal.',
+    'Community and data': 'Communauté et données', 'Community': 'Communauté',
+    'What’s near you this week': 'Près de chez vous cette semaine',
+    'Ontario and Canada resources': 'Ressources de l’Ontario et du Canada', 'Trusted sites': 'Sites de confiance',
+    'Data reliability': 'Fiabilité des données', 'Anomaly detection, a demo': 'Détection d’anomalies, une démo',
+    'Privacy': 'Confidentialité', 'Private, on this phone': 'Privé, sur ce téléphone',
+    'Appearance': 'Apparence', 'Theme': 'Thème', 'Auto': 'Auto', 'Light': 'Clair', 'Dark': 'Sombre',
+    'Glass': 'Verre', 'Frosted bars and buttons': 'Barres et boutons givrés', 'Text size': 'Taille du texte',
+    'Units': 'Unités', 'Metric': 'Métrique', 'Imperial': 'Impériale',
+    'Language': 'Langue', 'Fourth tab': 'Quatrième onglet', 'Include': 'Inclure',
+    'A record of everything you have seen outside.': 'Le registre de tout ce que vous avez vu dehors.',
+    'Start your life list': 'Commencez votre liste de vie',
+    'Log what you see and it lands here: a timeline of your days outside, a life list of every species you have met, and the places you found them. It all stays on this phone.': 'Notez ce que vous voyez et tout arrive ici: une chronologie de vos journées dehors, une liste de vie de chaque espèce rencontrée, et les lieux où vous les avez trouvées. Tout reste sur ce téléphone.',
+    'Log your first encounter': 'Notez votre première observation',
+    'encounter': 'observation', 'encounters': 'observations',
+    'logged, all on this phone.': 'notées, tout sur ce téléphone.',
+    'Category': 'Catégorie', 'Recently seen': 'Vues récemment', 'A to Z': 'A à Z',
+    'first seen': 'vue la première fois',
+    'species logged. Tap one to read your record of it.': 'espèces notées. Touchez-en une pour lire votre dossier.',
+    'Nothing in this filter': 'Rien dans ce filtre',
+    'No encounters match. Tap All to see everything.': 'Aucune observation ne correspond. Touchez Tout pour tout voir.',
+    'Search the guide': 'Chercher le guide',
+    'species, every category, any park. Stays on this phone.': 'espèces, chaque catégorie, tous les parcs. Reste sur ce téléphone.',
+    'Notes. Where exactly, what it was doing, the weather…': 'Notes. Où exactement, ce qu’il faisait, la météo…',
+    'Name': 'Nom', 'Your name': 'Votre nom',
+    'Units are this app’s. The rest is shared by every outdoors app on this device.': 'Les unités sont propres à cette appli. Le reste est partagé par toutes les applis plein air de cet appareil.',
+    'More from the Ontario outdoors': 'Plus du plein air ontarien',
+    'Rate Ontario Parks campsites': 'Évaluez les emplacements des parcs de l’Ontario',
+    'Zones, seasons and catch limits': 'Zones, saisons et limites de prise',
+    'Three field guides for Ontario, one look. Take all three.': 'Trois guides de terrain pour l’Ontario, un seul style. Prenez les trois.',
+    'Your data': 'Vos données', 'Export my log': 'Exporter mon journal', 'One file, everything': 'Un fichier, tout',
+    'Import a backup': 'Importer une sauvegarde', 'From an exported file': 'Depuis un fichier exporté',
+    'Reset all data': 'Réinitialiser toutes les données',
+    'Import merges by id, no duplicates. Reset asks twice.': 'L’import fusionne par identifiant, sans doublons. La réinitialisation demande deux fois.',
+    'About': 'À propos', 'Species in guide': 'Espèces dans le guide', 'Version': 'Version',
+    'Apps, projects and the rest': 'Applis, projets et le reste',
+    'on-fishing, the solo site': 'on-fishing, le site solo', 'The standalone zone map stays up': 'La carte des zones autonome reste en ligne',
+    'Everything here is hidden. The edit button brings rows back.': 'Tout est masqué ici. Le bouton de modification ramène les rangées.',
+    'Drag the handle to reorder. Unchecked rows leave the page, not the app.': 'Glissez la poignée pour réordonner. Les rangées décochées quittent la page, pas l’appli.',
+    'Edit': 'Modifier', 'Done': 'Terminé', 'Cancel': 'Annuler', 'Save': 'Enregistrer', 'Back': 'Retour',
+    'Save Encounter': 'Enregistrer l’observation', 'Log Encounter': 'Noter une observation', 'Edit Encounter': 'Modifier l’observation',
+    'What did you see?': 'Qu’avez-vous vu?', 'How did you see it?': 'Comment l’avez-vous vu?',
+    'Choose a species': 'Choisir une espèce', 'Search the guide or add your own': 'Cherchez le guide ou ajoutez la vôtre',
+    'Choose Species': 'Choisir l’espèce', 'Not in the guide': 'Pas dans le guide', 'Change': 'Changer',
+    'Observation': 'Observation', 'How many': 'Combien', 'Caught': 'Pris', 'Seen': 'Vu', 'Saw': 'Vu', 'Heard': 'Entendu', 'Signs': 'Traces',
+    'Where and when': 'Où et quand', 'Notes': 'Notes', 'Add a photo': 'Ajouter une photo',
+    'Take one or choose from your library': 'Prenez-en une ou choisissez dans votre bibliothèque', 'Remove photo': 'Retirer la photo',
+    'Choose a species first': 'Choisissez d’abord une espèce',
+    'All': 'Tout', 'Wildlife': 'Faune', 'Bears': 'Ours', 'Hazards': 'Dangers', 'Parks': 'Parcs', 'Zones': 'Zones',
+    'Layers': 'Couches', 'My location': 'Ma position', 'Report hazard': 'Signaler un danger', 'Report bear': 'Signaler un ours',
+    'Report a Bear': 'Signaler un ours', 'Report a Hazard': 'Signaler un danger',
+    'Map tiles need a connection. Your pins still show.': 'Les tuiles de carte demandent une connexion. Vos épingles restent visibles.',
+    'Fishing zone boundaries need a connection. Your pins still show.': 'Les limites de zones de pêche demandent une connexion. Vos épingles restent visibles.',
+    'Loading the map…': 'Chargement de la carte…', 'Map couldn’t load.': 'La carte n’a pas pu charger.',
+    'Timeline': 'Chronologie', 'Life list': 'Liste de vie', 'Places': 'Lieux', 'Badges': 'Insignes',
+    'Species caught': 'Espèces prises', 'This year': 'Cette année', 'Biggest': 'La plus grosse',
+    'What is open now': 'Ouvert en ce moment', 'All 20 zones': 'Les 20 zones', 'Recent catches': 'Prises récentes',
+    'No catches yet.': 'Pas encore de prises.', 'Latest lifer': 'Dernière coche', 'Birds in the guide': 'Oiseaux dans le guide',
+    'Recent sightings': 'Observations récentes', 'No birds yet.': 'Pas encore d’oiseaux.',
+    'Fishing is in the bar': 'La pêche est dans la barre', 'Birding is in the bar': 'Les oiseaux sont dans la barre',
+    'Search species, categories, or a park': 'Cherchez espèces, catégories ou un parc',
+    'Photos': 'Photos', 'Visibility': 'Visibilité', 'Sharing on': 'Partage activé', 'Sharing off': 'Partage désactivé'
+  };
+  function Lx(s) { return (app.settings && app.settings.lang === 'fr' && FR[s]) || s; }
   /* ---- Shared profile -------------------------------------------------
      The three outdoors apps live on one origin, so localStorage is shared.
      The display name lives under one JSON key, 'outdoors-profile' (shape
@@ -202,13 +284,16 @@
   }
   function applyAppearance() {
     var root = document.documentElement, a = app.appearance;
+    root.lang = app.settings.lang === 'fr' ? 'fr' : 'en';
     function stamp(attr, val, isDefault) {
       if (isDefault) root.removeAttribute(attr); else root.setAttribute(attr, val);
     }
     stamp('data-theme', a.theme, a.theme !== 'light' && a.theme !== 'dark');
     stamp('data-glass', 'off', a.glass !== 'off');
-    stamp('data-palette', a.palette, a.palette !== 'field' && a.palette !== 'granite');
-    stamp('data-face', a.face, a.face === 'parks');
+    // this app wears the parks look only: stored palettes and faces from
+    // the sibling apps are read but never stamped here
+    stamp('data-palette', '', true);
+    stamp('data-face', '', true);
     stamp('data-textsize', a.size, a.size === 'm');
   }
   function setAppearance(key, val) {
@@ -517,14 +602,14 @@
   // stays in the flow below this bar.
   function iosHeaderHtml(noActions) {
     return '<header class="ios-header"><div class="ios-header-row">' +
-      '<a class="ios-avatar" id="header-avatar" href="#/account" aria-label="Account">' + avatarInner() + '</a>' +
+      '<a class="ios-avatar" id="header-avatar" href="#/account" aria-label="' + Lx('Account') + '">' + avatarInner() + '</a>' +
       // the brand name only shows on big screens; the desktop layer in
       // ios.css owns its visibility
       '<span class="ios-brand">on-wildlife</span>' +
       // screens that carry their own tools (Map, More) skip the pair
       (noActions ? '' : '<div class="ios-header-actions">' +
-      '<button class="ios-glass-btn" type="button" data-action="open-log" aria-label="Log an encounter">' + spriteIcon('plus') + '</button>' +
-      '<a class="ios-glass-btn" href="#/search" aria-label="Search">' + spriteIcon('search') + '</a>' +
+      '<button class="ios-glass-btn" type="button" data-action="open-log" aria-label="' + Lx('Log an encounter') + '">' + spriteIcon('plus') + '</button>' +
+      '<a class="ios-glass-btn" href="#/search" aria-label="' + Lx('Search') + '">' + spriteIcon('search') + '</a>' +
       '</div>') + '</div></header>';
   }
   /* One settings-style row in the new system. opts: href or action (or neither
@@ -584,8 +669,8 @@
   }
   function sectionHead(key) {
     var t = SECTION_DEFS[key].title;
-    return '<div class="sec-head"><h2 class="ios-section-title">' + esc(t) + '</h2>' +
-      '<button type="button" class="sec-edit" data-action="edit-section" data-key="' + key + '" aria-label="Edit ' + esc(t) + '">' + spriteIcon('ellipsis') + '</button></div>';
+    return '<div class="sec-head"><h2 class="ios-section-title">' + esc(Lx(t)) + '</h2>' +
+      '<button type="button" class="sec-edit" data-action="edit-section" data-key="' + key + '" aria-label="' + Lx('Edit') + ' ' + esc(Lx(t)) + '">' + spriteIcon('ellipsis') + '</button></div>';
   }
   function openSectionEditor(key) {
     app._secKey = key;
@@ -596,17 +681,17 @@
     app._secDraft.forEach(function (r) {
       var d = defs[r.id];
       body += '<div class="secedit-row' + (r.on ? ' on' : '') + '" data-id="' + esc(r.id) + '">' +
-        '<button type="button" class="secedit-check" data-action="sec-toggle" data-id="' + esc(r.id) + '" role="checkbox" aria-checked="' + (r.on ? 'true' : 'false') + '" aria-label="Include ' + esc(d.label) + '">' + spriteIcon('check') + '</button>' +
+        '<button type="button" class="secedit-check" data-action="sec-toggle" data-id="' + esc(r.id) + '" role="checkbox" aria-checked="' + (r.on ? 'true' : 'false') + '" aria-label="' + Lx('Include') + ' ' + esc(Lx(d.label)) + '">' + spriteIcon('check') + '</button>' +
         (d.emoji ? '<span class="secedit-tile">' + d.emoji + '</span>' : '') +
-        '<span class="secedit-label">' + esc(d.label) + '</span>' +
+        '<span class="secedit-label">' + esc(Lx(d.label)) + '</span>' +
         '<span class="secedit-handle" data-drag="' + esc(r.id) + '" aria-hidden="true">' + spriteIcon('grip') + '</span>' +
         '</div>';
     });
-    body += '</div></div><p class="ios-group-foot">Drag the handle to reorder. Unchecked rows leave the page, not the app.</p>';
+    body += '</div></div><p class="ios-group-foot">' + Lx('Drag the handle to reorder. Unchecked rows leave the page, not the app.') + '</p>';
     var html = '<div class="scrim" data-action="close-sheet"></div>' +
       '<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Edit ' + esc(SECTION_DEFS[key].title) + '"><div class="sheet-grabber"></div>' +
-      '<div class="sheet-nav"><span style="width:44px"></span><span class="t">Edit ' + esc(SECTION_DEFS[key].title) + '</span>' +
-      '<button class="nav-btn bold" data-action="sec-done">Done</button></div>' +
+      '<div class="sheet-nav"><span style="width:44px"></span><span class="t">' + Lx('Edit') + ' ' + esc(Lx(SECTION_DEFS[key].title)) + '</span>' +
+      '<button class="nav-btn bold" data-action="sec-done">' + Lx('Done') + '</button></div>' +
       '<div class="sheet-body">' + body + '</div></div>';
     $('#sheet-root').innerHTML = html;
     requestAnimationFrame(function () { var s = $('#sheet'); if (s) s.classList.add('show'); var sc = $('.scrim'); if (sc) sc.classList.add('show'); });
@@ -794,6 +879,21 @@
   }
   window.addEventListener('scroll', updateNav, { passive: true });
 
+  // settings taps re-render the same screen in place: same scroll spot,
+  // no entry animation replay
+  function rerenderKeepScroll() {
+    var y = window.scrollY || window.pageYOffset || 0;
+    route();
+    // the class rides the mounted screen itself: removing it later would
+    // restart the entry animation, so it simply stays until the next nav
+    var scr = document.querySelector('#app .screen:last-child');
+    if (scr) scr.classList.add('no-anim');
+    requestAnimationFrame(function () {
+      window.scrollTo(0, y);
+      updateNav();
+    });
+  }
+
   /* ============================================================ SCREENS */
 
   // Legacy #/log route now lands on the Guide, which carries the log button.
@@ -805,7 +905,7 @@
     if (!list.length) return '';
     var h = sectionTitle(title) + '<div class="group"><div class="list">';
     list.forEach(function (e) { h += entryCell(e); });
-    return h + '</div><div class="group-footer"><a href="#/mylog">See all encounters ›</a></div></div>';
+    return h + '</div><div class="group-footer"><a href="#/mylog">' + Lx('See all encounters ›') + '</a></div></div>';
   }
   // Timely, season-aware highlight for the current month (deterministic, offline)
   function seasonalNote() {
@@ -829,7 +929,7 @@
     var sn = seasonalNote();
     var loggedSet = {}; app.entries.forEach(function (e) { if (e.speciesId) loggedSet[e.speciesId] = 1; });
     var suggest = sn.s.filter(function (id) { return byId[id] && !loggedSet[id]; })[0];
-    var h = sectionTitle('This month in Ontario') + '<div class="group"><div class="list">' +
+    var h = sectionTitle(Lx('This month in Ontario')) + '<div class="group"><div class="list">' +
       '<div class="cell"><span class="cell-emoji">\u{1F4C5}</span><span class="cell-body"><span class="cell-sub" style="white-space:normal;font-size:15px;color:var(--label)">' + esc(sn.t) + '</span></span></div>';
     if (suggest) {
       var s = byId[suggest];
@@ -1077,8 +1177,8 @@
     var atRiskN = SPECIES.filter(function (s) { return s.atRisk; }).length;
     body += '<div class="group"><div class="list">' +
       '<a class="cell tap" href="#/atrisk"><span class="cell-emoji">\u{1F6E1}️</span>' +
-      '<span class="cell-body"><span class="cell-title">Species at Risk</span>' +
-      '<span class="cell-sub">' + atRiskN + ' flagged in the guide</span></span>' +
+      '<span class="cell-body"><span class="cell-title">' + Lx('Species at Risk') + '</span>' +
+      '<span class="cell-sub">' + atRiskN + ' ' + Lx('flagged in the guide') + '</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></a></div></div>';
 
     body += sectionHead('guide-cats');
@@ -1088,28 +1188,28 @@
       var count = speciesInCat(r.def.id).length;
       body += '<a class="cell tap" href="#/explore/' + esc(r.def.id) + '">' +
         '<span class="cell-emoji">' + r.def.emoji + '</span>' +
-        '<span class="cell-body"><span class="cell-title">' + esc(r.def.label) + '</span>' +
-        '<span class="cell-sub">' + count + ' species</span></span>' +
+        '<span class="cell-body"><span class="cell-title">' + esc(Lx(r.def.label)) + '</span>' +
+        '<span class="cell-sub">' + count + ' ' + Lx('species') + '</span></span>' +
         '<span class="chevron">' + I.chevron + '</span></a>';
     });
     body += '</div></div>';
     if (COMING_SOON.length) {
-      body += sectionTitle('Coming Soon') + '<div class="group"><div class="list">';
+      body += sectionTitle(Lx('Coming Soon')) + '<div class="group"><div class="list">';
       COMING_SOON.forEach(function (c) {
         body += '<div class="cell"><span class="cell-emoji">' + c.emoji + '</span>' +
           '<span class="cell-body"><span class="cell-title">' + esc(c.name) + '</span>' +
-          '<span class="cell-sub">In a future update</span></span></div>';
+          '<span class="cell-sub">' + Lx('In a future update') + '</span></span></div>';
       });
       body += '</div></div>';
     }
     if (app.entries.length) {
       body += '<div class="stat-grid" style="margin-top:14px">' +
-        stat(app.entries.length, app.entries.length === 1 ? 'Encounter' : 'Encounters') +
-        stat(Object.keys(uniq).length, 'Species') + stat(catsSeen(), 'Categories') + '</div>';
-      body += recentGroup('Recent', recentIn(function () { return true; }, 6));
+        stat(app.entries.length, app.entries.length === 1 ? Lx('Encounter') : Lx('Encounters')) +
+        stat(Object.keys(uniq).length, Lx('Species')) + stat(catsSeen(), Lx('Categories')) + '</div>';
+      body += recentGroup(Lx('Recent'), recentIn(function () { return true; }, 6));
     }
 
-    screen({ title: 'on-wildlife', large: true, header: true, version: 'v3.5', subtitle: 'Ontario’s wildlife, and your journal of it.', body: body });
+    screen({ title: 'on-wildlife', large: true, header: true, version: 'v3.6', body: body });
   }
 
   /* ============================================================= SEARCH */
@@ -1177,12 +1277,12 @@
   }
   function viewSearch() {
     var body = '<div class="searchbar">' + I.search +
-      '<input type="search" id="uni-search" aria-label="Search" placeholder="Search species, categories, or a park" autocomplete="off" autocorrect="off" autocapitalize="none">' +
+      '<input type="search" id="uni-search" aria-label="' + Lx('Search') + '" placeholder="' + Lx('Search species, categories, or a park') + '" autocomplete="off" autocorrect="off" autocapitalize="none">' +
       '</div>';
     body += '<div id="search-results"></div>';
     body += '<div id="search-hint" class="empty" style="padding-top:40px"><div class="e">' + I.search + '</div>' +
-      '<h3>Search the guide</h3><p>All ' + SPECIES.length + ' species, every category, any park. Stays on this phone.</p></div>';
-    screen({ title: 'Search', large: true, backAction: true, backText: 'Back', body: body });
+      '<h3>' + Lx('Search the guide') + '</h3><p>' + Lx('All') + ' ' + SPECIES.length + ' ' + Lx('species, every category, any park. Stays on this phone.') + '</p></div>';
+    screen({ title: Lx('Search'), large: true, backAction: true, backText: Lx('Back'), body: body });
     // No autofocus: the keyboard comes up when the person taps the field.
     // Autofocusing made iOS Safari pan the page and hide the top of the screen.
     wireLiveSearch('uni-search', 'search-results', ['search-hint']);
@@ -1759,11 +1859,11 @@
 
   function journalEmpty() {
     screen({
-      title: 'Journal', large: true, header: true,
-      subtitle: 'A record of everything you have seen outside.',
-      body: '<div class="empty" style="padding-bottom:24px"><div class="e">' + spriteIcon('notebook') + '</div><h3>Start your life list</h3>' +
-        '<p>Log what you see and it lands here: a timeline of your days outside, a life list of every species you have met, and the places you found them. It all stays on this phone.</p></div>' +
-        '<div class="hpad"><button class="btn btn-primary btn-block" data-action="open-log">' + I.plus + 'Log your first encounter</button></div>' +
+      title: Lx('Journal'), large: true, header: true,
+      subtitle: Lx('A record of everything you have seen outside.'),
+      body: '<div class="empty" style="padding-bottom:24px"><div class="e">' + spriteIcon('notebook') + '</div><h3>' + Lx('Start your life list') + '</h3>' +
+        '<p>' + Lx('Log what you see and it lands here: a timeline of your days outside, a life list of every species you have met, and the places you found them. It all stays on this phone.') + '</p></div>' +
+        '<div class="hpad"><button class="btn btn-primary btn-block" data-action="open-log">' + I.plus + Lx('Log your first encounter') + '</button></div>' +
         '<div class="group"><div class="group-footer" style="text-align:center">Ontario has ' + SPECIES.length + ' species in the guide. Nobody sees them all, and that is the fun of it.</div></div>'
     });
   }
@@ -1788,13 +1888,13 @@
       '</div></div>';
 
     body += '<div class="stat-grid" style="margin-top:12px">' +
-      statLink(all.length, all.length === 1 ? 'Encounter' : 'Encounters') +
-      statLink(entriesThisYear(), 'This year') +
-      statLink(catsSeen(), catsSeen() === 1 ? 'Category' : 'Categories') +
+      statLink(all.length, all.length === 1 ? Lx('Encounter') : Lx('Encounters')) +
+      statLink(entriesThisYear(), Lx('This year')) +
+      statLink(catsSeen(), catsSeen() === 1 ? Lx('Category') : Lx('Categories')) +
       '</div>';
 
-    var segs = [['timeline', 'Timeline'], ['life', 'Life list']];
-    if (places.length) segs.push(['places', 'Places']);
+    var segs = [['timeline', Lx('Timeline')], ['life', Lx('Life list')]];
+    if (places.length) segs.push(['places', Lx('Places')]);
     body += '<div class="hpad" style="margin-top:16px">' + segHtml('journal-view', view, segs) + '</div>';
 
     // The category chips filter both the timeline and the life list.
@@ -1807,18 +1907,18 @@
         ? function (a, b) { return a.name.localeCompare(b.name); }
         : function (a, b) { return new Date(b.last) - new Date(a.last); });
       body += '<div class="hpad" style="margin-top:12px">' +
-        segHtml('life-sort', sort, [['recent', 'Recently seen'], ['az', 'A to Z']]) + '</div>';
+        segHtml('life-sort', sort, [['recent', Lx('Recently seen')], ['az', Lx('A to Z')]]) + '</div>';
       body += '<div class="group"><div class="list">';
       life.forEach(function (r) {
         var sp = byId[r.id];
         body += '<a class="cell tap" href="#/journal/species/' + esc(r.id) + '">' +
           '<span class="cell-emoji">' + (r.emoji || '\u{1F43E}') + '</span>' +
           '<span class="cell-body"><span class="cell-title">' + esc(r.name) + '</span>' +
-          '<span class="cell-sub">' + (sp ? '<i>' + esc(sp.sci) + '</i> · ' : '') + 'first seen ' + esc(fmtDay(r.first)) + '</span></span>' +
+          '<span class="cell-sub">' + (sp ? '<i>' + esc(sp.sci) + '</i> · ' : '') + Lx('first seen') + ' ' + esc(fmtDay(r.first)) + '</span></span>' +
           '<span class="cell-value">' + (r.count > 1 ? '×' + r.count : '') + '</span>' +
           '<span class="chevron">' + I.chevron + '</span></a>';
       });
-      body += '</div><div class="group-footer">' + life.length + (life.length === 1 ? ' species' : ' species') + ' logged. Tap one to read your record of it.</div></div>';
+      body += '</div><div class="group-footer">' + life.length + ' ' + Lx('species logged. Tap one to read your record of it.') + '</div></div>';
     } else if (view === 'places') {
       body += '<div class="group"><div class="list">';
       places.forEach(function (g) {
@@ -1834,12 +1934,12 @@
     } else {
       var shown = all.filter(function (e) { return matchesJournalFilter(e.cat); });
       if (shown.length) body += timelineHtml(shown, lifers);
-      else body += '<div class="empty" style="padding-top:32px"><div class="e">\u{1F50D}</div><h3>Nothing in this filter</h3><p>No encounters match. Tap All to see everything.</p></div>';
+      else body += '<div class="empty" style="padding-top:32px"><div class="e">\u{1F50D}</div><h3>' + Lx('Nothing in this filter') + '</h3><p>' + Lx('No encounters match. Tap All to see everything.') + '</p></div>';
     }
 
     screen({
-      title: 'Journal', large: true, header: true,
-      subtitle: all.length + (all.length === 1 ? ' encounter' : ' encounters') + ' logged, all on this phone.',
+      title: Lx('Journal'), large: true, header: true,
+      subtitle: all.length + ' ' + (all.length === 1 ? Lx('encounter') : Lx('encounters')) + ' ' + Lx('logged, all on this phone.'),
       body: body
     });
   }
@@ -1907,23 +2007,22 @@
     var bigLabel = big ? (big.fish.length + '&nbsp;' + (big.fish.units === 'imperial' ? 'in' : 'cm')) : '–';
 
     var body = '<div class="stat-grid" style="margin-top:8px">' +
-      stat(Object.keys(spSet).length, 'Species caught') +
-      stat(thisYear, 'This year') +
-      stat(bigLabel, 'Biggest') + '</div>';
+      stat(Object.keys(spSet).length, Lx('Species caught')) +
+      stat(thisYear, Lx('This year')) +
+      stat(bigLabel, Lx('Biggest')) + '</div>';
     body += '<div class="group"><div class="list">' +
       '<a class="cell tap" href="#/zones"><span class="cell-emoji">\u{1F3A3}</span>' +
-      '<span class="cell-body"><span class="cell-title">What is open now</span>' +
-      '<span class="cell-sub">All 20 zones</span></span>' +
+      '<span class="cell-body"><span class="cell-title">' + Lx('What is open now') + '</span>' +
+      '<span class="cell-sub">' + Lx('All 20 zones') + '</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></a></div></div>';
     if (catches.length) {
-      body += '<div class="group"><div class="group-header">Recent catches</div><div class="list">';
+      body += '<div class="group"><div class="group-header">' + Lx('Recent catches') + '</div><div class="list">';
       catches.slice(0, 5).forEach(function (e) { body += entryCell(e); });
       body += '</div></div>';
     } else {
-      body += '<div class="group"><div class="group-footer">No catches yet.</div></div>';
+      body += '<div class="group"><div class="group-footer">' + Lx('No catches yet.') + '</div></div>';
     }
-    body += pursuitSwitchRow('birding', 'Switch: put Birding in the bar');
-    screen({ title: 'Fishing', large: true, header: true, body: body });
+    screen({ title: Lx('Fishing'), large: true, header: true, body: body });
   }
   function viewBirding() {
     var birds = journalEntries().filter(function (e) { return e.cat === 'birds'; })
@@ -1938,24 +2037,23 @@
     life.forEach(function (r) { if (!latest || new Date(r.first) > new Date(latest.first)) latest = r; });
 
     var body = '<div class="stat-grid" style="margin-top:8px">' +
-      stat(life.length, 'Life list') +
-      stat(Object.keys(yearSet).length, 'This year') +
-      '<div class="stat"><div class="n stat-name">' + (latest ? esc(latest.name) : '–') + '</div><div class="l">Latest lifer</div></div>' +
+      stat(life.length, Lx('Life list')) +
+      stat(Object.keys(yearSet).length, Lx('This year')) +
+      '<div class="stat"><div class="n stat-name">' + (latest ? esc(latest.name) : '–') + '</div><div class="l">' + Lx('Latest lifer') + '</div></div>' +
       '</div>';
     body += '<div class="group"><div class="list">' +
       '<a class="cell tap" href="#/explore/birds"><span class="cell-emoji">\u{1F426}</span>' +
-      '<span class="cell-body"><span class="cell-title">Birds in the guide</span>' +
-      '<span class="cell-sub">' + speciesInCat('birds').length + ' species</span></span>' +
+      '<span class="cell-body"><span class="cell-title">' + Lx('Birds in the guide') + '</span>' +
+      '<span class="cell-sub">' + speciesInCat('birds').length + ' ' + Lx('species') + '</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></a></div></div>';
     if (birds.length) {
-      body += '<div class="group"><div class="group-header">Recent sightings</div><div class="list">';
+      body += '<div class="group"><div class="group-header">' + Lx('Recent sightings') + '</div><div class="list">';
       birds.slice(0, 5).forEach(function (e) { body += entryCell(e); });
       body += '</div></div>';
     } else {
-      body += '<div class="group"><div class="group-footer">No birds yet.</div></div>';
+      body += '<div class="group"><div class="group-footer">' + Lx('No birds yet.') + '</div></div>';
     }
-    body += pursuitSwitchRow('fishing', 'Switch: put Fishing in the bar');
-    screen({ title: 'Birding', large: true, header: true, body: body });
+    screen({ title: Lx('Birding'), large: true, header: true, body: body });
   }
 
   /* ----------------------------------------------- Appearance panel (More)
@@ -1972,27 +2070,13 @@
   }
   function appearancePanel() {
     var a = app.appearance || APPEAR_DEFAULT;
+    // theme, glass and text size, nothing else: the look itself is not a
+    // choice here, this app simply wears its own colours and type
     var h = '<div class="ios-group">';
-    h += appearSegRow('Theme', 'appear-theme', a.theme, [['auto', 'Auto'], ['light', 'Light'], ['dark', 'Dark']], 216);
-    // Colours: three swatch capsules, each showing its palette's three tones
-    h += '<div class="field pal-field"><span class="field-label">Colours</span><div style="flex:1"></div><div class="pal-row">';
-    [['parks', 'Parks'], ['field', 'Field'], ['granite', 'Granite']].forEach(function (p) {
-      var on = p[0] === 'parks' ? (a.palette !== 'field' && a.palette !== 'granite') : a.palette === p[0];
-      h += '<span class="pal-opt"><button type="button" class="pal-swatch pal-swatch--' + p[0] + (on ? ' on' : '') + '" data-action="appear-palette" data-v="' + p[0] + '" aria-label="' + p[1] + ' colours" aria-pressed="' + (on ? 'true' : 'false') + '">' +
-        '<span class="dot"></span><span class="dot"></span><span class="dot"></span></button>' +
-        '<span class="pal-name">' + p[1] + '</span></span>';
-    });
-    h += '</div></div>';
-    h += '<div class="field"><span class="ios-row-body" style="flex:1"><span class="ios-row-title">Glass</span><span class="ios-row-sub">Frosted bars and buttons</span></span>' +
-      '<label class="switch"><input type="checkbox" id="glass-toggle" aria-label="Glass"' + (a.glass !== 'off' ? ' checked' : '') + '><span class="track"></span><span class="knob"></span></label></div>';
-    h += appearSegRow('Text size', 'appear-size', a.size, [['s', 'S'], ['m', 'M'], ['l', 'L'], ['xl', 'XL']], 180);
-    [['parks', 'Parks'], ['system', 'System'], ['rounded', 'Rounded'], ['serif', 'Serif'], ['avenir', 'Avenir'], ['mono', 'Mono']].forEach(function (f) {
-      var on = a.face === f[0];
-      h += '<button type="button" class="ios-row ios-row--plain" data-action="appear-face" data-v="' + f[0] + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
-        '<span class="ios-row-body"><span class="ios-row-title face-label--' + f[0] + '">' + f[1] + '</span></span>' +
-        (on ? '<span class="face-check" aria-hidden="true">' + spriteIcon('check') + '</span>' : '') +
-        '</button>';
-    });
+    h += appearSegRow(Lx('Theme'), 'appear-theme', a.theme, [['auto', Lx('Auto')], ['light', Lx('Light')], ['dark', Lx('Dark')]], 216);
+    h += '<div class="field"><span class="ios-row-body" style="flex:1"><span class="ios-row-title">' + Lx('Glass') + '</span><span class="ios-row-sub">' + Lx('Frosted bars and buttons') + '</span></span>' +
+      '<label class="switch"><input type="checkbox" id="glass-toggle" aria-label="' + Lx('Glass') + '"' + (a.glass !== 'off' ? ' checked' : '') + '><span class="track"></span><span class="knob"></span></label></div>';
+    h += appearSegRow(Lx('Text size'), 'appear-size', a.size, [['s', 'S'], ['m', 'M'], ['l', 'L'], ['xl', 'XL']], 180);
     h += '</div>';
     return h;
   }
@@ -2001,20 +2085,20 @@
   // every More row by id, so the section system can order and hide them
   function moreRow(id) {
     switch (id) {
-      case 'learn': return iosRow({ href: '#/learn', tile: ['blue', 'book'], title: 'Learn and safety', sub: 'Bears, ticks, roads, water' });
-      case 'invasives': return iosRow({ href: '#/invasives', tile: ['orange', 'alert'], title: 'Invasive species', sub: 'Spot it, report it' });
-      case 'stats': return iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: 'Stats', sub: 'Your numbers' });
-      case 'community': return iosRow({ href: '#/community', tile: ['green', 'globe'], title: 'Community', sub: (Community.on() ? 'Sharing on · see nearby activity' : app.settings.communityUrl ? 'Connected · sharing off' : 'What’s near you this week') });
-      case 'resources': return iosRow({ href: '#/resources', tile: ['blue', 'link-out'], title: 'Ontario and Canada resources', sub: 'Trusted sites' });
-      case 'trust': return iosRow({ href: '#/trust', tile: ['graphite', 'shield'], title: 'Data reliability', sub: 'Anomaly detection, a demo' });
-      case 'privacy': return iosRow({ href: '#/privacy', tile: ['grey', 'lock'], title: 'Privacy', sub: 'Private, on this phone' });
+      case 'learn': return iosRow({ href: '#/learn', tile: ['blue', 'book'], title: Lx('Learn and safety'), sub: Lx('Bears, ticks, roads, water') });
+      case 'invasives': return iosRow({ href: '#/invasives', tile: ['orange', 'alert'], title: Lx('Invasive species'), sub: Lx('Spot it, report it') });
+      case 'stats': return iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats'), sub: Lx('Your numbers') });
+      case 'community': return iosRow({ href: '#/community', tile: ['green', 'globe'], title: Lx('Community'), sub: (Community.on() ? 'Sharing on · see nearby activity' : app.settings.communityUrl ? 'Connected · sharing off' : Lx('What’s near you this week')) });
+      case 'resources': return iosRow({ href: '#/resources', tile: ['blue', 'link-out'], title: Lx('Ontario and Canada resources'), sub: Lx('Trusted sites') });
+      case 'trust': return iosRow({ href: '#/trust', tile: ['graphite', 'shield'], title: Lx('Data reliability'), sub: Lx('Anomaly detection, a demo') });
+      case 'privacy': return iosRow({ href: '#/privacy', tile: ['grey', 'lock'], title: Lx('Privacy'), sub: Lx('Private, on this phone') });
     }
     return '';
   }
   function moreSection(key, foot) {
     var rows = sectionOrder(key).filter(function (r) { return r.on; });
     // an emptied section keeps its head, or the way back in disappears
-    if (!rows.length) return sectionHead(key) + '<p class="ios-group-foot">Everything here is hidden. The edit button brings rows back.</p>';
+    if (!rows.length) return sectionHead(key) + '<p class="ios-group-foot">' + Lx('Everything here is hidden. The edit button brings rows back.') + '</p>';
     return sectionHead(key) + '<nav class="ios-group">' +
       rows.map(function (r) { return moreRow(r.def.id); }).join('') + '</nav>' +
       (foot ? '<p class="ios-group-foot">' + foot + '</p>' : '');
@@ -2024,39 +2108,42 @@
     // Learn moved out of the tab bar to make room for the Journal, so it lives
     // here as an ordinary row into the same hub screen.
     body += moreSection('more-learn');
-    body += moreSection('more-journal', 'Your encounters live in the Journal tab.');
+    body += moreSection('more-journal', Lx('Your encounters live in the Journal tab.'));
     body += moreSection('more-community');
 
-    body += sectionTitle('Appearance') + appearancePanel() +
+    body += sectionTitle(Lx('Appearance')) + appearancePanel() +
       '<div class="ios-group">' +
-      '<div class="field"><span class="field-label">Units</span><div style="flex:1"></div>' +
+      '<div class="field"><span class="field-label">' + Lx('Units') + '</span><div style="flex:1"></div>' +
       '<div class="segmented" style="width:180px">' +
-      '<button type="button" class="seg-opt' + (app.settings.units === 'metric' ? ' on' : '') + '" aria-pressed="' + (app.settings.units === 'metric' ? 'true' : 'false') + '" data-action="set-units" data-val="metric">Metric</button>' +
-      '<button type="button" class="seg-opt' + (app.settings.units === 'imperial' ? ' on' : '') + '" aria-pressed="' + (app.settings.units === 'imperial' ? 'true' : 'false') + '" data-action="set-units" data-val="imperial">Imperial</button>' +
-      '</div></div></div>' +
-      '<p class="ios-group-foot">Units are this app’s. The rest is shared by every outdoors app on this device.</p>';
+      '<button type="button" class="seg-opt' + (app.settings.units === 'metric' ? ' on' : '') + '" aria-pressed="' + (app.settings.units === 'metric' ? 'true' : 'false') + '" data-action="set-units" data-val="metric">' + Lx('Metric') + '</button>' +
+      '<button type="button" class="seg-opt' + (app.settings.units === 'imperial' ? ' on' : '') + '" aria-pressed="' + (app.settings.units === 'imperial' ? 'true' : 'false') + '" data-action="set-units" data-val="imperial">' + Lx('Imperial') + '</button>' +
+      '</div></div>' +
+      appearSegRow(Lx('Language'), 'set-lang', (app.settings.lang === 'fr' ? 'fr' : 'en'), [['en', 'English'], ['fr', 'Français']], 200) +
+      appearSegRow(Lx('Fourth tab'), 'set-pursuit', (app.settings.primaryPursuit === 'birding' ? 'birding' : 'fishing'), [['fishing', Lx('Fishing')], ['birding', Lx('Birding')]], 200) +
+      '</div>' +
+      '<p class="ios-group-foot">' + Lx('Units are this app’s. The rest is shared by every outdoors app on this device.') + '</p>';
 
-    body += sectionTitle('More from the Ontario outdoors') + '<nav class="ios-group">' +
-      iosRow({ href: 'https://katsuma0.github.io/on-camp/', ext: true, title: 'on-camp', sub: 'Rate Ontario Parks campsites' }) +
-      iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: 'on-fishing', sub: 'Zones, seasons and catch limits' }) +
-      '</nav><p class="ios-group-foot">Three field guides for Ontario, one look. Take all three.</p>';
+    body += sectionTitle(Lx('More from the Ontario outdoors')) + '<nav class="ios-group">' +
+      iosRow({ href: 'https://katsuma0.github.io/on-camp/', ext: true, title: 'on-camp', sub: Lx('Rate Ontario Parks campsites') }) +
+      iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: 'on-fishing', sub: Lx('Zones, seasons and catch limits') }) +
+      '</nav><p class="ios-group-foot">' + Lx('Three field guides for Ontario, one look. Take all three.') + '</p>';
 
-    body += sectionTitle('Your data') + '<div class="ios-group">' +
-      iosRow({ action: 'export-data', tile: ['grey', 'download'], title: 'Export my log', sub: 'One file, everything' }) +
-      iosRow({ action: 'import-data', tile: ['grey', 'upload'], title: 'Import a backup', sub: 'From an exported file' }) +
-      iosRow({ action: 'reset-data', danger: true, title: 'Reset all data', chevron: false }) +
+    body += sectionTitle(Lx('Your data')) + '<div class="ios-group">' +
+      iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log'), sub: Lx('One file, everything') }) +
+      iosRow({ action: 'import-data', tile: ['grey', 'upload'], title: Lx('Import a backup'), sub: Lx('From an exported file') }) +
+      iosRow({ action: 'reset-data', danger: true, title: Lx('Reset all data'), chevron: false }) +
       '<input type="file" id="import-input" accept=".json,application/json" style="display:none" aria-hidden="true">' +
-      '</div><p class="ios-group-foot">Import merges by id, no duplicates. Reset asks twice.</p>';
+      '</div><p class="ios-group-foot">' + Lx('Import merges by id, no duplicates. Reset asks twice.') + '</p>';
 
-    body += sectionTitle('About') + '<div class="ios-group">' +
+    body += sectionTitle(Lx('About')) + '<div class="ios-group">' +
       '<div class="info-row"><div class="info-v">on-wildlife is a simple, private field guide and journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario. Look a species up, read a longer account if you want one, and log what you see. It works offline and installs to your home screen.</div></div><div class="info-row"><div class="info-v">I built it because I wanted one clear place to name what I run into outside and keep a record of it, without ads, accounts, or anything watching over my shoulder. Everything you log stays on this device. There is no server and nothing is tracked. Sensitive spots, like bear sightings, are coarsened before they can go to the optional community layer.</div></div>' +
       '<div class="info-row"><div class="info-v">ON Fishing is now part of ON Wildlife: the fishing zones live on the map, every fish page carries its seasons and limits, and your catch log shows up in the journal.</div></div>' +
-      iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: 'on-fishing, the solo site', sub: 'The standalone zone map stays up' }) +
-      iosRow({ title: 'Species in guide', value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: 'Version', value: '3.5', chevron: false }) +
-      iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca', sub: 'Apps, projects and the rest' }) +
+      iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: Lx('on-fishing, the solo site'), sub: Lx('The standalone zone map stays up') }) +
+      iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '3.6', chevron: false }) +
+      iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca', sub: Lx('Apps, projects and the rest') }) +
       '</div>';
-    screen({ title: 'More', large: true, header: true, actions: false, body: body });
+    screen({ title: Lx('More'), large: true, header: true, actions: false, body: body });
   }
   /* ------------------------------------------------------------ Account */
   function viewAccount() {
@@ -2066,30 +2153,25 @@
     var body = '<div class="ios-avatar account-avatar" id="account-avatar" aria-hidden="true">' + avatarInner() + '</div>';
 
     body += '<div class="ios-group" style="margin-top:8px">' +
-      '<div class="field"><label class="field-label" for="display-name">Name</label>' +
-      '<input type="text" id="display-name" placeholder="Your name" autocomplete="off" autocorrect="off" value="' + esc(profileName()) + '"></div>' +
+      '<div class="field"><label class="field-label" for="display-name">' + Lx('Name') + '</label>' +
+      '<input type="text" id="display-name" placeholder="' + Lx('Your name') + '" autocomplete="off" autocorrect="off" value="' + esc(profileName()) + '"></div>' +
       '</div><p class="ios-group-foot">Your avatar initial, shared with the other outdoors apps. Never leaves this phone.</p>';
 
-    body += '<div class="ios-group">' +
-      appearSegRow('Primary tab', 'set-pursuit', (app.settings.primaryPursuit === 'birding' ? 'birding' : 'fishing'),
-        [['fishing', 'Fishing'], ['birding', 'Birding']], 190) +
-      '</div><p class="ios-group-foot">The fourth tab in the bar. The other pursuit stays a tap away on its page.</p>';
-
     body += '<div class="stat-grid">' +
-      stat(life.length, 'Life list') +
-      stat(all.length, all.length === 1 ? 'Encounter' : 'Encounters') +
-      stat(entriesThisYear(), 'This year') +
+      stat(life.length, Lx('Life list')) +
+      stat(all.length, all.length === 1 ? Lx('Encounter') : Lx('Encounters')) +
+      stat(entriesThisYear(), Lx('This year')) +
       '</div><div class="spacer"></div>';
 
     body += '<nav class="ios-group">' +
-      iosRow({ href: '#/photos', tile: ['orange', 'image'], title: 'Photos', value: photosN }) +
-      iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: 'Visibility', value: (Community.on() ? 'Sharing on' : 'Sharing off') }) +
-      iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: 'Stats' }) +
-      iosRow({ action: 'export-data', tile: ['grey', 'download'], title: 'Export my log' }) +
-      iosRow({ title: 'Version', value: '3.5', chevron: false }) +
+      iosRow({ href: '#/photos', tile: ['orange', 'image'], title: Lx('Photos'), value: photosN }) +
+      iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
+      iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
+      iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
+      iosRow({ title: Lx('Version'), value: '3.6', chevron: false }) +
       '</nav>';
 
-    screen({ title: 'Account', backAction: true, backText: 'Back', body: body });
+    screen({ title: Lx('Account'), backAction: true, backText: Lx('Back'), body: body });
   }
 
   /* ------------------------------------------------------------- Photos */
@@ -2124,20 +2206,21 @@
 
   /* =============================================================== MAP */
   function viewMap() {
+    // one control card floats over the map, apple maps style: what shows
+    // (the filters, bears folded under hazards) and what draws (layers)
     var body =
-      '<div class="chip-row map-chiprow" id="map-chips">' + mapChips() + '</div>' +
       '<div class="map-wrap"><div id="map"></div>' +
+        '<div class="map-card" id="map-chips">' + mapChips() + '</div>' +
         '<div class="map-hint" id="map-hint" role="status" aria-live="polite"></div>' +
-        '<div class="map-note" id="map-offline" role="status" aria-live="polite" hidden>Map tiles need a connection. Your pins still show.</div>' +
-        '<div class="map-note" id="map-zones-note" role="status" aria-live="polite" style="bottom:56px" hidden>Fishing zone boundaries need a connection. Your pins still show.</div>' +
+        '<div class="map-note" id="map-offline" role="status" aria-live="polite" hidden>' + Lx('Map tiles need a connection. Your pins still show.') + '</div>' +
+        '<div class="map-note" id="map-zones-note" role="status" aria-live="polite" style="bottom:56px" hidden>' + Lx('Fishing zone boundaries need a connection. Your pins still show.') + '</div>' +
         '<div class="map-fabs">' +
-          '<button class="fab" data-action="map-layers" aria-label="Map layers">' + spriteIcon('layers') + '</button>' +
-          '<button class="fab fab-locate" data-action="map-locate" aria-label="My location">' + I.crosshair + '</button>' +
-          '<button class="fab fab-hazard" data-action="report-hazard" aria-label="Report hazard">⚠️</button>' +
-          '<button class="fab fab-bear" data-action="report-bear" aria-label="Report bear">\u{1F43B}</button>' +
+          '<button class="fab fab-locate" data-action="map-locate" aria-label="' + Lx('My location') + '">' + I.crosshair + '</button>' +
+          '<button class="fab fab-hazard" data-action="report-hazard" aria-label="' + Lx('Report hazard') + '">⚠️</button>' +
+          '<button class="fab fab-bear" data-action="report-bear" aria-label="' + Lx('Report bear') + '">\u{1F43B}</button>' +
         '</div>' +
       '</div>';
-    screen({ title: 'Map', header: true, actions: false, body: body, bare: true });
+    screen({ title: Lx('Map'), header: true, body: body, bare: true });
     ensureLeaflet(initMap);
   }
   /* Leaflet is 45KB compressed and only the Map tab needs it, so it stays out
@@ -2147,7 +2230,7 @@
   function ensureLeaflet(then) {
     if (window.L) { then(); return; }
     var el = document.getElementById('map');
-    if (el && !el.firstChild) el.innerHTML = '<div class="map-msg">Loading the map…</div>';
+    if (el && !el.firstChild) el.innerHTML = '<div class="map-msg">' + Lx('Loading the map…') + '</div>';
     if (_leafletLoading) return;
     _leafletLoading = true;
     var s = document.createElement('script');
@@ -2157,14 +2240,18 @@
     s.onerror = function () {
       _leafletLoading = false;
       var m = document.getElementById('map');
-      if (m) m.innerHTML = '<div class="map-msg">Map couldn’t load.</div>';
+      if (m) m.innerHTML = '<div class="map-msg">' + Lx('Map couldn’t load.') + '</div>';
     };
     document.body.appendChild(s);
   }
   function mapChips() {
     var f = app.mapFilter;
+    if (f === 'bear') f = 'hazard';   // bears live under hazards now
     function c(id, label) { return '<button class="chip' + (f === id ? ' on' : '') + '" aria-pressed="' + (f === id ? 'true' : 'false') + '" data-action="map-filter" data-f="' + id + '">' + label + '</button>'; }
-    return c('all', 'All') + c('wildlife', '\u{1F43E} Wildlife') + c('bear', '\u{1F43B} Bears') + c('hazard', '⚠️ Hazards');
+    function lay(id, label) { var on = mapLayerOn(id); return '<button class="chip' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '" data-action="map-layer" data-l="' + id + '">' + label + '</button>'; }
+    return c('all', Lx('All')) + c('wildlife', '\u{1F43E} ' + Lx('Wildlife')) + c('hazard', '⚠️ ' + Lx('Hazards')) +
+      '<span class="chip-sep" aria-hidden="true"></span>' +
+      lay('parks', '\u{1F3D5} ' + Lx('Parks')) + lay('zones', '\u{1F3A3} ' + Lx('Zones'));
   }
   function locatedRecords() {
     var out = [];
@@ -2183,15 +2270,19 @@
   function initMap() {
     var el = document.getElementById('map');
     if (!el) return;
-    if (!window.L) { el.innerHTML = '<div class="map-msg">Map couldn’t load.</div>'; return; }
+    if (!window.L) { el.innerHTML = '<div class="map-msg">' + Lx('Map couldn’t load.') + '</div>'; return; }
     el.innerHTML = '';   // drop the lazy-load placeholder before Leaflet mounts
     if (app.map) { try { app.map.remove(); } catch (e) {} app.map = null; }
     // No +/- buttons: they cover the top-left corner of the map and pinch and
     // scroll wheel zoom already cover both touch and desktop.
     var map = L.map(el, { zoomControl: false, attributionControl: true }).setView([50.0, -85.0], 5);
     app.map = map;
-    var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
+    // carto's muted basemaps read like apple maps; pick by the scheme in
+    // effect and keep osm's data attribution
+    var darkMap = document.documentElement.getAttribute('data-theme') === 'dark' ||
+      (document.documentElement.getAttribute('data-theme') !== 'light' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+    var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/' + (darkMap ? 'dark_all' : 'light_all') + '/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19, subdomains: 'abcd', attribution: '&copy; OpenStreetMap &copy; CARTO'
     });
     // Degrade gracefully offline: show a note instead of a blank grey grid.
     tiles.on('tileerror', function () { var n = $('#map-offline'); if (n) n.hidden = false; });
@@ -2216,9 +2307,15 @@
   function renderMapMarkers() {
     if (!app.map) return;
     if (app._layer) { try { app.map.removeLayer(app._layer); } catch (e) {} app._layer = null; }
-    if (!mapLayerOn('wildlife')) return;
+    // pins are always drawn: the filter chips are the visibility control
+    // now, and an old stored wildlife:false must not hide them forever
     var group = L.layerGroup();
-    locatedRecords().filter(function (r) { return app.mapFilter === 'all' || r.kind === app.mapFilter; }).forEach(function (r) {
+    locatedRecords().filter(function (r) {
+      var f = app.mapFilter === 'bear' ? 'hazard' : app.mapFilter;
+      if (f === 'all') return true;
+      if (f === 'hazard') return r.kind === 'hazard' || r.kind === 'bear';
+      return r.kind === f;
+    }).forEach(function (r) {
       var icon, popup;
       if (r.kind === 'hazard') {
         var ht = hazardType(r.type);
@@ -2445,8 +2542,8 @@
   function mountSheet(title, body, saveAction) {
     var html = '<div class="scrim" data-action="close-sheet"></div>' +
       '<div class="sheet" id="sheet"><div class="sheet-grabber"></div>' +
-      '<div class="sheet-nav"><button class="nav-btn" data-action="close-sheet">Cancel</button><span class="t">' + esc(title) + '</span>' +
-      '<button class="nav-btn bold" data-action="' + saveAction + '">Save</button></div>' +
+      '<div class="sheet-nav"><button class="nav-btn" data-action="close-sheet">' + Lx('Cancel') + '</button><span class="t">' + esc(Lx(title)) + '</span>' +
+      '<button class="nav-btn bold" data-action="' + saveAction + '">' + Lx('Save') + '</button></div>' +
       '<div class="sheet-body">' + body + '</div></div>';
     $('#sheet-root').innerHTML = html;
     requestAnimationFrame(function () { var s = $('#sheet'); if (s) s.classList.add('show'); var sc = $('.scrim'); if (sc) sc.classList.add('show'); });
@@ -2943,25 +3040,25 @@
         '<span class="cell-emoji">' + sp.emoji + '</span>' +
         '<span class="cell-body" style="text-align:left"><span class="cell-title">' + esc(sp.name) + '</span>' +
         '<span class="cell-sub"><i>' + esc(sp.sci) + '</i></span></span>' +
-        '<span class="cell-value" style="color:var(--tint)">Change</span></button>';
+        '<span class="cell-value" style="color:var(--tint)">' + Lx('Change') + '</span></button>';
     } else if (d.customName) {
       speciesRow = '<button class="cell tap" data-action="pick-species">' +
         '<span class="cell-emoji">❓</span>' +
         '<span class="cell-body" style="text-align:left"><span class="cell-title">' + esc(d.customName) + '</span>' +
-        '<span class="cell-sub">Not in the guide</span></span>' +
-        '<span class="cell-value" style="color:var(--tint)">Change</span></button>';
+        '<span class="cell-sub">' + Lx('Not in the guide') + '</span></span>' +
+        '<span class="cell-value" style="color:var(--tint)">' + Lx('Change') + '</span></button>';
     } else {
       speciesRow = '<button class="cell tap" data-action="pick-species">' +
         '<span class="cell-emoji">\u{1F50D}</span>' +
-        '<span class="cell-body" style="text-align:left"><span class="cell-title" style="color:var(--tint)">Choose a species</span>' +
-        '<span class="cell-sub">Search the guide or add your own</span></span>' +
+        '<span class="cell-body" style="text-align:left"><span class="cell-title" style="color:var(--tint)">' + Lx('Choose a species') + '</span>' +
+        '<span class="cell-sub">' + Lx('Search the guide or add your own') + '</span></span>' +
         '<span class="chevron">' + I.chevron + '</span></button>';
     }
 
     // Evidence options
     var evOpts = isFish
-      ? [['caught', 'Caught'], ['saw', 'Seen']]
-      : [['saw', 'Saw'], ['heard', 'Heard'], ['tracks', 'Signs']];
+      ? [['caught', Lx('Caught')], ['saw', Lx('Seen')]]
+      : [['saw', Lx('Saw')], ['heard', Lx('Heard')], ['tracks', Lx('Signs')]];
     var evHtml = '<div class="segmented">';
     evOpts.forEach(function (o) {
       evHtml += '<button type="button" class="seg-opt' + (d.evidence === o[0] ? ' on' : '') + '" aria-pressed="' + (d.evidence === o[0] ? 'true' : 'false') + '" data-action="set-evidence" data-val="' + o[0] + '">' + o[1] + '</button>';
@@ -2970,22 +3067,22 @@
 
     var body = '';
     // What
-    body += '<div class="group" style="margin-top:6px"><div class="group-header">What did you see?</div><div class="list">' +
+    body += '<div class="group" style="margin-top:6px"><div class="group-header">' + Lx('What did you see?') + '</div><div class="list">' +
       speciesRow + '</div></div>';
 
     // How you saw it. Kept apart from where and when so no single group asks the
     // eye to hold more than a couple of things at once.
-    body += '<div class="group"><div class="group-header">How did you see it?</div><div class="list">';
-    body += '<div class="field"><span class="field-label">Observation</span><div style="flex:1"></div>' +
+    body += '<div class="group"><div class="group-header">' + Lx('How did you see it?') + '</div><div class="list">';
+    body += '<div class="field"><span class="field-label">' + Lx('Observation') + '</span><div style="flex:1"></div>' +
       '<div style="width:' + (isFish ? '150' : '210') + 'px">' + evHtml + '</div></div>';
-    body += '<div class="field"><span class="field-label">How many</span><div style="flex:1"></div>' +
+    body += '<div class="field"><span class="field-label">' + Lx('How many') + '</span><div style="flex:1"></div>' +
       '<div class="stepper"><button data-action="count" data-d="-1">−</button><div class="sep"></div>' +
       '<div class="val" id="count-val">' + d.count + '</div>' +
       '<div class="sep"></div><button data-action="count" data-d="1">+</button></div></div>';
     body += '</div></div>';
 
     // Where and when
-    body += '<div class="group"><div class="group-header">Where and when</div><div class="list">';
+    body += '<div class="group"><div class="group-header">' + Lx('Where and when') + '</div><div class="list">';
     body += '<div class="field"><span class="field-label">When</span>' +
       '<input type="datetime-local" id="f-when" aria-label="Date and time seen" value="' + esc(d.when) + '"></div>';
     body += '<button class="cell tap" data-action="use-location">' +
@@ -3030,20 +3127,20 @@
     // Photo + notes
     body += '<div class="group"><div class="group-header">Photo & Notes</div><div class="list">';
     body += '<div id="photo-slot">' + photoSlot() + '</div>';
-    body += '<textarea class="notes" id="f-notes" aria-label="Notes" placeholder="Notes. Where exactly, what it was doing, the weather…"></textarea>';
+    body += '<textarea class="notes" id="f-notes" aria-label="Notes" placeholder="' + Lx('Notes. Where exactly, what it was doing, the weather…') + '"></textarea>';
     body += '</div></div>';
 
     // Save
     var canSave = !!(d.speciesId || d.customName);
     body += '<div class="hpad"><button class="btn btn-primary btn-block" data-action="save-entry"' +
-      (canSave ? '' : ' disabled') + '>Save Encounter</button></div>';
+      (canSave ? '' : ' disabled') + '>' + Lx('Save Encounter') + '</button></div>';
 
     var sheetHtml = '<div class="scrim" data-action="close-sheet"></div>' +
       '<div class="sheet" id="sheet">' +
       '<div class="sheet-grabber"></div>' +
-      '<div class="sheet-nav"><button class="nav-btn" data-action="close-sheet">Cancel</button>' +
-      '<span class="t">' + (d._editId ? 'Edit Encounter' : 'Log Encounter') + '</span>' +
-      '<button class="nav-btn bold" data-action="save-entry"' + (canSave ? '' : ' disabled') + '>Save</button></div>' +
+      '<div class="sheet-nav"><button class="nav-btn" data-action="close-sheet">' + Lx('Cancel') + '</button>' +
+      '<span class="t">' + (d._editId ? Lx('Edit Encounter') : Lx('Log Encounter')) + '</span>' +
+      '<button class="nav-btn bold" data-action="save-entry"' + (canSave ? '' : ' disabled') + '>' + Lx('Save') + '</button></div>' +
       '<div class="sheet-body">' + body + '</div></div>';
 
     $('#sheet-root').innerHTML = sheetHtml;
@@ -3062,12 +3159,12 @@
     var d = app.draft;
     if (d.photo) {
       return '<div style="padding:12px 16px"><img class="entry-photo" src="' + d.photo + '" alt="Photo you attached to this sighting">' +
-        '<button class="btn btn-danger btn-block" style="height:40px;margin-top:10px" data-action="remove-photo">Remove photo</button></div>';
+        '<button class="btn btn-danger btn-block" style="height:40px;margin-top:10px" data-action="remove-photo">' + Lx('Remove photo') + '</button></div>';
     }
     return '<button class="cell tap" data-action="take-photo">' +
       '<span class="cell-emoji" style="color:var(--tint)">' + I.camera + '</span>' +
-      '<span class="cell-body" style="text-align:left"><span class="cell-title" style="color:var(--tint)">Add a photo</span>' +
-      '<span class="cell-sub">Take one or choose from your library</span></span></button>' +
+      '<span class="cell-body" style="text-align:left"><span class="cell-title" style="color:var(--tint)">' + Lx('Add a photo') + '</span>' +
+      '<span class="cell-sub">' + Lx('Take one or choose from your library') + '</span></span></button>' +
       '<input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none">';
   }
   // Read current free-text inputs into the draft so a re-render doesn't lose them
@@ -3097,10 +3194,10 @@
     var d = app.draft;
     var startCat = d.cat || 'all';
     var html = '<div class="scrim show" data-action="close-picker"></div>' +
-      '<div class="sheet show" id="picker" role="dialog" aria-modal="true" aria-label="Choose Species" style="height:88dvh">' +
+      '<div class="sheet show" id="picker" role="dialog" aria-modal="true" aria-label="' + Lx('Choose Species') + '" style="height:88dvh">' +
       '<div class="sheet-grabber"></div>' +
       '<div class="sheet-nav"><button class="nav-btn" data-action="close-picker">Back</button>' +
-      '<span class="t">Choose Species</span><span style="width:44px"></span></div>' +
+      '<span class="t">' + Lx('Choose Species') + '</span><span style="width:44px"></span></div>' +
       '<div class="searchbar" style="margin-top:2px">' + I.search +
       '<input type="search" id="picker-search" aria-label="Search all species" placeholder="Search all species" autocomplete="off" autocapitalize="none">' +
       '</div>' +
@@ -3190,7 +3287,7 @@
   function saveEntry() {
     syncDraftInputs();
     var d = app.draft;
-    if (!d.speciesId && !d.customName) { toast('Choose a species first'); return; }
+    if (!d.speciesId && !d.customName) { toast(Lx('Choose a species first')); return; }
     if (app._saving) return; app._saving = true;   // guard against double-tap duplicate saves
     var sp = d.speciesId ? byId[d.speciesId] : null;
     var num = function (v) { var n = parseFloat(v); return isFinite(n) ? n : null; };
@@ -3537,14 +3634,14 @@
   function renderTabs() {
     var base = currentTab();
     var pursuit = app.settings.primaryPursuit === 'birding'
-      ? ['pursuit', '#/birding', 'Birding', 'bird']
-      : ['pursuit', '#/fishing-hub', 'Fishing', 'fish'];
+      ? ['pursuit', '#/birding', Lx('Birding'), 'bird']
+      : ['pursuit', '#/fishing-hub', Lx('Fishing'), 'fish'];
     var tabs = [
-      ['explore', '#/explore', 'Guide', 'book-open'],
-      ['map', '#/map', 'Map', 'map'],
-      ['journal', '#/journal', 'Journal', 'notebook'],
+      ['explore', '#/explore', Lx('Guide'), 'book-open'],
+      ['map', '#/map', Lx('Map'), 'map'],
+      ['journal', '#/journal', Lx('Journal'), 'notebook'],
       pursuit,
-      ['more', '#/more', 'More', 'ellipsis']
+      ['more', '#/more', Lx('More'), 'ellipsis']
     ];
     var html = '';
     tabs.forEach(function (t) {
@@ -3687,6 +3784,10 @@
         { var mc = $('#map-chips'); if (mc) mc.innerHTML = mapChips(); }
         renderMapMarkers();
         break;
+      case 'map-layer':
+        ev.preventDefault();
+        { var lk = t.getAttribute('data-l'); setMapLayer(lk, !mapLayerOn(lk)); var mc2 = $('#map-chips'); if (mc2) mc2.innerHTML = mapChips(); }
+        break;
       case 'journal-view':
         ev.preventDefault();
         app.settings.journalView = t.getAttribute('data-v'); saveSettings();
@@ -3792,7 +3893,7 @@
         resetAllData();
         break;
       }
-      case 'set-units': ev.preventDefault(); app.settings.units = t.getAttribute('data-val'); saveSettings(); viewMore(); break;
+      case 'set-units': ev.preventDefault(); app.settings.units = t.getAttribute('data-val'); saveSettings(); rerenderKeepScroll(); break;
       case 'edit-section': ev.preventDefault(); openSectionEditor(t.getAttribute('data-key')); break;
       case 'sec-toggle': ev.preventDefault(); (function () {
         var id = t.getAttribute('data-id');
@@ -3808,17 +3909,25 @@
         app.settings.sections[app._secKey] = app._secDraft;
         saveSettings(); closeSheet(); route();
       })(); break;
-      case 'appear-theme': ev.preventDefault(); setAppearance('theme', t.getAttribute('data-v')); viewMore(); break;
-      case 'appear-palette': ev.preventDefault(); setAppearance('palette', t.getAttribute('data-v')); viewMore(); break;
-      case 'appear-size': ev.preventDefault(); setAppearance('size', t.getAttribute('data-v')); viewMore(); break;
-      case 'appear-face': ev.preventDefault(); setAppearance('face', t.getAttribute('data-v')); viewMore(); break;
+      case 'appear-theme': ev.preventDefault(); setAppearance('theme', t.getAttribute('data-v')); rerenderKeepScroll(); break;
+      case 'appear-size': ev.preventDefault(); setAppearance('size', t.getAttribute('data-v')); rerenderKeepScroll(); break;
       case 'set-pursuit': {
         ev.preventDefault();
         var pv = t.getAttribute('data-v');
         if (pv === 'fishing' || pv === 'birding') {
           app.settings.primaryPursuit = pv; saveSettings();
-          renderTabs(); route();
-          toast(pv === 'birding' ? 'Birding is in the bar' : 'Fishing is in the bar');
+          renderTabs(); rerenderKeepScroll();
+          toast(pv === 'birding' ? Lx('Birding is in the bar') : Lx('Fishing is in the bar'));
+        }
+        break;
+      }
+      case 'set-lang': {
+        ev.preventDefault();
+        var lv = t.getAttribute('data-v');
+        if (lv === 'en' || lv === 'fr') {
+          app.settings.lang = lv; saveSettings();
+          document.documentElement.lang = lv;
+          renderTabs(); rerenderKeepScroll();
         }
         break;
       }

@@ -1177,7 +1177,7 @@ a.stat:active { background: var(--card-pressed); }
   position: relative;
   z-index: 0;
   overflow: hidden;
-  height: calc(100dvh - var(--sa-top) - var(--sa-bottom) - 208px);
+  height: calc(100dvh - var(--sa-top) - var(--sa-bottom) - 152px);
   min-height: 320px;
   background: var(--bg);
 }
@@ -1195,7 +1195,7 @@ a.stat:active { background: var(--card-pressed); }
 .fab svg { width: 24px; height: 24px; color: var(--tint); }
 .fab-bear { background: var(--tint); }
 .map-hint {
-  position: absolute; left: 12px; right: 76px; top: 12px; z-index: 500;
+  position: absolute; left: 12px; right: 76px; top: 70px; z-index: 500;
   background: rgba(28, 28, 30, 0.92); color: #FFFFFF;
   padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.35;
   -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
@@ -2103,17 +2103,6 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
   --ls-footnote: -0.08px; --ls-caption1: 0; --ls-caption2: 0.07px;
 }
 
-/* the parks palette signs its screens the way canada.ca signs a page:
-   a 72px, 6px-thick rule in the flag red under the main title */
-:root:not([data-palette="field"]):not([data-palette="granite"]) .large-head h1::after {
-  content: "";
-  display: block;
-  width: 72px;
-  height: 6px;
-  margin-top: 10px;
-  background: var(--tone3);
-}
-
 /* -------------------------------------------------- four text sizes */
 /* real Dynamic Type steps from the HIG, not a multiplier */
 :root[data-textsize="s"] {
@@ -2782,4 +2771,45 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
   z-index: 2;
   box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
   border-radius: 10px;
+}
+
+/* =====================================================================
+   ios.css polish round: gated saves, the quiet appearance panel, and
+   the apple maps style map with one control card up top.
+   ===================================================================== */
+
+/* a save that is not ready yet reads grey and does nothing */
+.nav-btn:disabled { color: var(--label-3); }
+
+/* settings taps re-render in place; the class rides the screen itself
+   so removing it can never restart the entry animation */
+.screen.no-anim,
+:root:not([data-glass="off"]) .screen.no-anim:not(.sc-anim) { animation: none; }
+
+/* the map control card floats over the map like apple maps: one place
+   for what shows (filters) and what draws (layers) */
+.map-wrap .map-card {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 600;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--chrome);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .14);
+}
+.map-wrap .map-card::-webkit-scrollbar { display: none; }
+.map-card .chip { flex: 0 0 auto; background: transparent; }
+.map-card .chip.on { background: var(--tint); color: var(--on-tint); }
+.map-card .chip-sep { flex: 0 0 1px; align-self: stretch; margin: 4px 2px; background: var(--sep); }
+@media (prefers-reduced-transparency: reduce) {
+  .map-wrap .map-card { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
