@@ -518,6 +518,9 @@
   function iosHeaderHtml() {
     return '<header class="ios-header"><div class="ios-header-row">' +
       '<a class="ios-avatar" id="header-avatar" href="#/account" aria-label="Account">' + avatarInner() + '</a>' +
+      // the brand name only shows on big screens; the desktop layer in
+      // ios.css owns its visibility
+      '<span class="ios-brand">on-wildlife</span>' +
       '<div class="ios-header-actions">' +
       '<button class="ios-glass-btn" type="button" data-action="open-log" aria-label="Log an encounter">' + spriteIcon('plus') + '</button>' +
       '<a class="ios-glass-btn" href="#/search" aria-label="Search">' + spriteIcon('search') + '</a>' +
@@ -1006,7 +1009,7 @@
     }
     body += '</div>';
 
-    screen({ title: 'on-wildlife', large: true, header: true, version: 'v3.3', subtitle: 'Ontario’s wildlife, and your journal of it.', body: body });
+    screen({ title: 'on-wildlife', large: true, header: true, version: 'v3.4', subtitle: 'Ontario’s wildlife, and your journal of it.', body: body });
     wireLiveSearch('explore-search', 'explore-results', ['explore-home']);
   }
 
@@ -1949,7 +1952,7 @@
       '<div class="info-row"><div class="info-v">ON Fishing is now part of ON Wildlife: the fishing zones live on the map, every fish page carries its seasons and limits, and your catch log shows up in the journal.</div></div>' +
       iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: 'on-fishing, the solo site', sub: 'The standalone zone map stays up' }) +
       iosRow({ title: 'Species in guide', value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: 'Version', value: '3.3', chevron: false }) +
+      iosRow({ action: 'version-tap', title: 'Version', value: '3.4', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca', sub: 'Apps, projects and the rest' }) +
       '</div>';
     screen({ title: 'More', large: true, header: true, body: body });
@@ -1982,7 +1985,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: 'Visibility', value: (Community.on() ? 'Sharing on' : 'Sharing off') }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: 'Stats' }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: 'Export my log' }) +
-      iosRow({ title: 'Version', value: '3.3', chevron: false }) +
+      iosRow({ title: 'Version', value: '3.4', chevron: false }) +
       '</nav>';
 
     screen({ title: 'Account', backAction: true, backText: 'Back', body: body });

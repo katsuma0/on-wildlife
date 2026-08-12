@@ -2379,3 +2379,139 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
   .field:has(> .segmented) { flex-wrap: wrap; }
   .field:has(> .segmented) > .segmented { width: 100% !important; margin-top: 6px; }
 }
+
+/* =====================================================================
+   ios.css desktop layer: the responsive arrangement for big screens.
+   Under 700px nothing here applies and the phone chrome stays exactly
+   as it is. From 700px (tablet) the content column relaxes and bottom
+   sheets become centered dialogs. From 1100px (desktop) the page reads
+   as a normal website: a solid 60px top bar, the tab bar restyled as a
+   fixed 264px left sidebar of labelled rows, and one wide main column.
+   Plain media queries, tokens only, no JS, so a window resize reflows
+   live and everything works with JS off.
+   ===================================================================== */
+
+/* the brand name sits in the header only on big screens */
+.ios-brand { display: none; }
+
+/* ------------------------------------------------------------ tablet */
+@media (min-width: 700px) {
+  #app { max-width: 900px; }
+  .card-grid { grid-template-columns: repeat(3, 1fr); }
+  /* bottom sheets become centered dialogs. the base sheet slides in
+     from the bottom edge with translateY, so both states are restated
+     here to keep the open and close transitions working; a small fade
+     is added because a dialog parked 24px low would otherwise sit in
+     full view during the close. the scrim and grabber are unchanged. */
+  .sheet, :root:not([data-glass="off"]) .sheet {
+    left: 50%; right: auto; top: 8vh; bottom: auto;
+    width: min(560px, 92vw);
+    max-height: 84vh;
+    border-radius: 16px;
+    transform: translate(-50%, 24px);
+    opacity: 0;
+    transition: transform 0.34s var(--ease), opacity 0.34s var(--ease);
+  }
+  /* the glass variant is restated here too: the closed-state selector
+     above carries (0,3,0), so a plain .sheet.show would lose to it and
+     the dialog would stay parked low and transparent */
+  .sheet.show, :root:not([data-glass="off"]) .sheet.show { transform: translate(-50%, 0); opacity: 1; }
+}
+
+/* ----------------------------------------------------------- desktop */
+@media (min-width: 1100px) {
+  /* room for the fixed sidebar, only on pages that have the real tab
+     bar. the styleguide shows a static demo capsule (.ios-tabbar--demo)
+     and demo headers, so the chrome rules below exclude the demo and
+     scope the header restyle to pages that carry the real bar. */
+  body:has(.ios-tabbar:not(.ios-tabbar--demo)) { padding-left: 264px; }
+
+  #app { max-width: 1016px; margin: 0 auto; padding-top: 60px; }
+
+  /* the top bar: solid, full width, never frosted. the scrolled and
+     glass variants carry higher specificity, so they are restated
+     here or the frost would win back past 8px of scroll. */
+  body:has(.ios-tabbar:not(.ios-tabbar--demo)) .ios-header,
+  body:has(.ios-tabbar:not(.ios-tabbar--demo)) .ios-header.is-scrolled,
+  body:has(.ios-tabbar:not(.ios-tabbar--demo)) .ios-header.scrolled,
+  :root:not([data-glass="off"]) body:has(.ios-tabbar:not(.ios-tabbar--demo)) .ios-header.is-scrolled,
+  :root:not([data-glass="off"]) body:has(.ios-tabbar:not(.ios-tabbar--demo)) .ios-header.scrolled {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 60px; padding: 0;
+    background: var(--card);
+    background-image: none;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    border-bottom: 1px solid var(--sep);
+    box-shadow: none;
+    z-index: 40;
+  }
+  body:has(.ios-tabbar:not(.ios-tabbar--demo)) .ios-header-row { height: 60px; max-width: none; padding: 0 20px; justify-content: flex-start; gap: 12px; }
+  .ios-brand { display: block; font-family: var(--font-display); font-weight: 700; font-size: var(--fs-headline); color: var(--label); }
+  .ios-header-actions { margin-left: auto; }
+
+  /* pushed screens carry a .nav backbar instead of the header; it takes
+     the same solid top bar treatment so no screen sits under a bare
+     60px strip. same restatements against the frost variants. */
+  body:has(.ios-tabbar:not(.ios-tabbar--demo)) .nav,
+  body:has(.ios-tabbar:not(.ios-tabbar--demo)) .nav.is-scrolled,
+  body:has(.ios-tabbar:not(.ios-tabbar--demo)) .nav.scrolled,
+  :root:not([data-glass="off"]) body:has(.ios-tabbar:not(.ios-tabbar--demo)) .nav.is-scrolled,
+  :root:not([data-glass="off"]) body:has(.ios-tabbar:not(.ios-tabbar--demo)) .nav.scrolled {
+    position: fixed; top: 0; left: 0; right: 0;
+    padding-top: 0;
+    background: var(--card);
+    background-image: none;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    border-bottom: 1px solid var(--sep);
+    box-shadow: none;
+    z-index: 40;
+  }
+  body:has(.ios-tabbar:not(.ios-tabbar--demo)) .nav-row { height: 60px; padding: 0 12px; }
+
+  /* the tab bar becomes the sidebar. same specificity discipline: the
+     glass capsule selectors are restated so the wash does not win. */
+  .ios-tabbar:not(.ios-tabbar--demo),
+  :root:not([data-glass="off"]) .ios-tabbar:not(.ios-tabbar--demo) {
+    left: 0; right: auto; top: 60px; bottom: 0;
+    width: 264px; height: auto; max-width: none; margin: 0;
+    border-radius: 0; border: 0; border-right: 1px solid var(--sep);
+    background: var(--bg);
+    background-image: none;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    box-shadow: none;
+    display: flex; flex-direction: column; justify-content: flex-start;
+    gap: 4px; padding: 16px 12px;
+  }
+  .ios-tabbar:not(.ios-tabbar--demo) .ios-tab,
+  :root:not([data-glass="off"]) .ios-tabbar:not(.ios-tabbar--demo) .ios-tab[aria-current="page"],
+  :root:not([data-glass="off"]) .ios-tabbar:not(.ios-tabbar--demo) .ios-tab.on {
+    flex: 0 0 auto; width: 100%; max-width: none;
+    flex-direction: row; justify-content: flex-start; gap: 10px;
+    min-height: 36px; height: 36px; padding: 0 12px;
+    border-radius: 8px; box-shadow: none;
+  }
+  .ios-tabbar:not(.ios-tabbar--demo) .ios-tab svg { width: 18px; height: 18px; }
+  .ios-tabbar:not(.ios-tabbar--demo) .ios-tab span { font-size: var(--fs-subhead); line-height: 1; }
+  .ios-tabbar:not(.ios-tabbar--demo) .ios-tab:hover { background: var(--fill); }
+  .ios-tabbar:not(.ios-tabbar--demo) .ios-tab[aria-current="page"],
+  .ios-tabbar:not(.ios-tabbar--demo) .ios-tab.active { background: var(--tint-soft); color: var(--tint-text); }
+
+  /* the large title is a page heading now, like Home on the github page */
+  .large-title { position: static; padding: 28px 0 4px; background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+
+  /* desktop pages do not slide sideways */
+  .screen { animation: none; }
+  .screen.sc-anim { transition: none; }
+  #app.nav-animating .screen { position: static; }
+  /* with the transitions off the outgoing screen would sit stacked in
+     the flow until the 420ms cleanup timer removes it; hide it so a
+     push or pop reads as an instant swap */
+  #app.nav-animating .screen:not(:last-child) { display: none; }
+
+  /* no bottom capsule on desktop, so the map runs to the bottom edge:
+     60px top bar plus the 60px chip row leave the rest of the viewport.
+     the map page also drops the body's capsule clearance so nothing
+     scrolls below the map. */
+  .map-wrap { height: calc(100dvh - 120px); }
+  body:has(.map-wrap) { padding-bottom: 0; }
+}
