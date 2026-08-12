@@ -14,38 +14,78 @@
   <meta name="apple-mobile-web-app-title" content="Wildlife Log" />
   <meta name="format-detection" content="telephone=no" />
 
-  <meta name="theme-color" content="#f9f9f9" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#1e1e1e" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
   <meta name="description" content="A simple, iOS-style field journal for logging Ontario's wildlife, fish, plants, trees, insects and fungi." />
 
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-  <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="assets/ios.css" />
+  <script>
+    /* One tiny synchronous check so the static first-run privacy sheet below
+       never flashes for someone who already accepted it. */
+    try { if (JSON.parse(localStorage.getItem('owl-settings') || '{}').seenPrivacy) document.documentElement.classList.add('privacy-ok'); } catch (e) {}
+  </script>
 </head>
 <body>
-  <div id="app"><!-- screens render here --></div>
+  <!-- A real first paint before any script arrives: the same chrome and large
+       title the Guide renders, so the page is visible while the data loads.
+       boot() replaces all of this with the routed screen. -->
+  <div id="app">
+    <div class="screen">
+      <header class="ios-header"><div class="ios-header-row">
+        <a class="ios-avatar" href="#/account" aria-label="Account"><svg aria-hidden="true"><use href="assets/icons.svg#user"/></svg></a>
+        <div class="ios-header-actions">
+          <span class="ios-glass-btn" aria-hidden="true"><svg><use href="assets/icons.svg#plus"/></svg></span>
+          <a class="ios-glass-btn" href="#/search" aria-label="Search"><svg aria-hidden="true"><use href="assets/icons.svg#search"/></svg></a>
+        </div>
+      </div></header>
+      <div class="large-title"><div class="large-head"><h1>on-wildlife</h1></div>
+        <div class="subtitle">A field guide to Ontario&rsquo;s wildlife, and your own journal of it.</div>
+      </div>
+    </div>
+  </div>
 
-  <nav class="tabbar" id="tabbar"><!-- tab bar renders here --></nav>
+  <nav class="ios-tabbar" id="tabbar" aria-label="Primary"><!-- tab bar renders here --></nav>
 
-  <div id="sheet-root"><!-- modal sheets mount here --></div>
+  <div id="sheet-root">
+    <!-- The first-run privacy notice ships in the HTML so it is readable at
+         first paint, before any script arrives. The head script hides it for
+         anyone who already accepted; the app wires the buttons and owns it
+         from boot onward. Markup mirrors maybePrivacyBanner() exactly. -->
+    <div class="privacy-static">
+      <div class="scrim show" data-action="accept-privacy"></div>
+      <div class="sheet show" id="sheet" style="max-height:none">
+        <div class="sheet-grabber"></div>
+        <div class="sheet-body" style="padding:8px 20px calc(24px + var(--sa-bottom))">
+          <div style="text-align:center;font-size:44px;margin:8px 0">&#x1F43E;</div>
+          <h2 style="text-align:center;margin:0 0 6px;font-size:22px">Welcome to Wildlife Log</h2>
+          <p style="text-align:center;color:var(--label-2);font-size:15px;line-height:1.45;margin:0 0 16px">Log the wildlife, fish and plants you find across Ontario. <b>Your sightings stay private on your device.</b> Nothing you log is uploaded unless you choose to turn on sharing.</p>
+          <button class="btn btn-primary btn-block" data-action="accept-privacy">Get started</button>
+          <div class="spacer"></div>
+          <button class="btn btn-plain btn-block" data-action="open-privacy-first" style="height:40px">Read our privacy note</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <div id="toast-root" role="status" aria-live="polite" aria-atomic="true"><!-- toasts mount here --></div>
 
-  <!-- Mapping library (vendored, offline-capable; tiles need a connection) -->
-  <script src="vendor/leaflet/leaflet.js"></script>
+  <!-- The mapping library (vendor/leaflet/leaflet.js) loads on demand from
+       the Map tab; it has no business in the boot chain -->
 
   <!-- Data (plain globals, no build step needed) -->
-  <script src="data/categories.js"></script>
-  <script src="data/species.js"></script>
-  <script src="data/notes.js"></script>
-  <script src="data/learn.js"></script>
-  <script src="data/trust.js"></script>
-  <script src="data/badges.js"></script>
-  <script src="data/ecosystem.js"></script>
+  <script defer src="data/categories.js"></script>
+  <script defer src="data/species.js"></script>
+  <!-- data/notes.js (the long "In depth" accounts, 650KB) loads lazily from
+       boot() so it never sits between the reader and first paint -->
+  <script defer src="data/learn.js"></script>
+  <script defer src="data/trust.js"></script>
+  <script defer src="data/badges.js"></script>
+  <script defer src="data/ecosystem.js"></script>
 
   <!-- App -->
-  <script src="share.js"></script>
-  <script src="app.js"></script>
+  <script defer src="share.js"></script>
+  <script defer src="app.js"></script>
 </body>
 </html>
