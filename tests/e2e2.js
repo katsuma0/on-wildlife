@@ -38,9 +38,14 @@ const BASE = process.env.BASE || 'http://localhost:8000/index.html';
   const cur = await page.$$eval('#tabbar .tab', els => els.filter(e => e.getAttribute('aria-current') === 'page').map(e => e.textContent.trim()));
   ok('exactly one tab has aria-current=page', cur.length === 1, 'tabs=' + JSON.stringify(cur));
   const tabCount = await page.$$eval('#tabbar .tab', els => els.length);
-  ok('tab bar has exactly 4 items (Search left the bar)', tabCount === 4, 'count=' + tabCount);
+  ok('tab bar has exactly 5 items (Guide, Map, Journal, pursuit, More)', tabCount === 5, 'count=' + tabCount);
   const searchTab = await page.$$eval('#tabbar .tab', els => els.some(e => e.getAttribute('data-tab') === 'search'));
   ok('no search tab in the bar', searchTab === false);
+  const pursuitLabel = await page.$$eval('#tabbar .tab', els => {
+    const t = els.find(e => e.getAttribute('data-tab') === 'pursuit');
+    return t ? t.textContent.trim() : null;
+  });
+  ok('pursuit tab defaults to Fishing', pursuitLabel === 'Fishing', 'label=' + pursuitLabel);
   const hdr = await page.evaluate(() => {
     const av = document.querySelector('.ios-header .ios-avatar');
     const btns = document.querySelectorAll('.ios-header .ios-glass-btn');
