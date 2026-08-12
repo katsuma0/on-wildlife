@@ -167,30 +167,37 @@
      One JSON key, 'outdoors-appearance', shared by every site on the origin:
      { theme, glass, palette, face, size }. The head script stamps the data
      attributes pre-paint; this is the same logic for live changes from the
-     Appearance panel. An old per-app theme migrates into the key once. */
+     Appearance panel. An old per-app theme migrates into the key once, and
+     so does one round of renames: a saved face "system" without the v2
+     marker moves to the new Parks default, and palette "shore" becomes
+     "parks". A System face picked after that carries v2 and sticks. */
   var APPEAR_KEY = 'outdoors-appearance';
-  var APPEAR_DEFAULT = { theme: 'auto', glass: 'on', palette: 'shore', face: 'system', size: 'm' };
+  var APPEAR_DEFAULT = { theme: 'auto', glass: 'on', palette: 'parks', face: 'parks', size: 'm' };
   var APPEAR_VALID = {
     theme: ['auto', 'light', 'dark'],
     glass: ['on', 'off'],
-    palette: ['shore', 'field', 'granite'],
-    face: ['system', 'rounded', 'serif', 'avenir', 'mono'],
+    palette: ['parks', 'field', 'granite'],
+    face: ['parks', 'system', 'rounded', 'serif', 'avenir', 'mono'],
     size: ['s', 'm', 'l', 'xl']
   };
   function loadAppearance() {
-    var raw = null;
+    var raw = null, save = false;
     try { raw = JSON.parse(localStorage.getItem(APPEAR_KEY) || 'null'); } catch (e) {}
     if (!raw || typeof raw !== 'object') {
       raw = {};
       var t = app.settings.theme;   // one-time migration of the old per-app theme
       if (t === 'light' || t === 'dark') raw.theme = t;
-      try { localStorage.setItem(APPEAR_KEY, JSON.stringify(raw)); } catch (e) {}
+      save = true;
     }
+    if (raw.face === 'system' && !raw.v2) { delete raw.face; raw.v2 = 1; save = true; }
+    if (raw.palette === 'shore') { raw.palette = 'parks'; save = true; }
+    if (save) { try { localStorage.setItem(APPEAR_KEY, JSON.stringify(raw)); } catch (e) {} }
     var a = {};
     for (var k in APPEAR_DEFAULT) {
       if (!APPEAR_DEFAULT.hasOwnProperty(k)) continue;
       a[k] = APPEAR_VALID[k].indexOf(raw[k]) >= 0 ? raw[k] : APPEAR_DEFAULT[k];
     }
+    a.v2 = 1;   // every save from here on keeps the migration marker
     app.appearance = a;
   }
   function applyAppearance() {
@@ -200,8 +207,8 @@
     }
     stamp('data-theme', a.theme, a.theme !== 'light' && a.theme !== 'dark');
     stamp('data-glass', 'off', a.glass !== 'off');
-    stamp('data-palette', a.palette, a.palette === 'shore');
-    stamp('data-face', a.face, a.face === 'system');
+    stamp('data-palette', a.palette, a.palette !== 'field' && a.palette !== 'granite');
+    stamp('data-face', a.face, a.face === 'parks');
     stamp('data-textsize', a.size, a.size === 'm');
   }
   function setAppearance(key, val) {
@@ -999,7 +1006,7 @@
     }
     body += '</div>';
 
-    screen({ title: 'on-wildlife', large: true, header: true, version: 'v3.2', subtitle: 'Ontario’s wildlife, and your journal of it.', body: body });
+    screen({ title: 'on-wildlife', large: true, header: true, version: 'v3.3', subtitle: 'Ontario’s wildlife, and your journal of it.', body: body });
     wireLiveSearch('explore-search', 'explore-results', ['explore-home']);
   }
 
@@ -1874,8 +1881,8 @@
     h += appearSegRow('Theme', 'appear-theme', a.theme, [['auto', 'Auto'], ['light', 'Light'], ['dark', 'Dark']], 216);
     // Colours: three swatch capsules, each showing its palette's three tones
     h += '<div class="field pal-field"><span class="field-label">Colours</span><div style="flex:1"></div><div class="pal-row">';
-    [['shore', 'Shore'], ['field', 'Field'], ['granite', 'Granite']].forEach(function (p) {
-      var on = a.palette === p[0];
+    [['parks', 'Parks'], ['field', 'Field'], ['granite', 'Granite']].forEach(function (p) {
+      var on = p[0] === 'parks' ? (a.palette !== 'field' && a.palette !== 'granite') : a.palette === p[0];
       h += '<span class="pal-opt"><button type="button" class="pal-swatch pal-swatch--' + p[0] + (on ? ' on' : '') + '" data-action="appear-palette" data-v="' + p[0] + '" aria-label="' + p[1] + ' colours" aria-pressed="' + (on ? 'true' : 'false') + '">' +
         '<span class="dot"></span><span class="dot"></span><span class="dot"></span></button>' +
         '<span class="pal-name">' + p[1] + '</span></span>';
@@ -1884,7 +1891,7 @@
     h += '<div class="field"><span class="ios-row-body" style="flex:1"><span class="ios-row-title">Glass</span><span class="ios-row-sub">Frosted bars and buttons</span></span>' +
       '<label class="switch"><input type="checkbox" id="glass-toggle" aria-label="Glass"' + (a.glass !== 'off' ? ' checked' : '') + '><span class="track"></span><span class="knob"></span></label></div>';
     h += appearSegRow('Text size', 'appear-size', a.size, [['s', 'S'], ['m', 'M'], ['l', 'L'], ['xl', 'XL']], 180);
-    [['system', 'System'], ['rounded', 'Rounded'], ['serif', 'Serif'], ['avenir', 'Avenir'], ['mono', 'Mono']].forEach(function (f) {
+    [['parks', 'Parks'], ['system', 'System'], ['rounded', 'Rounded'], ['serif', 'Serif'], ['avenir', 'Avenir'], ['mono', 'Mono']].forEach(function (f) {
       var on = a.face === f[0];
       h += '<button type="button" class="ios-row ios-row--plain" data-action="appear-face" data-v="' + f[0] + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
         '<span class="ios-row-body"><span class="ios-row-title face-label--' + f[0] + '">' + f[1] + '</span></span>' +
@@ -1942,7 +1949,7 @@
       '<div class="info-row"><div class="info-v">ON Fishing is now part of ON Wildlife: the fishing zones live on the map, every fish page carries its seasons and limits, and your catch log shows up in the journal.</div></div>' +
       iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: 'on-fishing, the solo site', sub: 'The standalone zone map stays up' }) +
       iosRow({ title: 'Species in guide', value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: 'Version', value: '3.2', chevron: false }) +
+      iosRow({ action: 'version-tap', title: 'Version', value: '3.3', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca', sub: 'Apps, projects and the rest' }) +
       '</div>';
     screen({ title: 'More', large: true, header: true, body: body });
@@ -1975,7 +1982,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: 'Visibility', value: (Community.on() ? 'Sharing on' : 'Sharing off') }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: 'Stats' }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: 'Export my log' }) +
-      iosRow({ title: 'Version', value: '3.2', chevron: false }) +
+      iosRow({ title: 'Version', value: '3.3', chevron: false }) +
       '</nav>';
 
     screen({ title: 'Account', backAction: true, backText: 'Back', body: body });
@@ -3805,7 +3812,7 @@
     loadProfile();
     loadAppearance();
     applyAppearance();
-    if (window.OnShare) OnShare.config({ app: 'on-wildlife', base: 'https://katsuma0.github.io/on-wildlife/', accent: '#007AFF' });
+    if (window.OnShare) OnShare.config({ app: 'on-wildlife', base: 'https://katsuma0.github.io/on-wildlife/', accent: '#284162' });
     Store.load().then(function (entries) {
       app.entries = entries || [];
       return Store.loadHazards();

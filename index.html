@@ -28,22 +28,28 @@
        2. Read the shared 'outdoors-appearance' key (one JSON key for every site
           on this origin) and stamp its data attributes on <html> so theme,
           palette, face, text size and glass are right with no flash. An old
-          per-app theme in owl-settings migrates into the key once. */
+          per-app theme in owl-settings migrates into the key once, and so does
+          one round of renames: a saved face "system" without the v2 marker
+          moves to the new Parks default, and palette "shore" becomes "parks".
+          Parks is the default for palette and face, so neither stamps. */
     (function () {
       var d = document.documentElement, st = {};
       try { st = JSON.parse(localStorage.getItem('owl-settings') || '{}') || {}; } catch (e) {}
       if (st.seenPrivacy) d.className += ' privacy-ok';
-      var a = null;
+      var a = null, save = false;
       try { a = JSON.parse(localStorage.getItem('outdoors-appearance') || 'null'); } catch (e) {}
       if (!a || typeof a !== 'object') {
         a = {};
         if (st.theme === 'light' || st.theme === 'dark') a.theme = st.theme;
-        try { localStorage.setItem('outdoors-appearance', JSON.stringify(a)); } catch (e) {}
+        save = true;
       }
+      if (a.face === 'system' && !a.v2) { delete a.face; a.v2 = 1; save = true; }
+      if (a.palette === 'shore') { a.palette = 'parks'; save = true; }
+      if (save) { try { localStorage.setItem('outdoors-appearance', JSON.stringify(a)); } catch (e) {} }
       if (a.theme === 'light' || a.theme === 'dark') d.setAttribute('data-theme', a.theme);
       if (a.glass === 'off') d.setAttribute('data-glass', 'off');
       if (a.palette === 'field' || a.palette === 'granite') d.setAttribute('data-palette', a.palette);
-      if (a.face === 'rounded' || a.face === 'serif' || a.face === 'avenir' || a.face === 'mono') d.setAttribute('data-face', a.face);
+      if (a.face === 'system' || a.face === 'rounded' || a.face === 'serif' || a.face === 'avenir' || a.face === 'mono') d.setAttribute('data-face', a.face);
       if (a.size === 's' || a.size === 'l' || a.size === 'xl') d.setAttribute('data-textsize', a.size);
     })();
   </script>
