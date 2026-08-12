@@ -23,9 +23,35 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="assets/ios.css" />
   <script>
-    /* One tiny synchronous check so the static first-run privacy sheet below
-       never flashes for someone who already accepted it. */
-    try { if (JSON.parse(localStorage.getItem('owl-settings') || '{}').seenPrivacy) document.documentElement.classList.add('privacy-ok'); } catch (e) {}
+    /* Two tiny synchronous jobs before first paint:
+       1. Hide the static first-run privacy sheet for anyone who already accepted.
+       2. Read the shared 'outdoors-appearance' key (one JSON key for every site
+          on this origin) and stamp its data attributes on <html> so theme,
+          palette, face, text size and glass are right with no flash. An old
+          per-app theme in owl-settings migrates into the key once, and so does
+          one round of renames: a saved face "system" without the v2 marker
+          moves to the new Parks default, and palette "shore" becomes "parks".
+          Parks is the default for palette and face, so neither stamps. */
+    (function () {
+      var d = document.documentElement, st = {};
+      try { st = JSON.parse(localStorage.getItem('owl-settings') || '{}') || {}; } catch (e) {}
+      if (st.seenPrivacy) d.className += ' privacy-ok';
+      var a = null, save = false;
+      try { a = JSON.parse(localStorage.getItem('outdoors-appearance') || 'null'); } catch (e) {}
+      if (!a || typeof a !== 'object') {
+        a = {};
+        if (st.theme === 'light' || st.theme === 'dark') a.theme = st.theme;
+        save = true;
+      }
+      if (a.face === 'system' && !a.v2) { delete a.face; a.v2 = 1; save = true; }
+      if (a.palette === 'shore') { a.palette = 'parks'; save = true; }
+      if (save) { try { localStorage.setItem('outdoors-appearance', JSON.stringify(a)); } catch (e) {} }
+      if (a.theme === 'light' || a.theme === 'dark') d.setAttribute('data-theme', a.theme);
+      if (a.glass === 'off') d.setAttribute('data-glass', 'off');
+      if (a.palette === 'field' || a.palette === 'granite') d.setAttribute('data-palette', a.palette);
+      if (a.face === 'system' || a.face === 'rounded' || a.face === 'serif' || a.face === 'avenir' || a.face === 'mono') d.setAttribute('data-face', a.face);
+      if (a.size === 's' || a.size === 'l' || a.size === 'xl') d.setAttribute('data-textsize', a.size);
+    })();
   </script>
 </head>
 <body>
@@ -36,13 +62,14 @@
     <div class="screen">
       <header class="ios-header"><div class="ios-header-row">
         <a class="ios-avatar" href="#/account" aria-label="Account"><svg aria-hidden="true"><use href="assets/icons.svg#user"/></svg></a>
+        <span class="ios-brand">on-wildlife</span>
         <div class="ios-header-actions">
           <span class="ios-glass-btn" aria-hidden="true"><svg><use href="assets/icons.svg#plus"/></svg></span>
           <a class="ios-glass-btn" href="#/search" aria-label="Search"><svg aria-hidden="true"><use href="assets/icons.svg#search"/></svg></a>
         </div>
       </div></header>
       <div class="large-title"><div class="large-head"><h1>on-wildlife</h1></div>
-        <div class="subtitle">A field guide to Ontario&rsquo;s wildlife, and your own journal of it.</div>
+        <div class="subtitle">Ontario&rsquo;s wildlife, and your journal of it.</div>
       </div>
     </div>
   </div>
