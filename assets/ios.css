@@ -47,6 +47,24 @@
   --press-pill: rgba(120, 120, 128, .16);
   --shadow-float: 0 8px 24px rgba(0, 0, 0, .12);
 
+
+  /* Apple type scale (Dynamic Type at the default Large setting).
+     Sizes, line heights and tracking straight from the HIG; every
+     font-size in this file must be one of these. */
+  --font-sys: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, sans-serif;
+  --fs-large-title: 34px; --lh-large-title: 41px; --ls-large-title: 0.37px;
+  --fs-title1: 28px; --lh-title1: 34px; --ls-title1: 0.36px;
+  --fs-title2: 22px; --lh-title2: 28px; --ls-title2: 0.35px;
+  --fs-title3: 20px; --lh-title3: 25px; --ls-title3: 0.38px;
+  --fs-headline: 17px; --lh-headline: 22px; --ls-headline: -0.41px;
+  --fs-body: 17px; --lh-body: 22px; --ls-body: -0.41px;
+  --fs-callout: 16px; --lh-callout: 21px; --ls-callout: -0.32px;
+  --fs-subhead: 15px; --lh-subhead: 20px; --ls-subhead: -0.24px;
+  --fs-footnote: 13px; --lh-footnote: 18px; --ls-footnote: -0.08px;
+  --fs-caption1: 12px; --lh-caption1: 16px; --ls-caption1: 0;
+  --fs-caption2: 11px; --lh-caption2: 13px; --ls-caption2: 0.07px;
+  --fs-tab: 10px;   /* the one exception: tab bar labels, as on iOS */
+
   /* geometry */
   --r-group: 12px;
   --r-tile: 7px;
@@ -161,9 +179,10 @@ body {
   min-height: 100dvh;
   background: var(--bg);
   color: var(--label);
-  font-family: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, sans-serif;
-  font-size: 17px;
-  line-height: 1.4;
+  font-family: var(--font-sys);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  letter-spacing: var(--ls-body);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
@@ -221,7 +240,7 @@ button {
   justify-content: center;
   background: var(--fill-strong);
   color: var(--label);
-  font-size: 19px;
+  font-size: var(--fs-title3);
   font-weight: 600;
   text-decoration: none;
   overflow: hidden;
@@ -251,10 +270,10 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  font-size: 26px;
+  font-size: var(--fs-title1);
   font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  letter-spacing: var(--ls-title1);
+  line-height: var(--lh-title1);
   color: var(--label);
   margin: 26px 0 8px;
   padding-left: var(--gutter);
@@ -291,7 +310,8 @@ button {
 }
 /* small footnote under a group, outside the card */
 .ios-group-foot {
-  font-size: 13px;
+  font-size: var(--fs-footnote);
+  letter-spacing: var(--ls-footnote);
   color: var(--label-2);
   margin: -24px var(--gutter) 32px;
   padding: 8px 4px 0;
@@ -307,7 +327,8 @@ button {
   padding: 8px 14px;
   gap: 12px;
   color: var(--label);
-  font-size: 17px;
+  font-size: var(--fs-body);
+  letter-spacing: var(--ls-body);
   text-decoration: none;
   text-align: left;
   background: var(--card);
@@ -333,7 +354,9 @@ button {
 .ios-row-body { flex: 1; min-width: 0; }
 .ios-row-title {
   display: block;
-  font-size: 17px;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  letter-spacing: var(--ls-body);
   color: var(--label);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -341,7 +364,9 @@ button {
 }
 .ios-row-sub {
   display: block;
-  font-size: 13px;
+  font-size: var(--fs-footnote);
+  line-height: var(--lh-footnote);
+  letter-spacing: var(--ls-footnote);
   color: var(--label-2);
   margin-top: 1px;
   overflow: hidden;
@@ -352,7 +377,8 @@ button {
   flex: none;
   margin-left: auto;
   color: var(--label-2);
-  font-size: 17px;
+  font-size: var(--fs-body);
+  letter-spacing: var(--ls-body);
   font-variant-numeric: tabular-nums;
 }
 .ios-chevron {
@@ -417,7 +443,7 @@ button {
   padding: 0 14px;
   border-radius: 22px;
   color: var(--label-aa);
-  font-size: 10px;
+  font-size: var(--fs-tab);
   font-weight: 500;
   line-height: 1;
   text-decoration: none;
@@ -478,7 +504,7 @@ button, .tap, .cell, .tab, .chip, .seg-opt {
 .notes[open] > summary .chevron { transform: rotate(90deg); }
 .notes > summary:active { background: var(--card-pressed); }
 .notes-body { padding: 2px 18px 18px; border-top: 0.5px solid var(--sep); }
-.notes-body p { margin: 12px 0 0; font-size: 16px; line-height: 1.55; color: var(--label); }
+.notes-body p { margin: 12px 0 0; font-size: 16px; line-height: var(--lh-callout); letter-spacing: var(--ls-callout); color: var(--label); }
 .notes-body p:first-child { margin-top: 14px; }
 
 .screen { animation: screen-in 0.28s var(--ease); }
@@ -519,7 +545,7 @@ button, .tap, .cell, .tab, .chip, .seg-opt {
 .nav-title {
   font-size: 17px;
   font-weight: 600;
-  letter-spacing: -0.2px;
+  letter-spacing: var(--ls-headline);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -612,7 +638,7 @@ button, .tap, .cell, .tab, .chip, .seg-opt {
   padding: 7px 4px 0;
   font-size: 13px;
   color: var(--label-2);
-  line-height: 1.35;
+  line-height: var(--lh-footnote);
 }
 .list {
   background: var(--card);
@@ -677,7 +703,7 @@ button.cell {
   color: var(--on-tint);
 }
 .cell-body { flex: 1 1 auto; min-width: 0; }
-.cell-title { display: block; font-size: 17px; letter-spacing: -0.2px; color: var(--label); }
+.cell-title { display: block; font-size: 17px; letter-spacing: var(--ls-body); color: var(--label); }
 .cell-title.i { font-style: italic; }
 .cell-sub {
   display: block;
@@ -705,7 +731,7 @@ button.cell {
   border-radius: var(--radius-btn);
   font-size: 17px;
   font-weight: 600;
-  letter-spacing: -0.2px;
+  letter-spacing: var(--ls-headline);
   transition: transform 0.08s, opacity 0.15s, background 0.15s;
 }
 .btn:active { transform: scale(0.975); }
@@ -926,7 +952,7 @@ textarea.notes {
 .sp-photo-wrap.show { display: block; margin-bottom: 14px; }
 .sp-photo { width: 100%; max-height: 300px; object-fit: cover; border-radius: 16px; display: block; box-shadow: var(--shadow-float); }
 .photo-credit { font-size: 11px; color: var(--label-2); margin-top: 6px; line-height: 1.3; }
-.hero h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.3px; }
+.hero h1 { margin: 0; font-size: var(--fs-title1); line-height: var(--lh-title1); font-weight: 700; letter-spacing: var(--ls-title1); }
 .hero .sci { color: var(--label-2); font-style: italic; font-size: 15px; margin-top: 2px; }
 .hero .badges { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 12px; }
 
@@ -980,10 +1006,10 @@ a.stat:active { background: var(--card-pressed); }
   margin-top: 4px;
 }
 .lifecard-n {
-  font-size: 46px;
+  font-size: var(--fs-title1);
   font-weight: 700;
-  line-height: 1;
-  letter-spacing: -1.4px;
+  line-height: var(--lh-title1);
+  letter-spacing: var(--ls-title1);
   color: var(--tint);
   font-variant-numeric: tabular-nums;
 }
@@ -1001,7 +1027,7 @@ a.stat:active { background: var(--card-pressed); }
   border-radius: 5px;
   background: var(--tint);
   color: var(--on-tint);
-  font-size: 10px;
+  font-size: var(--fs-caption2);
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -1015,7 +1041,7 @@ a.stat:active { background: var(--card-pressed); }
   color: var(--tint);
 }
 .seen-tick svg { width: 13px; height: 13px; display: block; }
-.stat .n { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; color: var(--tint); }
+.stat .n { font-size: var(--fs-title1); font-weight: 700; letter-spacing: var(--ls-title1); color: var(--tint); font-variant-numeric: tabular-nums; }
 .stat .l { font-size: 12px; color: var(--label-2); margin-top: 2px; }
 
 /* Empty state */
@@ -1030,7 +1056,7 @@ a.stat:active { background: var(--card-pressed); }
   stroke-width: 1.4;
 }
 .empty h3 { color: var(--label); font-size: 20px; margin: 14px 0 4px; }
-.empty p { font-size: 15px; line-height: 1.4; }
+.empty p { font-size: 15px; line-height: var(--lh-subhead); }
 
 /* Toast (fixed dark surface in both modes, so text stays light) */
 .toast {
@@ -1078,7 +1104,7 @@ a.stat:active { background: var(--card-pressed); }
   margin: 8px 16px; padding: 12px 14px;
   background: color-mix(in srgb, var(--orange) 12%, transparent);
   border-radius: 12px;
-  font-size: 14px; line-height: 1.4;
+  font-size: var(--fs-footnote); line-height: var(--lh-footnote);
   color: var(--label);
   display: flex; gap: 10px;
 }
@@ -1171,20 +1197,20 @@ a.stat:active { background: var(--card-pressed); }
 .pin-wild { background: var(--green); }
 .pin-bear { background: var(--graphite); }
 .pin-hazard { background: var(--orange); }
-.leaflet-popup-content { font: 14px -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+.leaflet-popup-content { font-family: var(--font-sys); font-size: var(--fs-footnote); }
 .leaflet-popup-content b { font-weight: 600; }
 .leaflet-popup-content a { color: var(--tint); }
 .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--card); color: var(--label); }
 .leaflet-container a.leaflet-popup-close-button { color: var(--label-2); }
 
 /* ---------------------------------------------------- Learn articles */
-.article-intro { margin: 8px 20px 4px; font-size: 16px; line-height: 1.5; color: var(--label); }
+.article-intro { margin: 8px 20px 4px; font-size: 16px; line-height: var(--lh-callout); letter-spacing: var(--ls-callout); color: var(--label); }
 .article-sec { margin: 16px 20px; }
-.article-sec h3 { font-size: 18px; margin: 0 0 6px; letter-spacing: -0.2px; }
-.article-sec p { margin: 0 0 8px; font-size: 15.5px; line-height: 1.5; color: var(--label); }
+.article-sec h3 { font-size: var(--fs-title3); line-height: var(--lh-title3); margin: 0 0 6px; letter-spacing: var(--ls-title3); }
+.article-sec p { margin: 0 0 8px; font-size: var(--fs-callout); line-height: var(--lh-callout); letter-spacing: var(--ls-callout); color: var(--label); }
 .article-sec ul, .article-sec ol { margin: 4px 0 8px; padding-left: 22px; }
-.article-sec li { font-size: 15.5px; line-height: 1.45; margin-bottom: 6px; color: var(--label); }
-.callout { margin: 10px 0; padding: 12px 14px; border-radius: 12px; font-size: 14.5px; line-height: 1.45; color: var(--label); }
+.article-sec li { font-size: var(--fs-callout); line-height: var(--lh-callout); letter-spacing: var(--ls-callout); margin-bottom: 6px; color: var(--label); }
+.callout { margin: 10px 0; padding: 12px 14px; border-radius: 12px; font-size: var(--fs-subhead); line-height: var(--lh-subhead); letter-spacing: var(--ls-subhead); color: var(--label); }
 .callout-t { font-weight: 700; margin-bottom: 3px; }
 .callout-info { background: var(--tint-soft); }
 .callout-warn { background: color-mix(in srgb, var(--orange) 15%, transparent); }
@@ -1208,7 +1234,7 @@ a.stat:active { background: var(--card-pressed); }
 .risk-mid { background: var(--orange); }
 .risk-lo { background: var(--tint); }
 .zrow { padding: 9px 16px; }
-.zrow-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; }
+.zrow-top { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--fs-footnote); }
 
 /* ------------------------------------------------------------- Badges */
 .badge-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 4px 16px 8px; }
@@ -1222,8 +1248,8 @@ a.stat:active { background: var(--card-pressed); }
 }
 .badge-card.locked { opacity: 0.5; filter: grayscale(0.9); }
 .badge-ico { font-size: 40px; line-height: 1; margin-bottom: 8px; }
-.badge-name { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
-.badge-desc { font-size: 12.5px; color: var(--label-2); margin-top: 3px; line-height: 1.35; }
+.badge-name { font-size: 15px; font-weight: 600; letter-spacing: var(--ls-subhead); }
+.badge-desc { font-size: var(--fs-caption1); color: var(--label-2); margin-top: 3px; line-height: var(--lh-caption1); }
 .badge-chk {
   position: absolute; top: 10px; right: 10px;
   width: 20px; height: 20px; border-radius: 50%;
@@ -1514,9 +1540,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
 /* general typography */
 .leaflet-container {
-	font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+	font-family: var(--font-sys);
 	font-size: 12px;
-	font-size: 0.75rem;
 	line-height: 1.5;
 	}
 
@@ -1581,7 +1606,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
 .leaflet-control-zoom-in,
 .leaflet-control-zoom-out {
-	font: bold 18px 'Lucida Console', Monaco, monospace;
+	font: bold 18px var(--font-sys);
 	text-indent: 1px;
 	}
 
@@ -1636,7 +1661,6 @@ svg.leaflet-image-layer.leaflet-interactive path {
 .leaflet-control-layers label {
 	display: block;
 	font-size: 13px;
-	font-size: 1.08333em;
 	}
 .leaflet-control-layers-separator {
 	height: 0;
@@ -1730,7 +1754,6 @@ svg.leaflet-image-layer.leaflet-interactive path {
 	margin: 13px 24px 13px 20px;
 	line-height: 1.3;
 	font-size: 13px;
-	font-size: 1.08333em;
 	min-height: 1px;
 	}
 .leaflet-popup-content p {
@@ -1774,7 +1797,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 	text-align: center;
 	width: 24px;
 	height: 24px;
-	font: 16px/24px Tahoma, Verdana, sans-serif;
+	font: 16px/24px var(--font-sys);
 	color: #757575;
 	text-decoration: none;
 	background: transparent;
