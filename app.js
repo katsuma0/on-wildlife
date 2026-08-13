@@ -147,6 +147,13 @@
     'Guide': 'Guide', 'Map': 'Carte', 'Journal': 'Journal', 'Fishing': 'Pêche', 'Birding': 'Oiseaux', 'More': 'Plus',
     'on-wildlife': 'on-wildlife', 'Account': 'Compte', 'Search': 'Recherche', 'Log an encounter': 'Noter une observation',
     'This month in Ontario': 'Ce mois-ci en Ontario', 'Ontario Wildlife': 'Faune de l’Ontario', 'Coming Soon': 'À venir',
+    'Insights': 'Aperçus', 'spotted': 'observées', 'Days with sightings': 'Jours avec observations',
+    'Total sightings': 'Observations au total', 'All Species': 'Toutes les espèces',
+    'Your sighting map': 'La carte de vos observations',
+    'Log this sighting': 'Noter cette observation', 'Open in your journal': 'Ouvrir dans votre journal',
+    'Every encounter': 'Chaque observation', 'Open guide entry': 'Ouvrir la fiche du guide', 'At risk': 'En péril',
+    'A private field guide and journal for the Ontario outdoors. Everything here manages this app and your data.':
+      'Un guide de terrain et un journal privés pour le plein air en Ontario. Tout ici gère cette application et vos données.',
     'In a future update': 'Dans une prochaine version', 'Species at Risk': 'Espèces en péril',
     'flagged in the guide': 'signalées dans le guide', 'species': 'espèces', 'Recent': 'Récent',
     'Encounter': 'Observation', 'Encounters': 'Observations', 'Species': 'Espèces', 'Categories': 'Catégories',
@@ -575,12 +582,27 @@
     var right = opts.right != null ? opts.right :
       '<span class="chevron">' + I.chevron + '</span>';
     var sub = opts.sub != null ? opts.sub : ('<i>' + esc(s.sci) + '</i>');
+    // Browsing the guide doubles as working a checklist, so a species you have
+    // logged wears a quiet tick rather than a loud badge.
+    var tick = logged ? '<span class="seen-tick" role="img" aria-label="in your journal">' + I.check + '</span>' : '';
+    if (opts.card) {
+      // Journal's entry-card voice: bold name, one secondary line, a
+      // metadata footer whose ellipsis opens real actions. The whole
+      // card navigates through a stretched cover link, so the ellipsis
+      // can be a true button rather than a control inside a link.
+      return '<div class="cell tap">' +
+        '<span class="cell-emoji">' + s.emoji + '</span>' +
+        '<span class="cell-body">' +
+        '<a class="cell-cover" href="#/species/' + esc(s.id) + '" aria-label="' + esc(s.name) + '"></a>' +
+        '<span class="cell-title">' + esc(s.name) + tick + '</span>' +
+        '<span class="cell-sub"><i>' + esc(s.sci) + '</i></span>' +
+        '<span class="cell-foot"><span class="meta">' + esc(seenLabel(s.seen)) + (s.atRisk ? ' · ' + Lx('At risk') : '') + '</span>' +
+        '<button type="button" class="cell-more" data-action="species-menu" data-id="' + esc(s.id) + '" aria-label="' + Lx('More') + ': ' + esc(s.name) + '">' + spriteIcon('ellipsis') + '</button></span>' +
+        '</span></div>';
+    }
     return '<a class="cell tap" href="#/species/' + esc(s.id) + '">' +
       '<span class="cell-emoji">' + s.emoji + '</span>' +
-      '<span class="cell-body"><span class="cell-title">' + esc(s.name) +
-      // Browsing the guide doubles as working a checklist, so a species you have
-      // logged wears a quiet tick rather than a loud badge.
-      (logged ? '<span class="seen-tick" role="img" aria-label="in your journal">' + I.check + '</span>' : '') +
+      '<span class="cell-body"><span class="cell-title">' + esc(s.name) + tick +
       '</span><span class="cell-sub">' + sub + '</span></span>' +
       right + '</a>';
   }
@@ -841,13 +863,19 @@
       // Root screens carry the shared iOS header instead of a nav-bar row.
       nav = iosHeaderHtml(cfg.actions === false);
     } else {
+      // Pushed screens carry a floating glass back circle, chevron only;
+      // the destination lives on in the aria-label.
+      var backAria = esc(Lx('Back')) + (cfg.backText ? ': ' + esc(backLabel(cfg.backText)) : '');
       var navLeft = cfg.back
-        ? '<div class="nav-left"><a class="nav-btn bold" href="' + esc(cfg.back) + '">' + I.back + '<span class="lbl">' + esc(backLabel(cfg.backText)) + '</span></a></div>'
+        ? '<div class="nav-left"><a class="nav-btn nav-circle" href="' + esc(cfg.back) + '" aria-label="' + backAria + '">' + I.back + '</a></div>'
         : cfg.backAction
-          ? '<div class="nav-left"><button class="nav-btn bold" data-action="nav-back">' + I.back + '<span class="lbl">' + esc(backLabel(cfg.backText)) + '</span></button></div>'
+          ? '<div class="nav-left"><button class="nav-btn nav-circle" data-action="nav-back" aria-label="' + backAria + '">' + I.back + '</button></div>'
           : (cfg.navLeft ? '<div class="nav-left">' + cfg.navLeft + '</div>' : '');
       var navRight = cfg.navRight ? '<div class="nav-right">' + cfg.navRight + '</div>' : '';
-      nav = '<div class="nav' + (cfg.large ? ' has-large' : '') + '" id="nav">' +
+      // cfg.cover hides the inline title until content scrolls, so a
+      // full-bleed hero owns the top of the screen (has-large reuses
+      // the existing show-title machinery).
+      nav = '<div class="nav' + (cfg.large || cfg.cover ? ' has-large' : '') + '" id="nav">' +
         '<div class="nav-row">' + navLeft +
         '<div class="nav-title"' + (cfg.large ? '' : ' role="heading" aria-level="1"') + '>' + esc(cfg.title || '') + '</div>' + navRight +
         '</div></div>';
@@ -863,7 +891,7 @@
     var dir = navDirection();
     if (app._browserNav && (dir === 'push' || dir === 'pop')) dir = 'none';
     app._browserNav = false;
-    mountScreen('<div class="screen">' + nav + large + cfg.body + tail + '</div>', dir);
+    mountScreen('<div class="screen' + (cfg.header ? '' : ' is-push') + '">' + nav + large + cfg.body + tail + '</div>', dir);
     fitBackLabel();
     updateNav();
   }
@@ -886,6 +914,15 @@
         if (y > 34) nav.classList.add('show-title'); else nav.classList.remove('show-title');
       }
     }
+    // The list-screen FAB ducks away while scrolling down and springs
+    // back the moment the direction turns.
+    var fab = root.querySelector('.fab-log');
+    if (fab && !reduceMotion()) {
+      var last = app._fabY || 0;
+      if (y < 40 || y < last - 4) fab.classList.remove('fab-hide');
+      else if (y > last + 4) fab.classList.add('fab-hide');
+    }
+    app._fabY = y;
   }
   window.addEventListener('scroll', updateNav, { passive: true });
 
@@ -1132,11 +1169,11 @@
     speciesPhoto(s, function (rec) {
       if (!rec || !rec.url) return;
       if (location.hash.indexOf('/species/' + forId) < 0) return; // navigated away, don't inject into another page
-      var box = $('#sp-photo'), em = $('#sp-emoji');
+      var box = $('#sp-photo'), em = $('#sp-emoji'), hero = $('#sp-hero');
       if (!box) return;
-      box.innerHTML = '<img class="sp-photo" src="' + esc(rec.url) + '" alt="' + esc(s.name) + '" loading="lazy">' +
+      box.innerHTML = '<img class="sp-photo-img" src="' + esc(rec.url) + '" alt="' + esc(s.name) + '" loading="lazy">' +
         '<div class="photo-credit">' + esc(rec.attr || 'iNaturalist') + ' · CC · iNaturalist</div>';
-      box.classList.add('show');
+      if (hero) hero.classList.add('has-photo');
       if (em) em.style.display = 'none';
     });
   }
@@ -1174,35 +1211,107 @@
   }
 
   /* ----------------------------------------------------------- Explore */
+  /* Distinct calendar days that have at least one entry. */
+  function daysWithSightings() {
+    var m = {};
+    journalEntries().forEach(function (e) {
+      var d = new Date(e.when);
+      if (!isNaN(d)) m[d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate()] = 1;
+    });
+    return Object.keys(m).length;
+  }
+
+  /* Journal's insights card: the life list as the hero numeral, days out
+     and total sightings stacked beside it. Real numbers only; the card
+     waits until there is at least one entry. Opens the existing Stats. */
+  function insightsCard() {
+    var all = journalEntries();
+    if (!all.length) return '';
+    var life = lifeList().length;
+    return '<a class="insight-card tap-scale" href="#/stats">' +
+      '<div class="insight-t">' + Lx('Insights') + '</div>' +
+      '<div class="insight-grid">' +
+      '<div class="insight-big"><div class="insight-n">' + life + '</div>' +
+      '<div class="insight-bl">' + Lx('Species') + ' <span>' + Lx('spotted') + '</span></div></div>' +
+      '<div class="insight-minis">' +
+      '<div class="insight-mini"><div class="n">' + spriteIcon('sun-moon') + '<span>' + daysWithSightings() + '</span></div>' +
+      '<div class="l">' + Lx('Days with sightings') + '</div></div>' +
+      '<div class="insight-mini"><div class="n">' + spriteIcon('paw') + '<span>' + all.length + '</span></div>' +
+      '<div class="l">' + Lx('Total sightings') + '</div></div>' +
+      '</div></div></a>';
+  }
+
+  /* The Home's places thumbnail: Ontario's lakes drawn as quiet inline
+     shapes, so no tile request leaves the device from the Home and the
+     privacy note about the Map tab stays true. One pin per place. */
+  function placesMapSvg(places) {
+    var W = 360, H = 168;
+    function px(lng) { return ((lng + 96) * (W / 22)).toFixed(1); }
+    function py(lat) { return ((57.5 - lat) * (H / 16.5)).toFixed(1); }
+    var pins = '';
+    places.forEach(function (g) {
+      var la = 0, ln = 0, n = 0;
+      g.entries.forEach(function (e) { if (e.lat != null && e.lng != null) { la += e.lat; ln += e.lng; n++; } });
+      if (!n) return;
+      la /= n; ln /= n;
+      if (la < 41 || la > 57.5 || ln < -96 || ln > -74) return;
+      pins += '<circle class="pm-glow" cx="' + px(ln) + '" cy="' + py(la) + '" r="8"/>' +
+        '<circle class="pm-pin" cx="' + px(ln) + '" cy="' + py(la) + '" r="3.5"/>';
+    });
+    return '<svg class="pm" viewBox="0 0 360 168" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<defs><filter id="pm-soft"><feGaussianBlur stdDeviation="0.8"/></filter></defs>' +
+      '<rect class="pm-land" x="0" y="0" width="360" height="168"/>' +
+      '<g filter="url(#pm-soft)">' +
+      '<path class="pm-lake" d="M0 0 H260 C250 12 240 18 230 22 C238 26 244 34 244 44 C246 56 242 66 234 70 C224 74 212 70 208 60 C204 50 208 38 216 32 C204 34 190 34 176 30 C150 24 118 26 92 20 C60 14 28 12 0 6 Z"/>' +
+      '<path class="pm-lake" d="M120 76 C124 72 130 72 134 76 C136 80 134 86 128 87 C122 87 118 81 120 76 Z"/>' +
+      '<path class="pm-lake" d="M62 110 C66 100 82 92 104 88 C126 84 148 86 166 96 C176 101 186 106 190 112 C182 116 168 112 152 112 C132 112 108 118 88 118 C74 118 64 115 62 110 Z"/>' +
+      '<path class="pm-lake" d="M156 168 C152 150 154 132 162 122 C170 128 174 144 172 160 L170 168 Z"/>' +
+      '<path class="pm-lake" d="M212 148 C208 136 210 126 218 118 C224 112 232 110 238 112 C240 106 246 100 254 98 C262 96 268 100 266 108 C264 114 258 118 252 122 C248 125 244 124 242 130 C240 138 236 146 228 150 C220 154 214 154 212 148 Z"/>' +
+      '<path class="pm-lake" d="M208 162 C220 154 240 148 262 144 C272 142 280 144 276 149 C260 156 238 162 220 166 L210 166 Z"/>' +
+      '<path class="pm-lake" d="M266 142 C276 134 296 131 314 132 C322 133 324 138 316 141 C300 145 280 146 270 146 C264 145 262 145 266 142 Z"/>' +
+      '<path class="pm-lake" d="M322 136 C334 130 348 124 360 120 L360 128 C346 132 334 136 326 140 Z"/>' +
+      '</g>' + pins + '</svg>';
+  }
+  function placesCardHtml() {
+    var places = placeGroups();
+    return '<a class="places-card tap-scale" href="#/map" aria-label="' + Lx('Places') + ': ' + places.length + '">' +
+      placesMapSvg(places) +
+      '<div class="places-head"><div class="places-t">' + Lx('Places') + '</div>' +
+      '<span class="places-chip">' + spriteIcon('pin') + '<span>' + places.length + '</span></span></div></a>';
+  }
+
   function viewExplore() {
-    var uniq = {}; app.entries.forEach(function (e) { if (e.speciesId) uniq[e.speciesId] = 1; });
-    // search and log both live in the top right corner now, so the page
-    // itself is sections, the way the github app's home reads
+    // the Home reads like Journal's: insights, places, then the guide
+    // as one card of rows with counts on the right
     var body = '';
     if (isIosSafari() && !app.settings.seenInstall) {
       body += '<div class="wrap-note" style="align-items:flex-start;margin-top:2px"><span class="i">\u{1F4F2}</span><span><b>Add to Home Screen</b> to use this like a real app, fullscreen and offline. Tap the <b>Share</b> button, then <b>Add to Home Screen</b>. <button data-action="dismiss-install" style="padding:0;font-weight:600;color:var(--tint);background:none">Got it</button></span></div>';
     }
-    body += seasonalCard();
+    var cards = insightsCard() + placesCardHtml();
+    body += '<div class="home-cards">' + cards + '</div>';
 
     var atRiskN = SPECIES.filter(function (s) { return s.atRisk; }).length;
-    body += '<div class="group"><div class="list">' +
-      '<a class="cell tap" href="#/atrisk"><span class="cell-emoji">\u{1F6E1}️</span>' +
-      '<span class="cell-body"><span class="cell-title">' + Lx('Species at Risk') + '</span>' +
-      '<span class="cell-sub">' + atRiskN + ' ' + Lx('flagged in the guide') + '</span></span>' +
-      '<span class="chevron">' + I.chevron + '</span></a></div></div>';
-
     body += sectionHead('guide-cats');
-    body += '<div class="group"><div class="list">';
+    body += '<div class="group home-list"><div class="list">';
+    body += '<a class="cell tap" href="#/search"><span class="cell-emoji" style="color:var(--tint)">' + spriteIcon('book-open') + '</span>' +
+      '<span class="cell-body"><span class="cell-title">' + Lx('All Species') + '</span></span>' +
+      '<span class="cell-value">' + SPECIES.length + '</span>' +
+      '<span class="chevron">' + I.chevron + '</span></a>';
+    body += '<a class="cell tap" href="#/atrisk"><span class="cell-emoji">\u{1F6E1}️</span>' +
+      '<span class="cell-body"><span class="cell-title">' + Lx('Species at Risk') + '</span></span>' +
+      '<span class="cell-value">' + atRiskN + '</span>' +
+      '<span class="chevron">' + I.chevron + '</span></a>';
     sectionOrder('guide-cats').forEach(function (r) {
       if (!r.on) return;
       var count = speciesInCat(r.def.id).length;
       body += '<a class="cell tap" href="#/explore/' + esc(r.def.id) + '">' +
         '<span class="cell-emoji">' + r.def.emoji + '</span>' +
-        '<span class="cell-body"><span class="cell-title">' + esc(Lx(r.def.label)) + '</span>' +
-        '<span class="cell-sub">' + count + ' ' + Lx('species') + '</span></span>' +
+        '<span class="cell-body"><span class="cell-title">' + esc(Lx(r.def.label)) + '</span></span>' +
+        '<span class="cell-value">' + count + '</span>' +
         '<span class="chevron">' + I.chevron + '</span></a>';
     });
     body += '</div></div>';
+    body += seasonalCard();
     if (COMING_SOON.length) {
       body += sectionTitle(Lx('Coming Soon')) + '<div class="group"><div class="list">';
       COMING_SOON.forEach(function (c) {
@@ -1213,13 +1322,10 @@
       body += '</div></div>';
     }
     if (app.entries.length) {
-      body += '<div class="stat-grid" style="margin-top:14px">' +
-        stat(app.entries.length, app.entries.length === 1 ? Lx('Encounter') : Lx('Encounters')) +
-        stat(Object.keys(uniq).length, Lx('Species')) + stat(catsSeen(), Lx('Categories')) + '</div>';
       body += recentGroup(Lx('Recent'), recentIn(function () { return true; }, 6));
     }
 
-    screen({ title: 'on-wildlife', large: true, header: true, version: 'v3.9', body: body });
+    screen({ title: 'on-wildlife', large: true, header: true, version: 'v4.0', body: body });
   }
 
   /* ============================================================= SEARCH */
@@ -1282,7 +1388,12 @@
         return;
       }
       others.forEach(function (el) { if (el) el.style.display = 'none'; });
+      // The first results of a query rise in; while narrowing an already
+      // visible list, updates land instantly.
+      var hadResults = res.childElementCount > 0;
       res.innerHTML = searchResultsHtml(q);
+      if (!hadResults) { res.classList.remove('anim-in'); void res.offsetWidth; res.classList.add('anim-in'); }
+      else res.classList.remove('anim-in');
     });
   }
   function viewSearch() {
@@ -1412,14 +1523,43 @@
         });
       }
       if (!list.length) return;
-      html += '<div class="group" id="sub-' + esc(sub.id) + '">' +
+      html += '<div class="group jcards" id="sub-' + esc(sub.id) + '">' +
         '<div class="group-header cat-sub-header">' + esc(sub.name) + '</div><div class="list">';
-      list.forEach(function (s) { html += speciesCell(s, { loggedIds: logged }); });
+      list.forEach(function (s) { html += speciesCell(s, { loggedIds: logged, card: true }); });
       html += '</div></div>';
     });
     if (!html) html = '<div class="empty"><div class="e">\u{1F50D}</div><h3>No matches</h3><p>Try another name.</p></div>';
     return html;
   }
+  /* The entry-card ellipsis and the species page's nav ellipsis open the
+     same small action sheet: only actions that really exist. */
+  function openSpeciesMenu(id) {
+    var s = byId[id]; if (!s) return;
+    var onPage = location.hash.indexOf('/species/' + id) >= 0;
+    var logged = journalEntries().filter(function (e) { return e.speciesId === id; }).length > 0;
+    var rows = '<button class="cell tap" data-action="open-log" data-species="' + esc(s.id) + '">' +
+      '<span class="cell-emoji" style="color:var(--tint)">' + I.plus + '</span>' +
+      '<span class="cell-body"><span class="cell-title">' + Lx('Log this sighting') + '</span></span></button>';
+    if (!onPage) {
+      rows += '<a class="cell tap" href="#/species/' + esc(s.id) + '" data-action="close-sheet-nav">' +
+        '<span class="cell-emoji">' + s.emoji + '</span>' +
+        '<span class="cell-body"><span class="cell-title">' + Lx('Open guide entry') + '</span></span></a>';
+    }
+    if (logged) {
+      rows += '<a class="cell tap" href="#/journal/species/' + esc(s.id) + '" data-action="close-sheet-nav">' +
+        '<span class="cell-emoji">' + spriteIcon('notebook') + '</span>' +
+        '<span class="cell-body"><span class="cell-title">' + Lx('Open in your journal') + '</span></span></a>';
+    }
+    var html = '<div class="scrim" data-action="close-sheet"></div>' +
+      '<div class="sheet" id="sheet"><div class="sheet-grabber"></div>' +
+      '<div class="sheet-nav"><span style="width:44px"></span><span class="t">' + esc(s.name) + '</span>' +
+      '<button class="nav-btn" data-action="close-sheet">' + Lx('Cancel') + '</button></div>' +
+      '<div class="sheet-body"><div class="group" style="margin-top:4px"><div class="list">' + rows + '</div></div></div></div>';
+    $('#sheet-root').innerHTML = html;
+    requestAnimationFrame(function () { var sh = $('#sheet'); if (sh) sh.classList.add('show'); var sc = $('.scrim'); if (sc) sc.classList.add('show'); });
+    afterSheetOpen();
+  }
+
   function viewCategory(catId, subId) {
     var c = catMeta(catId);
     if (!c) return viewExplore();
@@ -1441,7 +1581,12 @@
     // Goal gradient: a real, honest count of how far through this group you are.
     body += '<div class="group" style="margin-top:0"><div class="group-footer">' + catTotal + ' species, most commonly seen first within each section.' +
       (catSeen ? ' You have logged ' + catSeen + ' of the ' + catTotal + ' ' + esc(c.name.toLowerCase()) + ' in the guide.' : '') + '</div></div>';
-    screen({ title: c.name, back: '#/explore', backText: 'Guide', body: body });
+    // The accent FAB carries the one add action; it ducks away on scroll.
+    body += '<button type="button" class="fab-log" data-action="open-log" data-cat="' + esc(catId) + '" aria-label="' + Lx('Log an encounter') + '">' + I.plus + '</button>';
+    screen({
+      title: c.name, large: true, back: '#/explore', backText: 'Guide', body: body,
+      navRight: '<button type="button" class="nav-btn nav-circle" data-action="focus-filter" aria-label="' + Lx('Search') + '">' + I.search + '</button>'
+    });
     var fi = $('#cat-filter-input');
     if (fi) fi.addEventListener('input', function () {
       var box = $('#cat-list'); if (box) box.innerHTML = categoryListHtml(c, logged, fi.value);
@@ -1463,8 +1608,11 @@
     if (!s) return viewExplore();
     var c = catMeta(s.cat), sub = subMeta(s.cat, s.sub);
 
-    var body = '<div class="hero">' +
-      '<div id="sp-photo" class="sp-photo-wrap"></div>' +
+    // The photo, when one arrives, runs edge to edge under the transparent
+    // nav and melts into the page; the emoji hero stays as the offline and
+    // photos-off fallback.
+    var body = '<div class="sp-hero" id="sp-hero"><div id="sp-photo" class="sp-photo-full"></div></div>' +
+      '<div class="hero">' +
       '<div class="hero-emoji" id="sp-emoji" style="background:' + tintFor(s.cat) + '22">' + s.emoji + '</div>' +
       '<h1>' + esc(s.name) + '</h1><div class="sci">' + esc(s.sci) + '</div>' +
       '<div class="badges">' + statusBadge(s) +
@@ -1475,7 +1623,7 @@
     if (s.caution) body += '<div class="wrap-note danger"><span class="i">⚠️</span><span>' + esc(s.caution) + '</span></div>';
 
     body += '<div class="hpad" style="margin-top:12px">' +
-      '<button class="btn btn-primary btn-block" data-action="open-log" data-species="' + esc(s.id) + '">' + I.plus + 'Log this sighting</button></div>';
+      '<button class="btn btn-primary btn-block" data-action="open-log" data-species="' + esc(s.id) + '">' + I.plus + Lx('Log this sighting') + '</button></div>';
 
     // Your record sits right under the log button, because on a species page the
     // first question a birder or angler asks is "have I had this one?".
@@ -1486,7 +1634,7 @@
         '<div class="cell"><span class="cell-body"><span class="cell-title">Times seen</span></span><span class="cell-value">' + mine.length + '</span></div>' +
         '<div class="cell"><span class="cell-body"><span class="cell-title">First seen</span></span><span class="cell-value">' + esc(fmtDay(mine[0].when)) + '</span></div>' +
         (mine.length > 1 ? '<div class="cell"><span class="cell-body"><span class="cell-title">Last seen</span></span><span class="cell-value">' + esc(fmtDay(mine[mine.length - 1].when)) + '</span></div>' : '') +
-        '<a class="cell tap" href="#/journal/species/' + esc(s.id) + '"><span class="cell-body"><span class="cell-title">Open in your journal</span><span class="cell-sub">Every encounter</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+        '<a class="cell tap" href="#/journal/species/' + esc(s.id) + '"><span class="cell-body"><span class="cell-title">' + Lx('Open in your journal') + '</span><span class="cell-sub">' + Lx('Every encounter') + '</span></span><span class="chevron">' + I.chevron + '</span></a>' +
         '</div></div>';
     } else {
       body += '<div class="group"><div class="list">' +
@@ -1533,7 +1681,10 @@
 
     // Categories are flat pages now, so back goes to the category, not a sub page.
     var backHref = c ? '#/explore/' + s.cat : '#/explore';
-    screen({ title: s.name, back: backHref, backText: c ? c.name : 'Back', body: body });
+    screen({
+      title: s.name, back: backHref, backText: c ? c.name : 'Back', body: body, cover: true,
+      navRight: '<button type="button" class="nav-btn nav-circle" data-action="species-menu" data-id="' + esc(s.id) + '" aria-label="' + Lx('More') + ': ' + esc(s.name) + '">' + spriteIcon('ellipsis') + '</button>'
+    });
     applySpeciesPhoto(s);
   }
   function speciesLinks(s) {
@@ -2114,7 +2265,10 @@
       (foot ? '<p class="ios-group-foot">' + foot + '</p>' : '');
   }
   function viewMore() {
-    var body = '';
+    // Settings' voice: a header card with the app icon and one line on
+    // what this screen manages, then the grouped rows.
+    var body = '<div class="ios-group settings-head"><img class="app-ic" src="icons/icon.svg" alt="">' +
+      '<h2>on-wildlife</h2><p>' + Lx('A private field guide and journal for the Ontario outdoors. Everything here manages this app and your data.') + '</p></div>';
     // Learn moved out of the tab bar to make room for the Journal, so it lives
     // here as an ordinary row into the same hub screen.
     body += moreSection('more-learn');
@@ -2150,7 +2304,7 @@
       '<div class="info-row"><div class="info-v">ON Fishing is now part of ON Wildlife: the fishing zones live on the map, every fish page carries its seasons and limits, and your catch log shows up in the journal.</div></div>' +
       iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: Lx('on-fishing, the solo site'), sub: Lx('The standalone zone map stays up') }) +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '3.9', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.0', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca', sub: Lx('Apps, projects and the rest') }) +
       '</div>';
 
@@ -2159,6 +2313,9 @@
       '<div class="info-row"><div class="info-v">' + Lx('Offline maps you download before the trip. Pick your park, carry the map with no signal, and get a campground map you can actually read, because the printed ones are hard to follow.') + '</div></div>' +
       '<div class="info-row"><div class="info-v">' + Lx('Easier park entrances too, especially at parks like Hemlock where there are no signs. The long goal is to partner with a provincial park and pilot these features there.') + '</div></div>' +
       '</div>';
+    // The bottom search pill, as Settings carries it; it opens the
+    // existing universal search.
+    body += '<a class="bottom-search" href="#/search">' + I.search + '<span>' + Lx('Search') + '</span></a><div class="spacer-pill"></div>';
     screen({ title: Lx('More'), large: true, header: true, actions: false, body: body });
   }
   /* ------------------------------------------------------------ Account */
@@ -2184,7 +2341,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '3.9', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.0', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: Lx('Back'), body: body });
@@ -2235,6 +2392,7 @@
           '<button class="fab fab-hazard" data-action="report-hazard" aria-label="' + Lx('Report hazard') + '">⚠️</button>' +
           '<button class="fab fab-bear" data-action="report-bear" aria-label="' + Lx('Report bear') + '">\u{1F43B}</button>' +
         '</div>' +
+        '<a class="bottom-search" href="#/search">' + I.search + '<span>' + Lx('Search') + '</span></a>' +
       '</div>';
     screen({ title: Lx('Map'), header: true, body: body, bare: true });
     ensureLeaflet(initMap);
@@ -2524,9 +2682,50 @@
   }
   // Modal accessibility: label the dialog, move focus in, make the rest of the
   // page inert (also traps Tab where supported), and restore focus on close.
+  /* Sheets follow the finger: dragging the grabber or the sheet's own nav
+     row pulls the pane down; past the threshold (or on a quick flick) it
+     dismisses, otherwise it springs back. The grabber's hit area is grown
+     in CSS; scrolling the sheet body is untouched. */
+  function wireSheetDrag() {
+    var sheet = $('#sheet');
+    if (!sheet || sheet._dragWired) return;
+    sheet._dragWired = true;
+    var startY = 0, dy = 0, active = null, t0 = 0;
+    function down(ev) {
+      if (active != null) return;
+      // The nav row doubles as a drag zone, but its buttons stay buttons:
+      // capturing their pointer would swallow the click.
+      if (ev.target.closest && ev.target.closest('button, a, input, select, textarea, label')) return;
+      active = ev.pointerId; startY = ev.clientY; dy = 0; t0 = Date.now();
+      sheet.classList.add('dragging');
+      try { ev.currentTarget.setPointerCapture(ev.pointerId); } catch (e) {}
+      ev.preventDefault();
+    }
+    function move(ev) {
+      if (ev.pointerId !== active) return;
+      dy = Math.max(0, ev.clientY - startY);
+      sheet.style.transform = 'translateY(' + dy + 'px)';
+    }
+    function up(ev) {
+      if (ev == null || ev.pointerId !== active) return;
+      active = null;
+      sheet.classList.remove('dragging');
+      sheet.style.transform = '';
+      var flick = dy > 48 && (Date.now() - t0) < 280;
+      if (dy > 120 || flick) closeSheet();
+    }
+    [sheet.querySelector('.sheet-grabber'), sheet.querySelector('.sheet-nav')].forEach(function (el) {
+      if (!el) return;
+      el.addEventListener('pointerdown', down);
+      el.addEventListener('pointermove', move);
+      el.addEventListener('pointerup', up);
+      el.addEventListener('pointercancel', up);
+    });
+  }
   function afterSheetOpen() {
     var s = $('#sheet'); if (!s) return;
     lockScroll();
+    wireSheetDrag();
     s.setAttribute('role', 'dialog'); s.setAttribute('aria-modal', 'true');
     var t = s.querySelector('.sheet-nav .t, h1, h2');
     if (t) { if (!t.id) t.id = 'sheet-title'; s.setAttribute('aria-labelledby', t.id); }
@@ -3783,6 +3982,14 @@
         break;
       case 'close-sheet': ev.preventDefault(); closeSheet(); break;
       case 'close-sheet-nav': closeSheet(); break; // let the link navigate too
+      case 'species-menu': ev.preventDefault(); openSpeciesMenu(t.getAttribute('data-id')); break;
+      case 'focus-filter': {
+        ev.preventDefault();
+        window.scrollTo(0, 0);
+        var ffi = $('#cat-filter-input');
+        if (ffi) setTimeout(function () { ffi.focus(); }, 60);
+        break;
+      }
       case 'nav-back': ev.preventDefault(); if (history.length > 1) history.back(); else location.hash = '#/more'; break;
       case 'report-bear':
         ev.preventDefault();

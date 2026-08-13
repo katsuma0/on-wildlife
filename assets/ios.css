@@ -2658,27 +2658,13 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
   }
 }
 
-/* --------------------------------------- github's dark room, default */
-/* the untouched default wears github's own dark: their canvas, their
-   blue, their system type. field and granite keep their word; parks IS
-   the default, so picking it in the panel changes nothing here. */
+/* ----------------------------------------- apple's dark room, default */
+/* the untouched default wears Apple's own dark: the pure black canvas
+   and iOS greys already declared in the core dark block, the parks
+   accent, and the system face with SF tracking. an explicitly chosen
+   face keeps its word; parks IS the default palette, so only the face
+   changes here. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-palette]) {
-    --bg: #010409;
-    --card: #151B23;
-    --chrome: rgba(1, 4, 9, .78);
-    --fill: rgba(101, 108, 118, .24);
-    --press-pill: rgba(101, 108, 118, .28);
-    --sep: rgba(61, 68, 77, .72);
-    --label: #F0F6FC;
-    --label-2: #9198A1;
-    --label-3: rgba(145, 152, 161, .5);
-    --label-aa: #B7BDC8;
-    --tint: #4493F8; --tint-press: #316DCA; --tint-text: #4493F8; --tint-fill: #1F6FEB;
-    --tint-soft: rgba(68, 147, 248, .15);
-    --tone2: #316DCA; --tone3: #F85149;
-    --sw-parks-1: #4493F8; --sw-parks-2: #316DCA; --sw-parks-3: #F85149;
-  }
   :root:not([data-theme="light"]):not([data-face]) {
     --font-sys: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, sans-serif;
     --font-display: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, sans-serif;
@@ -2686,22 +2672,6 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
     --ls-headline: -0.41px; --ls-body: -0.41px; --ls-callout: -0.32px; --ls-subhead: -0.24px;
     --ls-footnote: -0.08px; --ls-caption1: 0; --ls-caption2: 0.07px;
   }
-}
-:root[data-theme="dark"]:not([data-palette]) {
-  --bg: #010409;
-  --card: #151B23;
-  --chrome: rgba(1, 4, 9, .78);
-  --fill: rgba(101, 108, 118, .24);
-  --press-pill: rgba(101, 108, 118, .28);
-  --sep: rgba(61, 68, 77, .72);
-  --label: #F0F6FC;
-  --label-2: #9198A1;
-  --label-3: rgba(145, 152, 161, .5);
-  --label-aa: #B7BDC8;
-  --tint: #4493F8; --tint-press: #316DCA; --tint-text: #4493F8; --tint-fill: #1F6FEB;
-  --tint-soft: rgba(68, 147, 248, .15);
-  --tone2: #316DCA; --tone3: #F85149;
-  --sw-parks-1: #4493F8; --sw-parks-2: #316DCA; --sw-parks-3: #F85149;
 }
 :root[data-theme="dark"]:not([data-face]) {
   --font-sys: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, sans-serif;
@@ -2814,4 +2784,542 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
 .map-card .chip-sep { flex: 0 0 1px; align-self: stretch; margin: 4px 2px; background: var(--sep); }
 @media (prefers-reduced-transparency: reduce) {
   .map-wrap .map-card { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* =====================================================================
+   ios.css journal round: the app sits beside Apple's Journal, Settings
+   and Maps. Liquid glass returns to the chrome layer only (the header
+   cluster and round controls; content stays standard material, as the
+   HIG's layer model asks). Grouped cards grow to 26px corners with a
+   squircle where the browser has one, the Home wears Journal's insight
+   and places cards, and motion rides one curve at two speeds.
+   ===================================================================== */
+
+/* ------------------------------------------------- tokens, this round */
+:root {
+  --ease-snappy: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-smooth: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-snappy: 350ms;
+  --dur-smooth: 550ms;
+  --r-card: 26px;
+  /* the glass primitive, light room */
+  --glass-fill: rgba(255, 255, 255, .55);
+  --glass-spec: rgba(255, 255, 255, .65);
+  --glass-lit: rgba(255, 255, 255, .75);
+  --glass-lit-2: rgba(255, 255, 255, .25);
+  --glass-drop: 0 8px 24px rgba(0, 0, 0, .12);
+  /* insights card: the parks accent as Journal wears its indigo */
+  --grad-insight: linear-gradient(160deg, #7FA0D8 0%, #4A6CA4 40%, #30497B 75%, #22365A 100%);
+  --grad-numeral: linear-gradient(180deg, #FFFFFF 18%, #C9D8F0 100%);
+  /* places thumbnail: a dark map, in both rooms, like a photo */
+  --pm-water: #0E1B2C;
+  --pm-land: #31504A;
+  --pm-lake: #16324F;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --glass-fill: rgba(255, 255, 255, .07);
+    --glass-spec: rgba(255, 255, 255, .18);
+    --glass-lit: rgba(255, 255, 255, .22);
+    --glass-lit-2: rgba(255, 255, 255, .06);
+    --glass-drop: 0 8px 32px rgba(0, 0, 0, .4);
+  }
+}
+:root[data-theme="dark"] {
+  --glass-fill: rgba(255, 255, 255, .07);
+  --glass-spec: rgba(255, 255, 255, .18);
+  --glass-lit: rgba(255, 255, 255, .22);
+  --glass-lit-2: rgba(255, 255, 255, .06);
+  --glass-drop: 0 8px 32px rgba(0, 0, 0, .4);
+}
+
+/* ------------------------------------------------ the .glass primitive */
+/* blur + saturation lift, a specular top line, a floating shadow, and a
+   1px top-lit border painted on a masked pseudo element so it fades from
+   lit to faint without a hard stroke. SVG displacement refraction was
+   measured and rejected: backdrop-filter: url() only renders in
+   Chromium, so it would vanish on the iPhone this app lives on. */
+.glass {
+  position: relative;
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: inset 0 1px 0 var(--glass-spec), var(--glass-drop);
+}
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(180deg, var(--glass-lit), var(--glass-lit-2));
+  -webkit-mask: linear-gradient(black 0 0) content-box, linear-gradient(black 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(black 0 0) content-box, linear-gradient(black 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* the header actions become one floating glass capsule, the search plus
+   ellipsis cluster in Apple's own apps. buttons inside go bare. phone
+   and tablet only: the desktop web layer keeps its own top bar. */
+@media (max-width: 1099.98px) {
+  :root:not([data-glass="off"]) .ios-header-actions {
+    position: relative;
+    gap: 0;
+    border-radius: 22px;
+    background: var(--glass-fill);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    box-shadow: inset 0 1px 0 var(--glass-spec), var(--glass-drop);
+  }
+  :root:not([data-glass="off"]) .ios-header-actions::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(180deg, var(--glass-lit), var(--glass-lit-2));
+    -webkit-mask: linear-gradient(black 0 0) content-box, linear-gradient(black 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(black 0 0) content-box, linear-gradient(black 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  :root:not([data-glass="off"]) .ios-header-actions .ios-glass-btn {
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border: 0;
+    box-shadow: none;
+  }
+  :root:not([data-glass="off"]) .ios-header-actions .ios-glass-btn:active {
+    background: var(--press-pill);
+  }
+  /* the tab capsule keeps its geometry and picks up the specular line */
+  .ios-tabbar,
+  :root:not([data-glass="off"]) .ios-tabbar {
+    box-shadow: inset 0 1px 0 var(--glass-spec), var(--glass-drop);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  :root:not([data-glass="off"]) .ios-header-actions {
+    background: var(--card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* ----------------------------------------- 26px cards, squircle where */
+.list, .ios-group { border-radius: var(--r-card); }
+@supports (corner-shape: squircle) {
+  .list, .ios-group, .insight-card, .places-card,
+  .ios-header-actions, .ios-tabbar { corner-shape: squircle; }
+}
+
+/* section names step back up to Journal's weight: Title 2, bold */
+.ios-section-title {
+  font-size: var(--fs-title2);
+  line-height: var(--lh-title2);
+  letter-spacing: var(--ls-title2);
+  font-weight: 700;
+}
+
+/* --------------------------------------------------- press physics */
+/* cards scale under the finger and spring back; transform only */
+.tap-scale {
+  transition: transform var(--dur-snappy) var(--ease-snappy);
+  -webkit-tap-highlight-color: transparent;
+}
+.tap-scale:active { transform: scale(.97); transition-duration: 120ms; }
+
+/* ------------------------------------------------ the insights card */
+.home-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 6px 16px 8px;
+}
+.insight-card {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-card);
+  padding: 14px 18px 18px;
+  background: var(--grad-insight);
+  color: var(--on-tint);
+  text-decoration: none;
+}
+.insight-t {
+  font-size: var(--fs-body);
+  letter-spacing: var(--ls-body);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.insight-grid {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+.insight-big { flex: 1 1 auto; min-width: 0; }
+.insight-n {
+  font-size: 72px;
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -1px;
+  background: var(--grad-numeral);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.insight-bl {
+  font-size: var(--fs-body);
+  letter-spacing: var(--ls-body);
+  font-weight: 600;
+  margin-top: 2px;
+}
+.insight-bl span { color: rgba(255, 255, 255, .62); font-weight: 400; }
+.insight-minis {
+  flex: 0 0 46%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 4px;
+}
+.insight-mini .n {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-title3);
+  letter-spacing: var(--ls-title3);
+  font-weight: 700;
+}
+.insight-mini .n svg { width: 16px; height: 16px; opacity: .85; flex: none; }
+.insight-mini .l {
+  font-size: var(--fs-subhead);
+  letter-spacing: var(--ls-subhead);
+  color: rgba(255, 255, 255, .62);
+  margin-top: 1px;
+}
+
+/* -------------------------------------------------- the places card */
+.places-card {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-card);
+  height: 168px;
+  background: var(--pm-water);
+  text-decoration: none;
+  color: var(--on-tint);
+}
+.places-card svg.pm {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.pm .pm-land { fill: var(--pm-land); }
+.pm .pm-lake { fill: var(--pm-lake); }
+.pm .pm-glow { fill: var(--tone3); opacity: .3; }
+.pm .pm-pin { fill: var(--tone3); stroke: rgba(255, 255, 255, .85); stroke-width: 1; }
+.places-head { position: absolute; top: 14px; left: 16px; }
+.places-t {
+  font-size: var(--fs-body);
+  letter-spacing: var(--ls-body);
+  font-weight: 700;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, .55);
+}
+.places-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(8, 14, 24, .55);
+  font-size: var(--fs-subhead);
+  letter-spacing: var(--ls-subhead);
+  font-weight: 600;
+}
+.places-chip svg { width: 13px; height: 13px; }
+
+/* ----------------------------- the home list, Journal's row voice */
+.home-list .cell { min-height: 52px; }
+.home-list .cell-value { font-size: var(--fs-body); }
+
+/* ------------------------------------------- step 2: pushed screens */
+/* the back button is a floating glass circle now, chevron only, the
+   way Apple's own pushed screens carry it. the label lives on in the
+   aria-label. */
+.nav-btn.nav-circle {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  margin-left: 8px;
+  border-radius: 50%;
+  justify-content: center;
+  color: var(--label);
+  position: relative;
+  background: var(--fill);
+}
+.nav-right .nav-btn.nav-circle { margin-left: 0; margin-right: 4px; }
+.nav-btn.nav-circle svg { width: 20px; height: 20px; }
+.nav-btn.nav-circle:active { opacity: 1; background: var(--press-pill); }
+:root:not([data-glass="off"]) .nav-btn.nav-circle {
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: inset 0 1px 0 var(--glass-spec), 0 4px 14px rgba(0, 0, 0, .18);
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root:not([data-glass="off"]) .nav-btn.nav-circle {
+    background: var(--card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* detail screens carry a vertical tint: the canvas at the top melting
+   into a very dark pass of the accent at the bottom, like Journal's
+   entry pages. light rooms keep their plain canvas. */
+:root { --bg-deep: var(--bg); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg-deep: #131F33; }
+}
+:root[data-theme="dark"] { --bg-deep: #131F33; }
+.screen.is-push {
+  background: linear-gradient(180deg, var(--bg) 0%, var(--bg) 42%, var(--bg-deep) 100%);
+  min-height: 100dvh;
+}
+
+/* push and pop, the brief's numbers: incoming rides in from the full
+   right; outgoing steps back 28% and dims 15%. transform and opacity
+   only. */
+.screen.sc-exit-left { transform: translateX(-28%); opacity: 0.85; }
+
+/* ---------------------------------- step 2: category entry cards */
+/* species rows read like Journal entries: bold name, one secondary
+   line, a metadata footer with an ellipsis that opens real actions. */
+.jcards .list {
+  background: none;
+  border-radius: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.jcards .cell {
+  border-radius: 18px;
+  padding: 12px 16px;
+  align-items: flex-start;
+}
+.jcards .cell + .cell::before { display: none; }
+.jcards .cell-emoji { margin-top: 2px; }
+.jcards .cell-title { font-weight: 600; }
+.cell-cover { position: absolute; inset: 0; border-radius: inherit; }
+.cell-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: var(--fs-footnote);
+  letter-spacing: var(--ls-footnote);
+  color: var(--label-2);
+}
+.cell-foot .meta { flex: 1 1 auto; min-width: 0; }
+.cell-more {
+  position: relative;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  margin: -6px -8px -6px 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--label-2);
+  background: none;
+  flex: none;
+}
+.cell-more svg { width: 18px; height: 18px; }
+.cell-more:active { background: var(--fill); }
+@supports (corner-shape: squircle) {
+  .jcards .cell { corner-shape: squircle; }
+}
+
+/* the accent FAB on list screens: springs away as you scroll down,
+   returns the moment you scroll back up */
+.fab-log {
+  position: fixed;
+  right: 20px;
+  bottom: calc(94px + var(--sa-bottom));
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  background: var(--tint-fill);
+  color: var(--on-tint);
+  display: grid;
+  place-items: center;
+  z-index: 45;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
+  transition: transform var(--dur-snappy) var(--ease-snappy);
+}
+.fab-log svg { width: 26px; height: 26px; }
+.fab-log.fab-hide { transform: translateY(150px) scale(.9); }
+.fab-log:active { transform: scale(.94); }
+
+/* ------------------------------------- step 2: bottom search pill */
+/* a glass pill above the tab capsule, as Settings and Maps carry it.
+   it opens the existing universal search. */
+.bottom-search {
+  position: fixed;
+  left: 22px;
+  right: 22px;
+  bottom: calc(84px + var(--sa-bottom));
+  margin: 0 auto;
+  max-width: 560px;
+  height: 46px;
+  border-radius: 23px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  color: var(--label-2);
+  font-size: var(--fs-body);
+  letter-spacing: var(--ls-body);
+  text-decoration: none;
+  z-index: 45;
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: inset 0 1px 0 var(--glass-spec), var(--glass-drop);
+}
+.bottom-search svg { width: 18px; height: 18px; flex: none; }
+.bottom-search:active { background: var(--press-pill); }
+.spacer-pill { height: 72px; }
+@media (prefers-reduced-transparency: reduce) {
+  .bottom-search { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (min-width: 1100px) {
+  .bottom-search, .fab-log { display: none; }
+}
+
+/* --------------------------------- step 2: species full-bleed hero */
+/* the photo runs edge to edge under the transparent nav, melts into
+   the page at its base, and the glass back circle floats on it. the
+   emoji hero stays as the offline and photos-off fallback. */
+.sp-hero { position: relative; }
+.sp-hero.has-photo { margin-top: calc(-44px - var(--sa-top)); }
+.sp-photo-full { display: none; }
+.sp-hero.has-photo .sp-photo-full { display: block; }
+.sp-photo-full .sp-photo-img {
+  width: 100%;
+  height: 320px;
+  object-fit: cover;
+  display: block;
+  -webkit-mask-image: linear-gradient(180deg, black 74%, transparent 100%);
+  mask-image: linear-gradient(180deg, black 74%, transparent 100%);
+}
+.sp-photo-full .photo-credit { text-align: right; padding: 0 16px; margin-top: -14px; position: relative; }
+.sp-hero.has-photo + .hero { padding-top: 0; }
+
+/* -------------------------------------- step 2: settings head card */
+.settings-head { padding: 18px; }
+.settings-head .app-ic { width: 60px; height: 60px; border-radius: 14px; display: block; margin-bottom: 12px; }
+.settings-head h2 {
+  margin: 0 0 6px;
+  font-size: var(--fs-title1);
+  line-height: var(--lh-title1);
+  letter-spacing: var(--ls-title1);
+  font-weight: 700;
+}
+.settings-head p {
+  margin: 0;
+  color: var(--label-2);
+  font-size: var(--fs-subhead);
+  line-height: var(--lh-subhead);
+  letter-spacing: var(--ls-subhead);
+}
+
+/* -------------------------------------------- step 2: the map, maps */
+/* full bleed: the map runs under the transparent header and the tab
+   capsule; the control cluster becomes one vertical glass stack on
+   the right, above the search pill. */
+.map-wrap {
+  margin-top: calc(-60px - var(--sa-top));
+  height: 100dvh;
+  min-height: 100dvh;
+}
+.map-wrap .map-card { top: calc(var(--sa-top) + 64px); }
+.map-hint { top: calc(var(--sa-top) + 122px); }
+.map-fabs {
+  bottom: calc(var(--sa-bottom) + 148px);
+  gap: 0;
+  padding: 3px;
+  border-radius: 16px;
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: inset 0 1px 0 var(--glass-spec), var(--glass-drop);
+}
+.map-fabs .fab,
+.map-fabs .fab-bear,
+:root:not([data-glass="off"]) .map-fabs .fab {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  background: none;
+  box-shadow: none;
+  font-size: 21px;
+  color: var(--label);
+}
+.map-fabs .fab + .fab { position: relative; }
+.map-fabs .fab + .fab::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 8px;
+  right: 8px;
+  height: 0.5px;
+  background: var(--sep);
+}
+.map-note { bottom: calc(var(--sa-bottom) + 148px); }
+@media (prefers-reduced-transparency: reduce) {
+  .map-fabs { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (min-width: 1100px) {
+  .map-wrap { margin-top: 0; height: calc(100dvh - 160px); min-height: 320px; }
+  .map-wrap .map-card { top: 10px; }
+  .map-fabs { bottom: 16px; }
+}
+
+/* --------------------------------------- step 2: sheets that breathe */
+/* the page steps back while a sheet is up, and the sheet follows the
+   finger down: past the threshold it dismisses, otherwise it springs
+   back. reduced motion keeps the plain fade and no scale. */
+@media (prefers-reduced-motion: no-preference) {
+  #app { transition: transform 0.34s var(--ease-smooth); }
+  html.sheet-lock #app { transform: scale(.965); border-radius: 14px; overflow: hidden; }
+}
+.sheet.dragging { transition: none; }
+.sheet-grabber { position: relative; }
+.sheet-grabber::after {
+  content: "";
+  position: absolute;
+  top: -12px;
+  left: -60px;
+  right: -60px;
+  height: 40px;
+}
+
+/* --------------------------------- step 2: results animate in */
+.anim-in > * { animation: rise-in 0.3s var(--ease-snappy) both; }
+.anim-in > *:nth-child(2) { animation-delay: 0.05s; }
+.anim-in > *:nth-child(3) { animation-delay: 0.1s; }
+.anim-in > *:nth-child(n+4) { animation-delay: 0.14s; }
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(10px); }
 }
