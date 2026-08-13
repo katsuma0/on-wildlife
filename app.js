@@ -147,6 +147,9 @@
     'Guide': 'Guide', 'Map': 'Carte', 'Journal': 'Journal', 'Fishing': 'Pêche', 'Birding': 'Oiseaux', 'More': 'Plus',
     'on-wildlife': 'on-wildlife', 'Account': 'Compte', 'Search': 'Recherche', 'Log an encounter': 'Noter une observation',
     'This month in Ontario': 'Ce mois-ci en Ontario', 'Ontario Wildlife': 'Faune de l’Ontario', 'Coming Soon': 'À venir',
+    'Insights': 'Aperçus', 'spotted': 'observées', 'Days with sightings': 'Jours avec observations',
+    'Total sightings': 'Observations au total', 'All Species': 'Toutes les espèces',
+    'Your sighting map': 'La carte de vos observations',
     'In a future update': 'Dans une prochaine version', 'Species at Risk': 'Espèces en péril',
     'flagged in the guide': 'signalées dans le guide', 'species': 'espèces', 'Recent': 'Récent',
     'Encounter': 'Observation', 'Encounters': 'Observations', 'Species': 'Espèces', 'Categories': 'Catégories',
@@ -1174,35 +1177,107 @@
   }
 
   /* ----------------------------------------------------------- Explore */
+  /* Distinct calendar days that have at least one entry. */
+  function daysWithSightings() {
+    var m = {};
+    journalEntries().forEach(function (e) {
+      var d = new Date(e.when);
+      if (!isNaN(d)) m[d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate()] = 1;
+    });
+    return Object.keys(m).length;
+  }
+
+  /* Journal's insights card: the life list as the hero numeral, days out
+     and total sightings stacked beside it. Real numbers only; the card
+     waits until there is at least one entry. Opens the existing Stats. */
+  function insightsCard() {
+    var all = journalEntries();
+    if (!all.length) return '';
+    var life = lifeList().length;
+    return '<a class="insight-card tap-scale" href="#/stats">' +
+      '<div class="insight-t">' + Lx('Insights') + '</div>' +
+      '<div class="insight-grid">' +
+      '<div class="insight-big"><div class="insight-n">' + life + '</div>' +
+      '<div class="insight-bl">' + Lx('Species') + ' <span>' + Lx('spotted') + '</span></div></div>' +
+      '<div class="insight-minis">' +
+      '<div class="insight-mini"><div class="n">' + spriteIcon('sun-moon') + '<span>' + daysWithSightings() + '</span></div>' +
+      '<div class="l">' + Lx('Days with sightings') + '</div></div>' +
+      '<div class="insight-mini"><div class="n">' + spriteIcon('paw') + '<span>' + all.length + '</span></div>' +
+      '<div class="l">' + Lx('Total sightings') + '</div></div>' +
+      '</div></div></a>';
+  }
+
+  /* The Home's places thumbnail: Ontario's lakes drawn as quiet inline
+     shapes, so no tile request leaves the device from the Home and the
+     privacy note about the Map tab stays true. One pin per place. */
+  function placesMapSvg(places) {
+    var W = 360, H = 168;
+    function px(lng) { return ((lng + 96) * (W / 22)).toFixed(1); }
+    function py(lat) { return ((57.5 - lat) * (H / 16.5)).toFixed(1); }
+    var pins = '';
+    places.forEach(function (g) {
+      var la = 0, ln = 0, n = 0;
+      g.entries.forEach(function (e) { if (e.lat != null && e.lng != null) { la += e.lat; ln += e.lng; n++; } });
+      if (!n) return;
+      la /= n; ln /= n;
+      if (la < 41 || la > 57.5 || ln < -96 || ln > -74) return;
+      pins += '<circle class="pm-glow" cx="' + px(ln) + '" cy="' + py(la) + '" r="8"/>' +
+        '<circle class="pm-pin" cx="' + px(ln) + '" cy="' + py(la) + '" r="3.5"/>';
+    });
+    return '<svg class="pm" viewBox="0 0 360 168" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<defs><filter id="pm-soft"><feGaussianBlur stdDeviation="0.8"/></filter></defs>' +
+      '<rect class="pm-land" x="0" y="0" width="360" height="168"/>' +
+      '<g filter="url(#pm-soft)">' +
+      '<path class="pm-lake" d="M0 0 H260 C250 12 240 18 230 22 C238 26 244 34 244 44 C246 56 242 66 234 70 C224 74 212 70 208 60 C204 50 208 38 216 32 C204 34 190 34 176 30 C150 24 118 26 92 20 C60 14 28 12 0 6 Z"/>' +
+      '<path class="pm-lake" d="M120 76 C124 72 130 72 134 76 C136 80 134 86 128 87 C122 87 118 81 120 76 Z"/>' +
+      '<path class="pm-lake" d="M62 110 C66 100 82 92 104 88 C126 84 148 86 166 96 C176 101 186 106 190 112 C182 116 168 112 152 112 C132 112 108 118 88 118 C74 118 64 115 62 110 Z"/>' +
+      '<path class="pm-lake" d="M156 168 C152 150 154 132 162 122 C170 128 174 144 172 160 L170 168 Z"/>' +
+      '<path class="pm-lake" d="M212 148 C208 136 210 126 218 118 C224 112 232 110 238 112 C240 106 246 100 254 98 C262 96 268 100 266 108 C264 114 258 118 252 122 C248 125 244 124 242 130 C240 138 236 146 228 150 C220 154 214 154 212 148 Z"/>' +
+      '<path class="pm-lake" d="M208 162 C220 154 240 148 262 144 C272 142 280 144 276 149 C260 156 238 162 220 166 L210 166 Z"/>' +
+      '<path class="pm-lake" d="M266 142 C276 134 296 131 314 132 C322 133 324 138 316 141 C300 145 280 146 270 146 C264 145 262 145 266 142 Z"/>' +
+      '<path class="pm-lake" d="M322 136 C334 130 348 124 360 120 L360 128 C346 132 334 136 326 140 Z"/>' +
+      '</g>' + pins + '</svg>';
+  }
+  function placesCardHtml() {
+    var places = placeGroups();
+    return '<a class="places-card tap-scale" href="#/map" aria-label="' + Lx('Places') + ': ' + places.length + '">' +
+      placesMapSvg(places) +
+      '<div class="places-head"><div class="places-t">' + Lx('Places') + '</div>' +
+      '<span class="places-chip">' + spriteIcon('pin') + '<span>' + places.length + '</span></span></div></a>';
+  }
+
   function viewExplore() {
-    var uniq = {}; app.entries.forEach(function (e) { if (e.speciesId) uniq[e.speciesId] = 1; });
-    // search and log both live in the top right corner now, so the page
-    // itself is sections, the way the github app's home reads
+    // the Home reads like Journal's: insights, places, then the guide
+    // as one card of rows with counts on the right
     var body = '';
     if (isIosSafari() && !app.settings.seenInstall) {
       body += '<div class="wrap-note" style="align-items:flex-start;margin-top:2px"><span class="i">\u{1F4F2}</span><span><b>Add to Home Screen</b> to use this like a real app, fullscreen and offline. Tap the <b>Share</b> button, then <b>Add to Home Screen</b>. <button data-action="dismiss-install" style="padding:0;font-weight:600;color:var(--tint);background:none">Got it</button></span></div>';
     }
-    body += seasonalCard();
+    var cards = insightsCard() + placesCardHtml();
+    body += '<div class="home-cards">' + cards + '</div>';
 
     var atRiskN = SPECIES.filter(function (s) { return s.atRisk; }).length;
-    body += '<div class="group"><div class="list">' +
-      '<a class="cell tap" href="#/atrisk"><span class="cell-emoji">\u{1F6E1}️</span>' +
-      '<span class="cell-body"><span class="cell-title">' + Lx('Species at Risk') + '</span>' +
-      '<span class="cell-sub">' + atRiskN + ' ' + Lx('flagged in the guide') + '</span></span>' +
-      '<span class="chevron">' + I.chevron + '</span></a></div></div>';
-
     body += sectionHead('guide-cats');
-    body += '<div class="group"><div class="list">';
+    body += '<div class="group home-list"><div class="list">';
+    body += '<a class="cell tap" href="#/search"><span class="cell-emoji" style="color:var(--tint)">' + spriteIcon('book-open') + '</span>' +
+      '<span class="cell-body"><span class="cell-title">' + Lx('All Species') + '</span></span>' +
+      '<span class="cell-value">' + SPECIES.length + '</span>' +
+      '<span class="chevron">' + I.chevron + '</span></a>';
+    body += '<a class="cell tap" href="#/atrisk"><span class="cell-emoji">\u{1F6E1}️</span>' +
+      '<span class="cell-body"><span class="cell-title">' + Lx('Species at Risk') + '</span></span>' +
+      '<span class="cell-value">' + atRiskN + '</span>' +
+      '<span class="chevron">' + I.chevron + '</span></a>';
     sectionOrder('guide-cats').forEach(function (r) {
       if (!r.on) return;
       var count = speciesInCat(r.def.id).length;
       body += '<a class="cell tap" href="#/explore/' + esc(r.def.id) + '">' +
         '<span class="cell-emoji">' + r.def.emoji + '</span>' +
-        '<span class="cell-body"><span class="cell-title">' + esc(Lx(r.def.label)) + '</span>' +
-        '<span class="cell-sub">' + count + ' ' + Lx('species') + '</span></span>' +
+        '<span class="cell-body"><span class="cell-title">' + esc(Lx(r.def.label)) + '</span></span>' +
+        '<span class="cell-value">' + count + '</span>' +
         '<span class="chevron">' + I.chevron + '</span></a>';
     });
     body += '</div></div>';
+    body += seasonalCard();
     if (COMING_SOON.length) {
       body += sectionTitle(Lx('Coming Soon')) + '<div class="group"><div class="list">';
       COMING_SOON.forEach(function (c) {
@@ -1213,9 +1288,6 @@
       body += '</div></div>';
     }
     if (app.entries.length) {
-      body += '<div class="stat-grid" style="margin-top:14px">' +
-        stat(app.entries.length, app.entries.length === 1 ? Lx('Encounter') : Lx('Encounters')) +
-        stat(Object.keys(uniq).length, Lx('Species')) + stat(catsSeen(), Lx('Categories')) + '</div>';
       body += recentGroup(Lx('Recent'), recentIn(function () { return true; }, 6));
     }
 
