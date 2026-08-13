@@ -165,7 +165,7 @@
     'Appearance': 'Apparence', 'Theme': 'Thème', 'Auto': 'Auto', 'Light': 'Clair', 'Dark': 'Sombre',
     'Glass': 'Verre', 'Frosted bars and buttons': 'Barres et boutons givrés', 'Text size': 'Taille du texte',
     'Units': 'Unités', 'Metric': 'Métrique', 'Imperial': 'Impériale',
-    'Language': 'Langue', 'Fourth tab': 'Quatrième onglet', 'Include': 'Inclure',
+    'Language': 'Langue', 'Third tab': 'Troisième onglet', 'Include': 'Inclure',
     'A record of everything you have seen outside.': 'Le registre de tout ce que vous avez vu dehors.',
     'Start your life list': 'Commencez votre liste de vie',
     'Log what you see and it lands here: a timeline of your days outside, a life list of every species you have met, and the places you found them. It all stays on this phone.': 'Notez ce que vous voyez et tout arrive ici: une chronologie de vos journées dehors, une liste de vie de chaque espèce rencontrée, et les lieux où vous les avez trouvées. Tout reste sur ce téléphone.',
@@ -746,6 +746,9 @@
      Builds a nav bar + optional large title + body, and wires scroll fade. */
   // ---- iOS-style navigation transitions ----
   var TAB_ROOTS = { explore: 1, map: 1, journal: 1, more: 1, 'fishing-hub': 1, birding: 1 };
+  // tab taps create history entries; safari re-applies each entry's saved
+  // scroll AFTER our reset unless restoration is manual
+  try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) {}
   function reduceMotion() { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
   // Decide push vs pop vs tab-switch vs same-screen re-render from the hash + a stack.
   function navDirection() {
@@ -773,7 +776,10 @@
     if (existing.length > 1) { for (var i = 0; i < existing.length - 1; i++) existing[i].remove(); appEl.classList.remove('nav-animating'); }
     var oldScreen = appEl.querySelector('.screen');
     if (!oldScreen || dir === 'none' || dir === 'tab' || reduceMotion()) {
-      appEl.innerHTML = html; window.scrollTo(0, 0); return;
+      appEl.innerHTML = html; window.scrollTo(0, 0);
+      // belt and braces: land on top even if the browser scrolls late
+      requestAnimationFrame(function () { window.scrollTo(0, 0); });
+      return;
     }
     var side = dir === 'push' ? 'sc-from-right' : 'sc-from-left';
     var tmp = document.createElement('div'); tmp.innerHTML = html;
@@ -1209,7 +1215,7 @@
       body += recentGroup(Lx('Recent'), recentIn(function () { return true; }, 6));
     }
 
-    screen({ title: 'on-wildlife', large: true, header: true, version: 'v3.6', body: body });
+    screen({ title: 'on-wildlife', large: true, header: true, version: 'v3.7', body: body });
   }
 
   /* ============================================================= SEARCH */
@@ -2119,7 +2125,7 @@
       '<button type="button" class="seg-opt' + (app.settings.units === 'imperial' ? ' on' : '') + '" aria-pressed="' + (app.settings.units === 'imperial' ? 'true' : 'false') + '" data-action="set-units" data-val="imperial">' + Lx('Imperial') + '</button>' +
       '</div></div>' +
       appearSegRow(Lx('Language'), 'set-lang', (app.settings.lang === 'fr' ? 'fr' : 'en'), [['en', 'English'], ['fr', 'Français']], 200) +
-      appearSegRow(Lx('Fourth tab'), 'set-pursuit', (app.settings.primaryPursuit === 'birding' ? 'birding' : 'fishing'), [['fishing', Lx('Fishing')], ['birding', Lx('Birding')]], 200) +
+      appearSegRow(Lx('Third tab'), 'set-pursuit', (app.settings.primaryPursuit === 'birding' ? 'birding' : 'fishing'), [['fishing', Lx('Fishing')], ['birding', Lx('Birding')]], 200) +
       '</div>' +
       '<p class="ios-group-foot">' + Lx('Units are this app’s. The rest is shared by every outdoors app on this device.') + '</p>';
 
@@ -2140,7 +2146,7 @@
       '<div class="info-row"><div class="info-v">ON Fishing is now part of ON Wildlife: the fishing zones live on the map, every fish page carries its seasons and limits, and your catch log shows up in the journal.</div></div>' +
       iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: Lx('on-fishing, the solo site'), sub: Lx('The standalone zone map stays up') }) +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '3.6', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '3.7', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca', sub: Lx('Apps, projects and the rest') }) +
       '</div>';
     screen({ title: Lx('More'), large: true, header: true, actions: false, body: body });
@@ -2168,7 +2174,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '3.6', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '3.7', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: Lx('Back'), body: body });
@@ -3639,8 +3645,8 @@
     var tabs = [
       ['explore', '#/explore', Lx('Guide'), 'book-open'],
       ['map', '#/map', Lx('Map'), 'map'],
-      ['journal', '#/journal', Lx('Journal'), 'notebook'],
       pursuit,
+      ['journal', '#/journal', Lx('Journal'), 'notebook'],
       ['more', '#/more', Lx('More'), 'ellipsis']
     ];
     var html = '';
