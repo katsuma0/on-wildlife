@@ -181,6 +181,10 @@
     'species, every category, any park. Stays on this phone.': 'espèces, chaque catégorie, tous les parcs. Reste sur ce téléphone.',
     'Notes. Where exactly, what it was doing, the weather…': 'Notes. Où exactement, ce qu’il faisait, la météo…',
     'Name': 'Nom', 'Your name': 'Votre nom',
+    'Future of this project': 'L’avenir de ce projet',
+    'Smart stickers are next: tap one of my stickers in the field and the right page opens in this app.': 'Les autocollants intelligents arrivent: touchez un de mes autocollants sur le terrain et la bonne page s’ouvre dans cette appli.',
+    'Offline maps you download before the trip. Pick your park, carry the map with no signal, and get a campground map you can actually read, because the printed ones are hard to follow.': 'Des cartes hors ligne à télécharger avant le départ. Choisissez votre parc, gardez la carte sans signal, et ayez un plan de camping vraiment lisible, parce que les plans imprimés sont durs à suivre.',
+    'Easier park entrances too, especially at parks like Hemlock where there are no signs. The long goal is to partner with a provincial park and prove all of this on real ground.': 'Des entrées de parc plus simples aussi, surtout dans des parcs comme Hemlock où il n’y a aucun panneau. Le but à long terme est un partenariat avec un parc provincial pour prouver tout ça sur le vrai terrain.',
     'Units are this app’s. The rest is shared by every outdoors app on this device.': 'Les unités sont propres à cette appli. Le reste est partagé par toutes les applis plein air de cet appareil.',
     'More from the Ontario outdoors': 'Plus du plein air ontarien',
     'Rate Ontario Parks campsites': 'Évaluez les emplacements des parcs de l’Ontario',
@@ -1215,7 +1219,7 @@
       body += recentGroup(Lx('Recent'), recentIn(function () { return true; }, 6));
     }
 
-    screen({ title: 'on-wildlife', large: true, header: true, version: 'v3.7', body: body });
+    screen({ title: 'on-wildlife', large: true, header: true, version: 'v3.8', body: body });
   }
 
   /* ============================================================= SEARCH */
@@ -2130,7 +2134,7 @@
       '<p class="ios-group-foot">' + Lx('Units are this app’s. The rest is shared by every outdoors app on this device.') + '</p>';
 
     body += sectionTitle(Lx('More from the Ontario outdoors')) + '<nav class="ios-group">' +
-      iosRow({ href: 'https://katsuma0.github.io/on-camp/', ext: true, title: 'on-camp', sub: Lx('Rate Ontario Parks campsites') }) +
+      iosRow({ href: 'https://katsuma0.github.io/on-camp/', ext: true, title: 'on-site', sub: Lx('Rate Ontario Parks campsites') }) +
       iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: 'on-fishing', sub: Lx('Zones, seasons and catch limits') }) +
       '</nav><p class="ios-group-foot">' + Lx('Three field guides for Ontario, one look. Take all three.') + '</p>';
 
@@ -2146,8 +2150,14 @@
       '<div class="info-row"><div class="info-v">ON Fishing is now part of ON Wildlife: the fishing zones live on the map, every fish page carries its seasons and limits, and your catch log shows up in the journal.</div></div>' +
       iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: Lx('on-fishing, the solo site'), sub: Lx('The standalone zone map stays up') }) +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '3.7', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '3.8', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca', sub: Lx('Apps, projects and the rest') }) +
+      '</div>';
+
+    body += sectionTitle(Lx('Future of this project')) + '<div class="ios-group">' +
+      '<div class="info-row"><div class="info-v">' + Lx('Smart stickers are next: tap one of my stickers in the field and the right page opens in this app.') + '</div></div>' +
+      '<div class="info-row"><div class="info-v">' + Lx('Offline maps you download before the trip. Pick your park, carry the map with no signal, and get a campground map you can actually read, because the printed ones are hard to follow.') + '</div></div>' +
+      '<div class="info-row"><div class="info-v">' + Lx('Easier park entrances too, especially at parks like Hemlock where there are no signs. The long goal is to partner with a provincial park and prove all of this on real ground.') + '</div></div>' +
       '</div>';
     screen({ title: Lx('More'), large: true, header: true, actions: false, body: body });
   }
@@ -2174,7 +2184,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '3.7', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '3.8', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: Lx('Back'), body: body });
