@@ -49,7 +49,7 @@
   var _vtaps = 0, _vtimer;
   function versionTap() {
     _vtaps++; clearTimeout(_vtimer); _vtimer = setTimeout(function () { _vtaps = 0; }, 1200);
-    if (_vtaps >= 5) { _vtaps = 0; haptic(); toast('\u{1F43E} Made with care for Ontario’s wild places. Thanks for logging!'); }
+    if (_vtaps >= 5) { _vtaps = 0; haptic(); toast('\u{1F43E} Thanks for logging what you see.'); }
   }
 
   var app = {
@@ -154,7 +154,7 @@
     'Trees': 'Arbres', 'Plants': 'Plantes', 'Insects': 'Insectes', 'Fungi': 'Champignons',
     'See all encounters ›': 'Toutes les observations ›',
     'Learn': 'Apprendre', 'Learn and safety': 'Apprendre et sécurité', 'Bears, ticks, roads, water': 'Ours, tiques, routes, eau',
-    'Invasive species': 'Espèces envahissantes', 'Spot it, report it': 'Vu? Signalez-le',
+    'Invasive species': 'Espèces envahissantes', 'What to watch for and how to report': 'Quoi surveiller et comment signaler',
     'Your journal': 'Votre journal', 'Stats': 'Statistiques', 'Your numbers': 'Vos chiffres',
     'Your encounters live in the Journal tab.': 'Vos observations vivent dans l’onglet Journal.',
     'Community and data': 'Communauté et données', 'Community': 'Communauté',
@@ -168,7 +168,7 @@
     'Language': 'Langue', 'Third tab': 'Troisième onglet', 'Include': 'Inclure',
     'A record of everything you have seen outside.': 'Le registre de tout ce que vous avez vu dehors.',
     'Start your life list': 'Commencez votre liste de vie',
-    'Log what you see and it lands here: a timeline of your days outside, a life list of every species you have met, and the places you found them. It all stays on this phone.': 'Notez ce que vous voyez et tout arrive ici: une chronologie de vos journées dehors, une liste de vie de chaque espèce rencontrée, et les lieux où vous les avez trouvées. Tout reste sur ce téléphone.',
+    'Log what you see and it collects here: a timeline of your outings, a life list of the species you have found, and the places where you found them. Everything stays on this phone.': 'Notez ce que vous voyez et tout se rassemble ici: une chronologie de vos sorties, une liste de vie des espèces trouvées, et les lieux où vous les avez trouvées. Tout reste sur ce téléphone.',
     'Log your first encounter': 'Notez votre première observation',
     'encounter': 'observation', 'encounters': 'observations',
     'logged, all on this phone.': 'notées, tout sur ce téléphone.',
@@ -178,27 +178,27 @@
     'Nothing in this filter': 'Rien dans ce filtre',
     'No encounters match. Tap All to see everything.': 'Aucune observation ne correspond. Touchez Tout pour tout voir.',
     'Search the guide': 'Chercher le guide',
-    'species, every category, any park. Stays on this phone.': 'espèces, chaque catégorie, tous les parcs. Reste sur ce téléphone.',
+    'species, every category and every provincial park. Searches stay on this phone.': 'espèces, chaque catégorie et chaque parc provincial. Les recherches restent sur ce téléphone.',
     'Notes. Where exactly, what it was doing, the weather…': 'Notes. Où exactement, ce qu’il faisait, la météo…',
     'Name': 'Nom', 'Your name': 'Votre nom',
     'Future of this project': 'L’avenir de ce projet',
     'Smart stickers are next: tap one of my stickers in the field and the right page opens in this app.': 'Les autocollants intelligents arrivent: touchez un de mes autocollants sur le terrain et la bonne page s’ouvre dans cette appli.',
     'Offline maps you download before the trip. Pick your park, carry the map with no signal, and get a campground map you can actually read, because the printed ones are hard to follow.': 'Des cartes hors ligne à télécharger avant le départ. Choisissez votre parc, gardez la carte sans signal, et ayez un plan de camping vraiment lisible, parce que les plans imprimés sont durs à suivre.',
-    'Easier park entrances too, especially at parks like Hemlock where there are no signs. The long goal is to partner with a provincial park and prove all of this on real ground.': 'Des entrées de parc plus simples aussi, surtout dans des parcs comme Hemlock où il n’y a aucun panneau. Le but à long terme est un partenariat avec un parc provincial pour prouver tout ça sur le vrai terrain.',
-    'Units are this app’s. The rest is shared by every outdoors app on this device.': 'Les unités sont propres à cette appli. Le reste est partagé par toutes les applis plein air de cet appareil.',
+    'Easier park entrances too, especially at parks like Hemlock where there are no signs. The long goal is to partner with a provincial park and pilot these features there.': 'Des entrées de parc plus simples aussi, surtout dans des parcs comme Hemlock où il n’y a aucun panneau. Le but à long terme est un partenariat avec un parc provincial pour y piloter ces fonctions.',
+    'Units and language apply to this app only. Theme, glass and text size are shared with the other outdoors apps on this device.': 'Les unités et la langue s’appliquent à cette appli seulement. Le thème, le verre et la taille du texte sont partagés avec les autres applis plein air de cet appareil.',
     'More from the Ontario outdoors': 'Plus du plein air ontarien',
     'Rate Ontario Parks campsites': 'Évaluez les emplacements des parcs de l’Ontario',
     'Zones, seasons and catch limits': 'Zones, saisons et limites de prise',
-    'Three field guides for Ontario, one look. Take all three.': 'Trois guides de terrain pour l’Ontario, un seul style. Prenez les trois.',
-    'Your data': 'Vos données', 'Export my log': 'Exporter mon journal', 'One file, everything': 'Un fichier, tout',
+    'Three field guides for Ontario, built to match.': 'Trois guides de terrain pour l’Ontario, conçus pour s’accorder.',
+    'Your data': 'Vos données', 'Export my log': 'Exporter mon journal', 'Your whole log in one file': 'Tout votre journal dans un fichier',
     'Import a backup': 'Importer une sauvegarde', 'From an exported file': 'Depuis un fichier exporté',
     'Reset all data': 'Réinitialiser toutes les données',
-    'Import merges by id, no duplicates. Reset asks twice.': 'L’import fusionne par identifiant, sans doublons. La réinitialisation demande deux fois.',
+    'Import merges by id and skips anything already saved. Reset asks for confirmation twice.': 'L’import fusionne par identifiant et saute ce qui est déjà enregistré. La réinitialisation demande deux confirmations.',
     'About': 'À propos', 'Species in guide': 'Espèces dans le guide', 'Version': 'Version',
     'Apps, projects and the rest': 'Applis, projets et le reste',
     'on-fishing, the solo site': 'on-fishing, le site solo', 'The standalone zone map stays up': 'La carte des zones autonome reste en ligne',
-    'Everything here is hidden. The edit button brings rows back.': 'Tout est masqué ici. Le bouton de modification ramène les rangées.',
-    'Drag the handle to reorder. Unchecked rows leave the page, not the app.': 'Glissez la poignée pour réordonner. Les rangées décochées quittent la page, pas l’appli.',
+    'Every row in this section is hidden. Use the edit button to show them again.': 'Chaque rangée de cette section est masquée. Utilisez le bouton de modification pour les afficher de nouveau.',
+    'Drag the handle to reorder. Unchecked rows are hidden from this page and can be checked again any time.': 'Glissez la poignée pour réordonner. Les rangées décochées sont masquées de cette page et peuvent être recochées en tout temps.',
     'Edit': 'Modifier', 'Done': 'Terminé', 'Cancel': 'Annuler', 'Save': 'Enregistrer', 'Back': 'Retour',
     'Save Encounter': 'Enregistrer l’observation', 'Log Encounter': 'Noter une observation', 'Edit Encounter': 'Modifier l’observation',
     'What did you see?': 'Qu’avez-vous vu?', 'How did you see it?': 'Comment l’avez-vous vu?',
@@ -691,7 +691,7 @@
         '<span class="secedit-handle" data-drag="' + esc(r.id) + '" aria-hidden="true">' + spriteIcon('grip') + '</span>' +
         '</div>';
     });
-    body += '</div></div><p class="ios-group-foot">' + Lx('Drag the handle to reorder. Unchecked rows leave the page, not the app.') + '</p>';
+    body += '</div></div><p class="ios-group-foot">' + Lx('Drag the handle to reorder. Unchecked rows are hidden from this page and can be checked again any time.') + '</p>';
     var html = '<div class="scrim" data-action="close-sheet"></div>' +
       '<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Edit ' + esc(SECTION_DEFS[key].title) + '"><div class="sheet-grabber"></div>' +
       '<div class="sheet-nav"><span style="width:44px"></span><span class="t">' + Lx('Edit') + ' ' + esc(Lx(SECTION_DEFS[key].title)) + '</span>' +
@@ -1219,7 +1219,7 @@
       body += recentGroup(Lx('Recent'), recentIn(function () { return true; }, 6));
     }
 
-    screen({ title: 'on-wildlife', large: true, header: true, version: 'v3.8', body: body });
+    screen({ title: 'on-wildlife', large: true, header: true, version: 'v3.9', body: body });
   }
 
   /* ============================================================= SEARCH */
@@ -1291,7 +1291,7 @@
       '</div>';
     body += '<div id="search-results"></div>';
     body += '<div id="search-hint" class="empty" style="padding-top:40px"><div class="e">' + I.search + '</div>' +
-      '<h3>' + Lx('Search the guide') + '</h3><p>' + Lx('All') + ' ' + SPECIES.length + ' ' + Lx('species, every category, any park. Stays on this phone.') + '</p></div>';
+      '<h3>' + Lx('Search the guide') + '</h3><p>' + Lx('All') + ' ' + SPECIES.length + ' ' + Lx('species, every category and every provincial park. Searches stay on this phone.') + '</p></div>';
     screen({ title: Lx('Search'), large: true, backAction: true, backText: Lx('Back'), body: body });
     // No autofocus: the keyboard comes up when the person taps the field.
     // Autofocusing made iOS Safari pan the page and hide the top of the screen.
@@ -1371,8 +1371,8 @@
       learnCell('', 'Protect the water', 'Stop aquatic invasive species spreading', 'water-care') +
       learnCell('', 'Is it safe to eat?', 'Eating your catch the healthy way', 'fish-eating') +
       learnCell('', 'How to birdwatch', 'Patience, quiet and good timing', 'birding-how') +
-      learnCell('', 'Trail etiquette', 'Share the trail, protect the wild', 'trail-etiquette') +
-      learnCell('', 'Trail safety', 'Come home from every hike', 'trail-safety') +
+      learnCell('', 'Trail etiquette', 'Courtesy on the trail, for people and wildlife', 'trail-etiquette') +
+      learnCell('', 'Trail safety', 'Planning, packing and knowing your limits', 'trail-safety') +
       '</div></div>';
 
     body += '<div class="group"><div class="group-header">Conservation</div><div class="list">' +
@@ -1381,7 +1381,7 @@
       '<a class="cell tap" href="#/resources"><span class="cell-body"><span class="cell-title">Ontario and Canada resources</span><span class="cell-sub">Trusted sites</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       '</div></div>';
 
-    screen({ title: 'Learn', large: true, subtitle: 'Stay safe out there, and help the wild', body: body });
+    screen({ title: 'Learn', large: true, subtitle: 'Safety guides and ways to help wildlife', body: body });
   }
 
   function viewAtRisk() {
@@ -1872,9 +1872,9 @@
       title: Lx('Journal'), large: true, header: true,
       subtitle: Lx('A record of everything you have seen outside.'),
       body: '<div class="empty" style="padding-bottom:24px"><div class="e">' + spriteIcon('notebook') + '</div><h3>' + Lx('Start your life list') + '</h3>' +
-        '<p>' + Lx('Log what you see and it lands here: a timeline of your days outside, a life list of every species you have met, and the places you found them. It all stays on this phone.') + '</p></div>' +
+        '<p>' + Lx('Log what you see and it collects here: a timeline of your outings, a life list of the species you have found, and the places where you found them. Everything stays on this phone.') + '</p></div>' +
         '<div class="hpad"><button class="btn btn-primary btn-block" data-action="open-log">' + I.plus + Lx('Log your first encounter') + '</button></div>' +
-        '<div class="group"><div class="group-footer" style="text-align:center">Ontario has ' + SPECIES.length + ' species in the guide. Nobody sees them all, and that is the fun of it.</div></div>'
+        '<div class="group"><div class="group-footer" style="text-align:center">The guide covers ' + SPECIES.length + ' Ontario species across nine categories.</div></div>'
     });
   }
 
@@ -2096,7 +2096,7 @@
   function moreRow(id) {
     switch (id) {
       case 'learn': return iosRow({ href: '#/learn', tile: ['blue', 'book'], title: Lx('Learn and safety'), sub: Lx('Bears, ticks, roads, water') });
-      case 'invasives': return iosRow({ href: '#/invasives', tile: ['orange', 'alert'], title: Lx('Invasive species'), sub: Lx('Spot it, report it') });
+      case 'invasives': return iosRow({ href: '#/invasives', tile: ['orange', 'alert'], title: Lx('Invasive species'), sub: Lx('What to watch for and how to report') });
       case 'stats': return iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats'), sub: Lx('Your numbers') });
       case 'community': return iosRow({ href: '#/community', tile: ['green', 'globe'], title: Lx('Community'), sub: (Community.on() ? 'Sharing on · see nearby activity' : app.settings.communityUrl ? 'Connected · sharing off' : Lx('What’s near you this week')) });
       case 'resources': return iosRow({ href: '#/resources', tile: ['blue', 'link-out'], title: Lx('Ontario and Canada resources'), sub: Lx('Trusted sites') });
@@ -2108,7 +2108,7 @@
   function moreSection(key, foot) {
     var rows = sectionOrder(key).filter(function (r) { return r.on; });
     // an emptied section keeps its head, or the way back in disappears
-    if (!rows.length) return sectionHead(key) + '<p class="ios-group-foot">' + Lx('Everything here is hidden. The edit button brings rows back.') + '</p>';
+    if (!rows.length) return sectionHead(key) + '<p class="ios-group-foot">' + Lx('Every row in this section is hidden. Use the edit button to show them again.') + '</p>';
     return sectionHead(key) + '<nav class="ios-group">' +
       rows.map(function (r) { return moreRow(r.def.id); }).join('') + '</nav>' +
       (foot ? '<p class="ios-group-foot">' + foot + '</p>' : '');
@@ -2131,33 +2131,33 @@
       appearSegRow(Lx('Language'), 'set-lang', (app.settings.lang === 'fr' ? 'fr' : 'en'), [['en', 'English'], ['fr', 'Français']], 200) +
       appearSegRow(Lx('Third tab'), 'set-pursuit', (app.settings.primaryPursuit === 'birding' ? 'birding' : 'fishing'), [['fishing', Lx('Fishing')], ['birding', Lx('Birding')]], 200) +
       '</div>' +
-      '<p class="ios-group-foot">' + Lx('Units are this app’s. The rest is shared by every outdoors app on this device.') + '</p>';
+      '<p class="ios-group-foot">' + Lx('Units and language apply to this app only. Theme, glass and text size are shared with the other outdoors apps on this device.') + '</p>';
 
     body += sectionTitle(Lx('More from the Ontario outdoors')) + '<nav class="ios-group">' +
       iosRow({ href: 'https://katsuma0.github.io/on-camp/', ext: true, title: 'on-site', sub: Lx('Rate Ontario Parks campsites') }) +
       iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: 'on-fishing', sub: Lx('Zones, seasons and catch limits') }) +
-      '</nav><p class="ios-group-foot">' + Lx('Three field guides for Ontario, one look. Take all three.') + '</p>';
+      '</nav><p class="ios-group-foot">' + Lx('Three field guides for Ontario, built to match.') + '</p>';
 
     body += sectionTitle(Lx('Your data')) + '<div class="ios-group">' +
-      iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log'), sub: Lx('One file, everything') }) +
+      iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log'), sub: Lx('Your whole log in one file') }) +
       iosRow({ action: 'import-data', tile: ['grey', 'upload'], title: Lx('Import a backup'), sub: Lx('From an exported file') }) +
       iosRow({ action: 'reset-data', danger: true, title: Lx('Reset all data'), chevron: false }) +
       '<input type="file" id="import-input" accept=".json,application/json" style="display:none" aria-hidden="true">' +
-      '</div><p class="ios-group-foot">' + Lx('Import merges by id, no duplicates. Reset asks twice.') + '</p>';
+      '</div><p class="ios-group-foot">' + Lx('Import merges by id and skips anything already saved. Reset asks for confirmation twice.') + '</p>';
 
     body += sectionTitle(Lx('About')) + '<div class="ios-group">' +
-      '<div class="info-row"><div class="info-v">on-wildlife is a simple, private field guide and journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario. Look a species up, read a longer account if you want one, and log what you see. It works offline and installs to your home screen.</div></div><div class="info-row"><div class="info-v">I built it because I wanted one clear place to name what I run into outside and keep a record of it, without ads, accounts, or anything watching over my shoulder. Everything you log stays on this device. There is no server and nothing is tracked. Sensitive spots, like bear sightings, are coarsened before they can go to the optional community layer.</div></div>' +
+      '<div class="info-row"><div class="info-v">on-wildlife is a private field guide and journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario. Look a species up, read the longer account, and log what you see. It works offline and installs to your home screen.</div></div><div class="info-row"><div class="info-v">I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</div></div>' +
       '<div class="info-row"><div class="info-v">ON Fishing is now part of ON Wildlife: the fishing zones live on the map, every fish page carries its seasons and limits, and your catch log shows up in the journal.</div></div>' +
       iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: Lx('on-fishing, the solo site'), sub: Lx('The standalone zone map stays up') }) +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '3.8', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '3.9', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca', sub: Lx('Apps, projects and the rest') }) +
       '</div>';
 
     body += sectionTitle(Lx('Future of this project')) + '<div class="ios-group">' +
       '<div class="info-row"><div class="info-v">' + Lx('Smart stickers are next: tap one of my stickers in the field and the right page opens in this app.') + '</div></div>' +
       '<div class="info-row"><div class="info-v">' + Lx('Offline maps you download before the trip. Pick your park, carry the map with no signal, and get a campground map you can actually read, because the printed ones are hard to follow.') + '</div></div>' +
-      '<div class="info-row"><div class="info-v">' + Lx('Easier park entrances too, especially at parks like Hemlock where there are no signs. The long goal is to partner with a provincial park and prove all of this on real ground.') + '</div></div>' +
+      '<div class="info-row"><div class="info-v">' + Lx('Easier park entrances too, especially at parks like Hemlock where there are no signs. The long goal is to partner with a provincial park and pilot these features there.') + '</div></div>' +
       '</div>';
     screen({ title: Lx('More'), large: true, header: true, actions: false, body: body });
   }
@@ -2184,7 +2184,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '3.8', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '3.9', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: Lx('Back'), body: body });
@@ -2849,7 +2849,7 @@
         (on ? '<div class="badge-chk" aria-label="Earned">✓</div>' : '') + '</div>';
     });
     body += '</div>';
-    if (!earned.emblems) body += '<div class="group-footer hpad" style="text-align:center">✨ There’s a secret badge to discover…</div>';
+    if (!earned.emblems) body += '<div class="group-footer hpad" style="text-align:center">One badge is hidden until you earn it.</div>';
     screen({ title: 'Badges', backAction: true, backText: 'Back', body: body });
   }
 
@@ -2920,11 +2920,11 @@
   /* =============================================================== PRIVACY */
   function viewPrivacy() {
     var body = '<div class="hero" style="padding-bottom:2px"><div class="hero-emoji" style="background:var(--tint-soft)">\u{1F512}</div><h1>Your Privacy</h1><div class="sci" style="font-style:normal">Private by default</div></div>';
-    body += '<p class="article-intro">Your log, including sightings, photos, locations and notes, is stored <b>only on this device</b>. There are no accounts, ads or trackers, and <b>nothing you log is uploaded</b> unless you turn on Community sharing. Two other features reach the internet: connecting to a Community server (off until you set one up), and loading reference photos (on by default, and you can turn it off below). One more thing to know. The <b>Map</b> loads its background tiles from <b>OpenStreetMap</b>, so opening the Map tab sends the area you are viewing, and your device IP, to that map service. It never sends your saved sightings.</p>';
+    body += '<p class="article-intro">Your log, including sightings, photos, locations and notes, is stored <b>only on this device</b>. There are no accounts, ads or trackers, and <b>nothing you log is uploaded</b> unless you turn on Community sharing. Two other features reach the internet: connecting to a Community server (off until you set one up), and loading reference photos (on by default, and you can turn it off below). The <b>Map</b> loads its background tiles from <b>CARTO</b>, drawn from OpenStreetMap data, so opening the Map tab sends the area you are viewing, and your device IP, to that tile service. It never sends your saved sightings.</p>';
     body += '<div class="group"><div class="group-header">On this device</div><div class="list">' +
       infoRow2('\u{1F4F1}', 'Stored locally', 'Your journal lives in this app’s private storage on your phone.') +
       infoRow2('\u{1F6AB}', 'No accounts or trackers', 'No sign-in, no ads, no analytics.') +
-      infoRow2('\u{1F4E4}', 'You’re in control', 'Export your whole log to a file, or delete everything, anytime.') +
+      infoRow2('\u{1F4E4}', 'Export and delete', 'Export your whole log to a file, or delete everything, anytime.') +
       '</div></div>';
     body += '<div class="group"><div class="group-header">Reference photos</div><div class="list">' +
       '<div class="field"><span class="field-label" style="flex:1">Load species photos</span>' +
@@ -2987,7 +2987,7 @@
           events.slice(0, 10).forEach(function (v) { h += '<div class="cell"><span class="cell-body"><span class="cell-title" style="font-size:15px">' + esc(v.e) + '</span><span class="cell-sub">' + esc(v.when ? fmtDay(v.when) : '') + '</span></span></div>'; });
           h += '</div><div class="group-footer">Locations are approximate (coarsened for privacy). These are community reports, not official alerts.</div></div>';
         }
-        if (!(d.topSpecies && d.topSpecies.length) && !events.length) h += '<div class="empty"><div class="e">\u{1F331}</div><h3>Quiet so far</h3><p>Be the first to log something near you this week.</p></div>';
+        if (!(d.topSpecies && d.topSpecies.length) && !events.length) h += '<div class="empty"><div class="e">\u{1F331}</div><h3>Quiet so far</h3><p>No community sightings near you this week.</p></div>';
         box.innerHTML = h;
       });
     };
@@ -3012,7 +3012,7 @@
       '<div class="sheet-body" style="padding:8px 20px calc(24px + var(--sa-bottom))">' +
       '<div style="text-align:center;font-size:44px;margin:8px 0">\u{1F43E}</div>' +
       '<h2 style="text-align:center;margin:0 0 6px;font-size:22px">Welcome to Wildlife Log</h2>' +
-      '<p style="text-align:center;color:var(--label-2);font-size:15px;line-height:1.45;margin:0 0 16px">Log the wildlife, fish and plants you find across Ontario. <b>Your sightings stay private on your device.</b> Nothing you log is uploaded unless you choose to turn on sharing.</p>' +
+      '<p style="text-align:center;color:var(--label-2);font-size:15px;line-height:1.45;margin:0 0 16px">Log the wildlife, fish and plants you find across Ontario. <b>Your sightings stay on this phone.</b> The app uploads an entry only when you turn sharing on and post it yourself.</p>' +
       '<button class="btn btn-primary btn-block" data-action="accept-privacy">Get started</button>' +
       '<div class="spacer"></div>' +
       '<button class="btn btn-plain btn-block" data-action="open-privacy-first" style="height:40px">Read our privacy note</button>' +
