@@ -270,10 +270,12 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  font-size: var(--fs-title1);
-  font-weight: 700;
-  letter-spacing: var(--ls-title1);
-  line-height: var(--lh-title1);
+  /* the github app sizes its section names (My Work, Favorites) like
+     headline text, not like page titles */
+  font-size: var(--fs-headline);
+  font-weight: 600;
+  letter-spacing: var(--ls-headline);
+  line-height: var(--lh-headline);
   color: var(--label);
   margin: 26px 0 8px;
   padding-left: var(--gutter);
