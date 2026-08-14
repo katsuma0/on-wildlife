@@ -54,7 +54,7 @@
 
   var app = {
     entries: [], hazards: [],
-    settings: { units: 'metric', theme: 'auto', homeMode: 'all', photos: true, seenPrivacy: false, seenInstall: false, community: false, communityUrl: '', badges: [], journalView: 'timeline', lifeSort: 'recent', journalFilter: 'all', mapLayers: { wildlife: true, parks: false, zones: false }, mapShow: { wildlife: false, hazard: false }, displayName: '', primaryPursuit: 'fishing' },
+    settings: { units: 'metric', theme: 'auto', homeMode: 'all', photos: true, seenPrivacy: false, seenInstall: false, community: false, communityUrl: '', badges: [], journalFilter: 'all', mapLayers: { wildlife: true, parks: false, zones: false }, mapShow: { wildlife: false, hazard: false }, displayName: '', primaryPursuit: 'fishing' },
     draft: null, hdraft: null, ready: false, map: null, mapFilter: 'all', placeMode: null
   };
 
@@ -191,7 +191,7 @@
     'first seen': 'vue la première fois',
     'species logged. Tap one to read your record of it.': 'espèces notées. Touchez-en une pour lire votre dossier.',
     'Nothing in this filter': 'Rien dans ce filtre',
-    'No encounters match. Tap All to see everything.': 'Aucune observation ne correspond. Touchez Tout pour tout voir.',
+    'No encounters match. Choose All to see everything.': 'Aucune observation ne correspond. Choisissez Tout pour tout voir.',
     'Search the guide': 'Chercher le guide',
     'species, every category and every provincial park. Searches stay on this phone.': 'espèces, chaque catégorie et chaque parc provincial. Les recherches restent sur ce téléphone.',
     'Notes. Where exactly, what it was doing, the weather…': 'Notes. Où exactement, ce qu’il faisait, la météo…',
@@ -230,6 +230,7 @@
     'Fishing zone boundaries need a connection. Your pins still show.': 'Les limites de zones de pêche demandent une connexion. Vos épingles restent visibles.',
     'Loading the map…': 'Chargement de la carte…', 'Map couldn’t load.': 'La carte n’a pas pu charger.',
     'Timeline': 'Chronologie', 'Life list': 'Liste de vie', 'Places': 'Lieux', 'Badges': 'Insignes',
+    'Filter': 'Filtre',
     'Species caught': 'Espèces prises', 'This year': 'Cette année', 'Biggest': 'La plus grosse',
     'What is open now': 'Ouvert en ce moment', 'All 20 zones': 'Les 20 zones', 'Recent catches': 'Prises récentes',
     'No catches yet.': 'Pas encore de prises.', 'Latest lifer': 'Dernière coche', 'Birds in the guide': 'Oiseaux dans le guide',
@@ -540,6 +541,12 @@
     var opts = { weekday: 'short', month: 'short', day: 'numeric' };
     if (d.getFullYear() !== today.getFullYear()) opts.year = 'numeric';
     return d.toLocaleDateString('en-CA', opts);
+  }
+  // "August 2026", and the French room gets the month name from fr-CA rather
+  // than a dictionary entry per month.
+  function fmtMonth(iso) {
+    var d = new Date(iso);
+    return d.toLocaleDateString(app.settings.lang === 'fr' ? 'fr-CA' : 'en-CA', { month: 'long', year: 'numeric' });
   }
   function localDatetimeValue(d) {
     var p = function (n) { return (n < 10 ? '0' : '') + n; };
@@ -1224,92 +1231,17 @@
   }
 
   /* ----------------------------------------------------------- Explore */
-  /* Distinct calendar days that have at least one entry. */
-  function daysWithSightings() {
-    var m = {};
-    journalEntries().forEach(function (e) {
-      var d = new Date(e.when);
-      if (!isNaN(d)) m[d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate()] = 1;
-    });
-    return Object.keys(m).length;
-  }
-
-  /* Journal's insights card: the life list as the hero numeral, days out
-     and total sightings stacked beside it. Real numbers only; the card
-     waits until there is at least one entry. Opens the existing Stats. */
-  function insightsCard() {
-    var all = journalEntries();
-    if (!all.length) return '';
-    var life = lifeList().length;
-    return '<a class="insight-card tap-scale" href="#/stats">' +
-      '<div class="insight-t">' + Lx('Insights') + '</div>' +
-      '<div class="insight-grid">' +
-      '<div class="insight-big"><div class="insight-n">' + life + '</div>' +
-      '<div class="insight-bl">' + Lx('Species') + ' <span>' + Lx('spotted') + '</span></div></div>' +
-      '<div class="insight-minis">' +
-      '<div class="insight-mini"><div class="n">' + spriteIcon('sun-moon') + '<span>' + daysWithSightings() + '</span></div>' +
-      '<div class="l">' + Lx('Days with sightings') + '</div></div>' +
-      '<div class="insight-mini"><div class="n">' + spriteIcon('paw') + '<span>' + all.length + '</span></div>' +
-      '<div class="l">' + Lx('Total sightings') + '</div></div>' +
-      '</div></div></a>';
-  }
-
-  /* The Home's places thumbnail: Ontario's lakes drawn as quiet inline
-     shapes, so no tile request leaves the device from the Home and the
-     privacy note about the Map tab stays true. One pin per place. */
-  function placesMapSvg(places) {
-    var W = 360, H = 168;
-    function px(lng) { return ((lng + 96) * (W / 22)).toFixed(1); }
-    function py(lat) { return ((57.5 - lat) * (H / 16.5)).toFixed(1); }
-    var pins = '';
-    places.forEach(function (g) {
-      var la = 0, ln = 0, n = 0;
-      g.entries.forEach(function (e) { if (e.lat != null && e.lng != null) { la += e.lat; ln += e.lng; n++; } });
-      if (!n) return;
-      la /= n; ln /= n;
-      if (la < 41 || la > 57.5 || ln < -96 || ln > -74) return;
-      pins += '<circle class="pm-glow" cx="' + px(ln) + '" cy="' + py(la) + '" r="8"/>' +
-        '<circle class="pm-pin" cx="' + px(ln) + '" cy="' + py(la) + '" r="3.5"/>';
-    });
-    return '<svg class="pm" viewBox="0 0 360 168" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
-      '<defs><filter id="pm-soft"><feGaussianBlur stdDeviation="0.8"/></filter></defs>' +
-      '<rect class="pm-land" x="0" y="0" width="360" height="168"/>' +
-      '<g filter="url(#pm-soft)">' +
-      '<path class="pm-lake" d="M0 0 H260 C250 12 240 18 230 22 C238 26 244 34 244 44 C246 56 242 66 234 70 C224 74 212 70 208 60 C204 50 208 38 216 32 C204 34 190 34 176 30 C150 24 118 26 92 20 C60 14 28 12 0 6 Z"/>' +
-      '<path class="pm-lake" d="M120 76 C124 72 130 72 134 76 C136 80 134 86 128 87 C122 87 118 81 120 76 Z"/>' +
-      '<path class="pm-lake" d="M62 110 C66 100 82 92 104 88 C126 84 148 86 166 96 C176 101 186 106 190 112 C182 116 168 112 152 112 C132 112 108 118 88 118 C74 118 64 115 62 110 Z"/>' +
-      '<path class="pm-lake" d="M156 168 C152 150 154 132 162 122 C170 128 174 144 172 160 L170 168 Z"/>' +
-      '<path class="pm-lake" d="M212 148 C208 136 210 126 218 118 C224 112 232 110 238 112 C240 106 246 100 254 98 C262 96 268 100 266 108 C264 114 258 118 252 122 C248 125 244 124 242 130 C240 138 236 146 228 150 C220 154 214 154 212 148 Z"/>' +
-      '<path class="pm-lake" d="M208 162 C220 154 240 148 262 144 C272 142 280 144 276 149 C260 156 238 162 220 166 L210 166 Z"/>' +
-      '<path class="pm-lake" d="M266 142 C276 134 296 131 314 132 C322 133 324 138 316 141 C300 145 280 146 270 146 C264 145 262 145 266 142 Z"/>' +
-      '<path class="pm-lake" d="M322 136 C334 130 348 124 360 120 L360 128 C346 132 334 136 326 140 Z"/>' +
-      '</g>' + pins + '</svg>';
-  }
-  function placesCardHtml() {
-    var places = placeGroups();
-    return '<a class="places-card tap-scale" href="#/map" aria-label="' + Lx('Places') + ': ' + places.length + '">' +
-      placesMapSvg(places) +
-      '<div class="places-head"><div class="places-t">' + Lx('Places') + '</div>' +
-      '<span class="places-chip">' + spriteIcon('pin') + '<span>' + places.length + '</span></span></div></a>';
-  }
-
   function viewExplore() {
-    // the Home reads like Journal's: insights, places, then the guide
-    // as one card of rows with counts on the right
+    // the Home is the guide itself: one card of category rows, each with
+    // the count of what is inside it on the right
     var body = '';
     if (isIosSafari() && !app.settings.seenInstall) {
       body += '<div class="wrap-note" style="align-items:flex-start;margin-top:2px"><span class="i">\u{1F4F2}</span><span><b>Add to Home Screen</b> to use this like a real app, fullscreen and offline. Tap the <b>Share</b> button, then <b>Add to Home Screen</b>. <button data-action="dismiss-install" style="padding:0;font-weight:600;color:var(--tint);background:none">Got it</button></span></div>';
     }
-    var cards = insightsCard() + placesCardHtml();
-    body += '<div class="home-cards">' + cards + '</div>';
 
     var atRiskN = SPECIES.filter(function (s) { return s.atRisk; }).length;
     body += sectionHead('guide-cats');
     body += '<div class="group home-list"><div class="list">';
-    body += '<a class="cell tap" href="#/search"><span class="cell-emoji" style="color:var(--tint)">' + spriteIcon('book-open') + '</span>' +
-      '<span class="cell-body"><span class="cell-title">' + Lx('All Species') + '</span></span>' +
-      '<span class="cell-value">' + SPECIES.length + '</span>' +
-      '<span class="chevron">' + I.chevron + '</span></a>';
     body += '<a class="cell tap" href="#/atrisk"><span class="cell-emoji">\u{1F6E1}️</span>' +
       '<span class="cell-body"><span class="cell-title">' + Lx('Species at Risk') + '</span></span>' +
       '<span class="cell-value">' + atRiskN + '</span>' +
@@ -1909,23 +1841,33 @@
     for (var i = 0; i < all.length; i++) if (all[i].id === id) return all[i];
     return null;
   }
-  /* ---- Journal category filter (persisted) ---- */
+  /* ---- Journal category filter (persisted) ----
+     The options come from the reader's own entries, in guide order, so the
+     list never offers a filter that would come back empty. A saved value for
+     a category no longer in the log quietly falls back to All. */
+  function journalFilterCats() {
+    var seen = {};
+    journalEntries().forEach(function (e) { if (e.cat) seen[e.cat] = 1; });
+    return CATEGORIES.filter(function (c) { return seen[c.id]; });
+  }
   function journalFilter() {
     var f = app.settings.journalFilter;
-    return (f === 'fish' || f === 'birds' || f === 'mammals' || f === 'other') ? f : 'all';
+    var cats = journalFilterCats();
+    for (var i = 0; i < cats.length; i++) if (cats[i].id === f) return f;
+    return 'all';
   }
-  function matchesJournalFilter(cat) {
-    var f = journalFilter();
-    if (f === 'all') return true;
-    if (f === 'other') return cat !== 'fish' && cat !== 'birds' && cat !== 'mammals';
-    return cat === f;
-  }
-  function journalFilterChips() {
-    var cur = journalFilter(), h = '';
-    [['all', 'All'], ['fish', 'Fish'], ['birds', 'Birds'], ['mammals', 'Mammals'], ['other', 'Other']].forEach(function (o) {
-      h += '<button class="chip' + (cur === o[0] ? ' on' : '') + '" aria-pressed="' + (cur === o[0] ? 'true' : 'false') + '" data-action="journal-filter" data-f="' + o[0] + '">' + o[1] + '</button>';
+  /* A native select, not a chip row: the guide has nine categories and a
+     dropdown holds all of them at any text size without scrolling sideways. */
+  function journalFilterSelect() {
+    var cur = journalFilter();
+    var opts = '<option value="all"' + (cur === 'all' ? ' selected' : '') + '>' + esc(Lx('All')) + '</option>';
+    journalFilterCats().forEach(function (c) {
+      opts += '<option value="' + esc(c.id) + '"' + (cur === c.id ? ' selected' : '') + '>' + esc(Lx(c.name)) + '</option>';
     });
-    return '<div class="chip-row" style="padding-top:8px">' + h + '</div>';
+    return '<div class="ios-group"><div class="field">' +
+      '<label class="field-label" for="journal-filter">' + esc(Lx('Filter')) + '</label>' +
+      '<select class="ios-select" id="journal-filter">' + opts + '</select>' +
+      '</div></div>';
   }
 
   // The earliest entry for each species. That entry is the lifer, the one that
@@ -2013,21 +1955,24 @@
     return out;
   }
 
-  // Day-grouped timeline, newest first. Shared by the journal and by the
-  // per-species and per-place views so they all read the same way.
+  // Month-grouped timeline, newest first. Shared by the journal and by the
+  // per-species and per-place views so they all read the same way. A month
+  // is the span a season of outings actually fits in, so the headers stay
+  // few enough to scan; each row still names its own day underneath.
   function timelineHtml(entries, lifers) {
     var sorted = entries.slice().sort(function (a, b) { return new Date(b.when) - new Date(a.when); });
-    var html = '', curDay = null;
+    var html = '', curMonth = null;
     sorted.forEach(function (e) {
-      var day = fmtDay(e.when);
-      if (day !== curDay) {
-        if (curDay !== null) html += '</div></div>';
-        html += '<div class="group"><div class="group-header">' + esc(day) + '</div><div class="list">';
-        curDay = day;
+      var d = new Date(e.when);
+      var key = d.getFullYear() + '-' + d.getMonth();
+      if (key !== curMonth) {
+        if (curMonth !== null) html += '</div></div>';
+        html += '<div class="group"><div class="group-header">' + esc(fmtMonth(e.when)) + '</div><div class="list">';
+        curMonth = key;
       }
-      html += entryCell(e, { lifer: lifers && lifers[e.speciesId] === e, hideDay: true });
+      html += entryCell(e, { lifer: lifers && lifers[e.speciesId] === e });
     });
-    if (curDay !== null) html += '</div></div>';
+    if (curMonth !== null) html += '</div></div>';
     return html;
   }
 
@@ -2048,14 +1993,10 @@
 
     var life = lifeList();
     var lifers = firstEntryBySpecies();
-    var places = placeGroups();
-    var view = app.settings.journalView || 'timeline';
-    if (view === 'places' && !places.length) view = 'timeline';
 
-    // The Journal opens the way the Home does, in the same card, so the two
-    // screens read as one app: the life list as the hero numeral, the counts
-    // beside it, and the honest unfinished total underneath (Zeigarnik: the
-    // gap is what pulls you back outside).
+    // The Journal opens on its card: the life list as the hero numeral, the
+    // counts beside it, and the honest unfinished total underneath
+    // (Zeigarnik: the gap is what pulls you back outside).
     var pct = SPECIES.length ? (life.length / SPECIES.length) * 100 : 0;
     var body = '<div class="home-cards">' +
       '<a class="insight-card tap-scale" href="#/stats">' +
@@ -2073,55 +2014,17 @@
       '<span>' + life.length + ' ' + Lx('of') + ' ' + SPECIES.length + ' ' + Lx('in the Ontario guide') + '</span></div>' +
       '</a></div>';
 
-    var segs = [['timeline', Lx('Timeline')], ['life', Lx('Life list')]];
-    if (places.length) segs.push(['places', Lx('Places')]);
-    body += '<div class="hpad" style="margin-top:18px">' + segHtml('journal-view', view, segs) + '</div>';
+    // One view, the chronological timeline. Species and place pages are
+    // reached from the entries themselves and from the guide.
+    body += journalFilterSelect();
 
-    // The category chips filter both the timeline and the life list.
-    if (view === 'timeline' || view === 'life') body += journalFilterChips();
+    // resolve the filter once: it reads the whole log to validate itself
+    var filter = journalFilter();
+    var shown = filter === 'all' ? all : all.filter(function (e) { return e.cat === filter; });
+    if (shown.length) body += timelineHtml(shown, lifers);
+    else body += '<div class="empty" style="padding-top:32px"><div class="e">\u{1F50D}</div><h3>' + Lx('Nothing in this filter') + '</h3><p>' + Lx('No encounters match. Choose All to see everything.') + '</p></div>';
 
-    if (view === 'life') {
-      var sort = app.settings.lifeSort === 'az' ? 'az' : 'recent';
-      life = life.filter(function (r) { return matchesJournalFilter(r.cat); });
-      life.sort(sort === 'az'
-        ? function (a, b) { return a.name.localeCompare(b.name); }
-        : function (a, b) { return new Date(b.last) - new Date(a.last); });
-      body += '<div class="hpad" style="margin-top:12px">' +
-        segHtml('life-sort', sort, [['recent', Lx('Recently seen')], ['az', Lx('A to Z')]]) + '</div>';
-      body += '<div class="group"><div class="list">';
-      life.forEach(function (r) {
-        var sp = byId[r.id];
-        body += '<a class="cell tap" href="#/journal/species/' + esc(r.id) + '">' +
-          '<span class="cell-emoji">' + (r.emoji || '\u{1F43E}') + '</span>' +
-          '<span class="cell-body"><span class="cell-title">' + esc(r.name) + '</span>' +
-          '<span class="cell-sub">' + (sp ? '<i>' + esc(sp.sci) + '</i> · ' : '') + Lx('first seen') + ' ' + esc(fmtDay(r.first)) + '</span></span>' +
-          '<span class="cell-value">' + (r.count > 1 ? '×' + r.count : '') + '</span>' +
-          '<span class="chevron">' + I.chevron + '</span></a>';
-      });
-      body += '</div><div class="group-footer">' + life.length + ' ' + Lx('species logged. Tap one to read your record of it.') + '</div></div>';
-    } else if (view === 'places') {
-      body += '<div class="group"><div class="list">';
-      places.forEach(function (g) {
-        var ns = Object.keys(g.species).length;
-        body += '<a class="cell tap" href="#/journal/place/' + encodeURIComponent(g.key) + '">' +
-          '<span class="cell-emoji">' + (g.key.indexOf('park:') === 0 ? '\u{1F332}' : '\u{1F4CD}') + '</span>' +
-          '<span class="cell-body"><span class="cell-title">' + esc(g.name) + '</span>' +
-          '<span class="cell-sub">' + g.entries.length + (g.entries.length === 1 ? ' encounter' : ' encounters') + ' · ' + ns + (ns === 1 ? ' species' : ' species') + '</span></span>' +
-          '<span class="chevron">' + I.chevron + '</span></a>';
-      });
-      var placed = places.reduce(function (n, g) { return n + g.entries.length; }, 0);
-      body += '</div><div class="group-footer">' + placed + ' of your ' + all.length + ' encounters have a location. Parks are named when a sighting falls within 15km of one.</div></div>';
-    } else {
-      var shown = all.filter(function (e) { return matchesJournalFilter(e.cat); });
-      if (shown.length) body += timelineHtml(shown, lifers);
-      else body += '<div class="empty" style="padding-top:32px"><div class="e">\u{1F50D}</div><h3>' + Lx('Nothing in this filter') + '</h3><p>' + Lx('No encounters match. Tap All to see everything.') + '</p></div>';
-    }
-
-    screen({
-      title: Lx('Journal'), large: true, header: true,
-      subtitle: all.length + ' ' + (all.length === 1 ? Lx('encounter') : Lx('encounters')) + ' ' + Lx('logged, all on this phone.'),
-      body: body
-    });
+    screen({ title: Lx('Journal'), large: true, header: true, body: body });
   }
 
   /* One species, everything you have recorded of it, and a door into the guide
@@ -2282,10 +2185,9 @@
       (foot ? '<p class="ios-group-foot">' + foot + '</p>' : '');
   }
   function viewMore() {
-    // Settings' voice: a header card with the app icon and one line on
-    // what this screen manages, then the grouped rows.
-    var body = '<div class="ios-group settings-head"><img class="app-ic" src="icons/icon.svg" alt="">' +
-      '<h2>on-wildlife</h2><p>' + Lx('A private field guide and journal for the Ontario outdoors. Everything here manages this app and your data.') + '</p></div>';
+    // Settings' voice: grouped rows, straight in. What the app is belongs to
+    // the About section further down, which already says it.
+    var body = '';
     // Learn moved out of the tab bar to make room for the Journal, so it lives
     // here as an ordinary row into the same hub screen.
     body += moreSection('more-learn');
@@ -2320,7 +2222,7 @@
       '<div class="info-row"><div class="info-v">ON Fishing is now part of ON Wildlife: the fishing zones live on the map, every fish page carries its seasons and limits, and your catch log shows up in the journal.</div></div>' +
       iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: Lx('on-fishing, the solo site'), sub: Lx('The standalone zone map stays up') }) +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.1', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.2', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca', sub: Lx('Apps, projects and the rest') }) +
       '</div>';
 
@@ -2357,7 +2259,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.1', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.2', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: Lx('Back'), body: body });
@@ -4033,23 +3935,8 @@
         ev.preventDefault();
         { var lk = t.getAttribute('data-l'); setMapLayer(lk, !mapLayerOn(lk)); var mc2 = $('#map-chips'); if (mc2) mc2.innerHTML = mapChips(); }
         break;
-      case 'journal-view':
-        ev.preventDefault();
-        app.settings.journalView = t.getAttribute('data-v'); saveSettings();
-        viewJournal();
-        break;
-      case 'life-sort':
-        ev.preventDefault();
-        app.settings.lifeSort = t.getAttribute('data-v'); saveSettings();
-        viewJournal();
-        break;
       case 'map-locate': ev.preventDefault(); mapLocate(false); break;
       case 'map-layers': ev.preventDefault(); openLayersSheet(); break;
-      case 'journal-filter':
-        ev.preventDefault();
-        app.settings.journalFilter = t.getAttribute('data-f'); saveSettings();
-        viewJournal();
-        break;
       case 'place-center': {
         ev.preventDefault();
         if (!app.map || !app.placeMode) break;
@@ -4219,6 +4106,11 @@
   document.addEventListener('change', function (ev) {
     if (!ev.target) return;
     if (ev.target.id === 'photo-input') handlePhoto(ev.target.files && ev.target.files[0]);
+    else if (ev.target.id === 'journal-filter') {
+      // re-render in place so the timeline swaps under a still-parked scroll
+      app.settings.journalFilter = ev.target.value; saveSettings();
+      rerenderKeepScroll();
+    }
     else if (ev.target.id === 'photos-toggle') {
       app.settings.photos = !!ev.target.checked; saveSettings();
       toast(ev.target.checked ? 'Reference photos on (fetched from iNaturalist)' : 'Reference photos off');
