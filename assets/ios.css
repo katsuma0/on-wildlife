@@ -2821,8 +2821,8 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
    and Maps. Liquid glass returns to the chrome layer only (the header
    cluster and round controls; content stays standard material, as the
    HIG's layer model asks). Grouped cards grow to 26px corners with a
-   squircle where the browser has one, the Home wears Journal's insight
-   and places cards, and motion rides one curve at two speeds.
+   squircle where the browser has one, the Journal wears its insight
+   card, and motion rides one curve at two speeds.
    ===================================================================== */
 
 /* ------------------------------------------------- tokens, this round */
@@ -2841,10 +2841,6 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
   /* insights card: the parks accent as Journal wears its indigo */
   --grad-insight: linear-gradient(160deg, #7FA0D8 0%, #4A6CA4 40%, #30497B 75%, #22365A 100%);
   --grad-numeral: linear-gradient(180deg, #FFFFFF 18%, #C9D8F0 100%);
-  /* places thumbnail: a dark map, in both rooms, like a photo */
-  --pm-water: #0E1B2C;
-  --pm-land: #31504A;
-  --pm-lake: #16324F;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -2944,7 +2940,7 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
 /* ----------------------------------------- 26px cards, squircle where */
 .list, .ios-group { border-radius: var(--r-card); }
 @supports (corner-shape: squircle) {
-  .list, .ios-group, .insight-card, .places-card,
+  .list, .ios-group, .insight-card,
   .ios-header-actions, .ios-tabbar { corner-shape: squircle; }
 }
 
@@ -3026,49 +3022,6 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
   color: rgba(255, 255, 255, .62);
   margin-top: 1px;
 }
-
-/* -------------------------------------------------- the places card */
-.places-card {
-  display: block;
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--r-card);
-  height: 168px;
-  background: var(--pm-water);
-  text-decoration: none;
-  color: var(--on-tint);
-}
-.places-card svg.pm {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-.pm .pm-land { fill: var(--pm-land); }
-.pm .pm-lake { fill: var(--pm-lake); }
-.pm .pm-glow { fill: var(--tone3); opacity: .3; }
-.pm .pm-pin { fill: var(--tone3); stroke: rgba(255, 255, 255, .85); stroke-width: 1; }
-.places-head { position: absolute; top: 14px; left: 16px; }
-.places-t {
-  font-size: var(--fs-body);
-  letter-spacing: var(--ls-body);
-  font-weight: 700;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, .55);
-}
-.places-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 6px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: rgba(8, 14, 24, .55);
-  font-size: var(--fs-subhead);
-  letter-spacing: var(--ls-subhead);
-  font-weight: 600;
-}
-.places-chip svg { width: 13px; height: 13px; }
 
 /* ----------------------------- the home list, Journal's row voice */
 .home-list .cell { min-height: 52px; }
@@ -3250,24 +3203,6 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
 .sp-photo-full .photo-credit { text-align: right; padding: 0 16px; margin-top: -14px; position: relative; }
 .sp-hero.has-photo + .hero { padding-top: 0; }
 
-/* -------------------------------------- step 2: settings head card */
-.settings-head { padding: 18px; }
-.settings-head .app-ic { width: 60px; height: 60px; border-radius: 14px; display: block; margin-bottom: 12px; }
-.settings-head h2 {
-  margin: 0 0 6px;
-  font-size: var(--fs-title1);
-  line-height: var(--lh-title1);
-  letter-spacing: var(--ls-title1);
-  font-weight: 700;
-}
-.settings-head p {
-  margin: 0;
-  color: var(--label-2);
-  font-size: var(--fs-subhead);
-  line-height: var(--lh-subhead);
-  letter-spacing: var(--ls-subhead);
-}
-
 /* -------------------------------------------- step 2: the map, maps */
 /* full bleed: the map runs under the transparent header and the tab
    capsule; the control cluster becomes one vertical glass stack on
@@ -3407,3 +3342,41 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
   background: rgba(255, 255, 255, .85);
 }
 .insight-foot > span:last-child { flex: none; }
+
+/* the journal's category filter: a native select in a settings row, so the
+   system menu does the picking and nine categories never scroll sideways.
+   Right-aligned like any iOS value, with a drawn chevron on the row because
+   an unstyled select carries no glyph once its appearance is reset. */
+.field > .ios-select {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  margin: -8px 0;
+  padding: 0 16px 0 8px;
+  border: 0;
+  border-radius: var(--radius-btn);
+  background: none;
+  outline: none;
+  font-size: var(--fs-body);
+  letter-spacing: var(--ls-body);
+  color: var(--label-2);
+  text-align: right;
+  text-align-last: right;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+.field:has(> .ios-select) { position: relative; }
+.field:has(> .ios-select)::after {
+  content: '';
+  position: absolute;
+  right: 19px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: -4px;
+  border-right: 2px solid var(--label-3);
+  border-bottom: 2px solid var(--label-3);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
