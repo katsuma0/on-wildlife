@@ -54,7 +54,7 @@
 
   var app = {
     entries: [], hazards: [],
-    settings: { units: 'metric', theme: 'auto', homeMode: 'all', photos: true, seenPrivacy: false, seenInstall: false, community: false, communityUrl: '', badges: [], journalView: 'timeline', lifeSort: 'recent', journalFilter: 'all', mapLayers: { wildlife: true, parks: false, zones: false }, displayName: '', primaryPursuit: 'fishing' },
+    settings: { units: 'metric', theme: 'auto', homeMode: 'all', photos: true, seenPrivacy: false, seenInstall: false, community: false, communityUrl: '', badges: [], journalView: 'timeline', lifeSort: 'recent', journalFilter: 'all', mapLayers: { wildlife: true, parks: false, zones: false }, mapShow: { wildlife: false, hazard: false }, displayName: '', primaryPursuit: 'fishing' },
     draft: null, hdraft: null, ready: false, map: null, mapFilter: 'all', placeMode: null
   };
 
@@ -136,6 +136,9 @@
     if (!app.settings.mapLayers || typeof app.settings.mapLayers !== 'object') {
       app.settings.mapLayers = { wildlife: true, parks: false, zones: false };
     }
+    if (!app.settings.mapShow || typeof app.settings.mapShow !== 'object') {
+      app.settings.mapShow = { wildlife: false, hazard: false };
+    }
   }
   function saveSettings() { try { localStorage.setItem('owl-settings', JSON.stringify(app.settings)); } catch (e) {} }
 
@@ -147,6 +150,10 @@
     'Guide': 'Guide', 'Map': 'Carte', 'Journal': 'Journal', 'Fishing': 'Pêche', 'Birding': 'Oiseaux', 'More': 'Plus',
     'on-wildlife': 'on-wildlife', 'Account': 'Compte', 'Search': 'Recherche', 'Log an encounter': 'Noter une observation',
     'This month in Ontario': 'Ce mois-ci en Ontario', 'Ontario Wildlife': 'Faune de l’Ontario', 'Coming Soon': 'À venir',
+    'Two apps for Ontario, built to match.': 'Deux applications pour l’Ontario, conçues pour s’accorder.',
+    'Loading': 'Chargement',
+    'Units and language apply to this app only. Theme and text size are shared with the other outdoors apps on this device.':
+      'Les unités et la langue s’appliquent à cette application seulement. Le thème et la taille du texte sont partagés avec les autres applications de plein air sur cet appareil.',
     'Insights': 'Aperçus', 'spotted': 'observées', 'Days with sightings': 'Jours avec observations',
     'Total sightings': 'Observations au total', 'All Species': 'Toutes les espèces',
     'Your sighting map': 'La carte de vos observations',
@@ -192,7 +199,7 @@
     'Smart stickers are next: tap one of my stickers in the field and the right page opens in this app.': 'Les autocollants intelligents arrivent: touchez un de mes autocollants sur le terrain et la bonne page s’ouvre dans cette appli.',
     'Offline maps you download before the trip. Pick your park, carry the map with no signal, and get a campground map you can actually read, because the printed ones are hard to follow.': 'Des cartes hors ligne à télécharger avant le départ. Choisissez votre parc, gardez la carte sans signal, et ayez un plan de camping vraiment lisible, parce que les plans imprimés sont durs à suivre.',
     'Easier park entrances too, especially at parks like Hemlock where there are no signs. The long goal is to partner with a provincial park and pilot these features there.': 'Des entrées de parc plus simples aussi, surtout dans des parcs comme Hemlock où il n’y a aucun panneau. Le but à long terme est un partenariat avec un parc provincial pour y piloter ces fonctions.',
-    'Units and language apply to this app only. Theme, glass and text size are shared with the other outdoors apps on this device.': 'Les unités et la langue s’appliquent à cette appli seulement. Le thème, le verre et la taille du texte sont partagés avec les autres applis plein air de cet appareil.',
+    'Units and language apply to this app only. Theme and text size are shared with the other outdoors apps on this device.': 'Les unités et la langue s’appliquent à cette appli seulement. Le thème, le verre et la taille du texte sont partagés avec les autres applis plein air de cet appareil.',
     'More from the Ontario outdoors': 'Plus du plein air ontarien',
     'Rate Ontario Parks campsites': 'Évaluez les emplacements des parcs de l’Ontario',
     'Zones, seasons and catch limits': 'Zones, saisons et limites de prise',
@@ -658,6 +665,11 @@
         (opts.ext ? ' target="_blank" rel="noopener noreferrer"' : '') + '>' + lead + body + tail + '</a>';
     }
     return '<div class="' + cls + '">' + lead + body + tail + '</div>';
+  }
+  function spinnerHtml() {
+    var blades = '';
+    for (var i = 0; i < 8; i++) blades += '<span style="transform:rotate(' + (i * 45) + 'deg);animation-delay:' + (-0.8 + i * 0.1).toFixed(1) + 's"></span>';
+    return '<span class="ios-spinner" role="img" aria-label="' + Lx('Loading') + '">' + blades + '</span>';
   }
   function sectionTitle(t) { return '<h2 class="ios-section-title">' + esc(t) + '</h2>'; }
 
@@ -1325,7 +1337,7 @@
       body += recentGroup(Lx('Recent'), recentIn(function () { return true; }, 6));
     }
 
-    screen({ title: 'on-wildlife', large: true, header: true, version: 'v4.0', body: body });
+    screen({ title: 'on-wildlife', large: true, header: true, body: body });
   }
 
   /* ============================================================= SEARCH */
@@ -2235,8 +2247,6 @@
     // choice here, this app simply wears its own colours and type
     var h = '<div class="ios-group">';
     h += appearSegRow(Lx('Theme'), 'appear-theme', a.theme, [['auto', Lx('Auto')], ['light', Lx('Light')], ['dark', Lx('Dark')]], 216);
-    h += '<div class="field"><span class="ios-row-body" style="flex:1"><span class="ios-row-title">' + Lx('Glass') + '</span><span class="ios-row-sub">' + Lx('Frosted bars and buttons') + '</span></span>' +
-      '<label class="switch"><input type="checkbox" id="glass-toggle" aria-label="' + Lx('Glass') + '"' + (a.glass !== 'off' ? ' checked' : '') + '><span class="track"></span><span class="knob"></span></label></div>';
     h += appearSegRow(Lx('Text size'), 'appear-size', a.size, [['s', 'S'], ['m', 'M'], ['l', 'L'], ['xl', 'XL']], 180);
     h += '</div>';
     return h;
@@ -2285,12 +2295,11 @@
       appearSegRow(Lx('Language'), 'set-lang', (app.settings.lang === 'fr' ? 'fr' : 'en'), [['en', 'English'], ['fr', 'Français']], 200) +
       appearSegRow(Lx('Third tab'), 'set-pursuit', (app.settings.primaryPursuit === 'birding' ? 'birding' : 'fishing'), [['fishing', Lx('Fishing')], ['birding', Lx('Birding')]], 200) +
       '</div>' +
-      '<p class="ios-group-foot">' + Lx('Units and language apply to this app only. Theme, glass and text size are shared with the other outdoors apps on this device.') + '</p>';
+      '<p class="ios-group-foot">' + Lx('Units and language apply to this app only. Theme and text size are shared with the other outdoors apps on this device.') + '</p>';
 
     body += sectionTitle(Lx('More from the Ontario outdoors')) + '<nav class="ios-group">' +
       iosRow({ href: 'https://katsuma0.github.io/on-camp/', ext: true, title: 'on-site', sub: Lx('Rate Ontario Parks campsites') }) +
-      iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: 'on-fishing', sub: Lx('Zones, seasons and catch limits') }) +
-      '</nav><p class="ios-group-foot">' + Lx('Three field guides for Ontario, built to match.') + '</p>';
+      '</nav><p class="ios-group-foot">' + Lx('Two apps for Ontario, built to match.') + '</p>';
 
     body += sectionTitle(Lx('Your data')) + '<div class="ios-group">' +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log'), sub: Lx('Your whole log in one file') }) +
@@ -2304,7 +2313,7 @@
       '<div class="info-row"><div class="info-v">ON Fishing is now part of ON Wildlife: the fishing zones live on the map, every fish page carries its seasons and limits, and your catch log shows up in the journal.</div></div>' +
       iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: Lx('on-fishing, the solo site'), sub: Lx('The standalone zone map stays up') }) +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.0', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.1', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca', sub: Lx('Apps, projects and the rest') }) +
       '</div>';
 
@@ -2341,7 +2350,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.0', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.1', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: Lx('Back'), body: body });
@@ -2404,7 +2413,7 @@
   function ensureLeaflet(then) {
     if (window.L) { then(); return; }
     var el = document.getElementById('map');
-    if (el && !el.firstChild) el.innerHTML = '<div class="map-msg">' + Lx('Loading the map…') + '</div>';
+    if (el && !el.firstChild) el.innerHTML = '<div class="map-msg">' + spinnerHtml() + '<span>' + Lx('Loading the map…') + '</span></div>';
     if (_leafletLoading) return;
     _leafletLoading = true;
     var s = document.createElement('script');
@@ -2418,12 +2427,16 @@
     };
     document.body.appendChild(s);
   }
+  // every chip is an independent toggle and the map starts clean:
+  // nothing draws until it is asked for
+  function mapShow(key) {
+    var m = app.settings.mapShow;
+    return !!(m && m[key]);
+  }
   function mapChips() {
-    var f = app.mapFilter;
-    if (f === 'bear') f = 'hazard';   // bears live under hazards now
-    function c(id, label) { return '<button class="chip' + (f === id ? ' on' : '') + '" aria-pressed="' + (f === id ? 'true' : 'false') + '" data-action="map-filter" data-f="' + id + '">' + label + '</button>'; }
+    function c(id, label) { var on = mapShow(id); return '<button class="chip' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '" data-action="map-filter" data-f="' + id + '">' + label + '</button>'; }
     function lay(id, label) { var on = mapLayerOn(id); return '<button class="chip' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '" data-action="map-layer" data-l="' + id + '">' + label + '</button>'; }
-    return c('all', Lx('All')) + c('wildlife', '\u{1F43E} ' + Lx('Wildlife')) + c('hazard', '⚠️ ' + Lx('Hazards')) +
+    return c('wildlife', '\u{1F43E} ' + Lx('Wildlife')) + c('hazard', '⚠️ ' + Lx('Hazards')) +
       '<span class="chip-sep" aria-hidden="true"></span>' +
       lay('parks', '\u{1F3D5} ' + Lx('Parks')) + lay('zones', '\u{1F3A3} ' + Lx('Zones'));
   }
@@ -2485,10 +2498,8 @@
     // now, and an old stored wildlife:false must not hide them forever
     var group = L.layerGroup();
     locatedRecords().filter(function (r) {
-      var f = app.mapFilter === 'bear' ? 'hazard' : app.mapFilter;
-      if (f === 'all') return true;
-      if (f === 'hazard') return r.kind === 'hazard' || r.kind === 'bear';
-      return r.kind === f;
+      if (r.kind === 'hazard' || r.kind === 'bear') return mapShow('hazard');
+      return mapShow('wildlife');
     }).forEach(function (r) {
       var icon, popup;
       if (r.kind === 'hazard') {
@@ -4001,12 +4012,16 @@
         if (app.map) { app.placeMode = 'hazard'; updateMapHint(); toast('Tap the map to place the hazard'); }
         else openHazardReport({});
         break;
-      case 'map-filter':
+      case 'map-filter': {
         ev.preventDefault();
-        app.mapFilter = t.getAttribute('data-f');
-        { var mc = $('#map-chips'); if (mc) mc.innerHTML = mapChips(); }
+        var fk = t.getAttribute('data-f');
+        if (!app.settings.mapShow || typeof app.settings.mapShow !== 'object') app.settings.mapShow = {};
+        app.settings.mapShow[fk] = !app.settings.mapShow[fk];
+        saveSettings();
+        var mc = $('#map-chips'); if (mc) mc.innerHTML = mapChips();
         renderMapMarkers();
         break;
+      }
       case 'map-layer':
         ev.preventDefault();
         { var lk = t.getAttribute('data-l'); setMapLayer(lk, !mapLayerOn(lk)); var mc2 = $('#map-chips'); if (mc2) mc2.innerHTML = mapChips(); }

@@ -2658,13 +2658,28 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
   }
 }
 
-/* ----------------------------------------- apple's dark room, default */
-/* the untouched default wears Apple's own dark: the pure black canvas
-   and iOS greys already declared in the core dark block, the parks
-   accent, and the system face with SF tracking. an explicitly chosen
-   face keeps its word; parks IS the default palette, so only the face
-   changes here. */
+/* --------------------------------------- the shared dark room, default */
+/* the untouched default wears the same dark room as on-site: the soft
+   near-black canvas, its cards and separators, its blue, the system
+   face with SF tracking. an explicitly chosen palette or face keeps
+   its word. */
 @media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-palette]) {
+    --bg: #010409;
+    --card: #151B23;
+    --chrome: rgba(1, 4, 9, .78);
+    --fill: rgba(101, 108, 118, .24);
+    --press-pill: rgba(101, 108, 118, .28);
+    --sep: rgba(61, 68, 77, .72);
+    --label: #F0F6FC;
+    --label-2: #9198A1;
+    --label-3: rgba(145, 152, 161, .5);
+    --label-aa: #B7BDC8;
+    --tint: #4493F8; --tint-press: #316DCA; --tint-text: #4493F8; --tint-fill: #1F6FEB;
+    --tint-soft: rgba(68, 147, 248, .15);
+    --tone2: #316DCA; --tone3: #F85149;
+    --sw-parks-1: #4493F8; --sw-parks-2: #316DCA; --sw-parks-3: #F85149;
+  }
   :root:not([data-theme="light"]):not([data-face]) {
     --font-sys: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, sans-serif;
     --font-display: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, sans-serif;
@@ -2672,6 +2687,22 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
     --ls-headline: -0.41px; --ls-body: -0.41px; --ls-callout: -0.32px; --ls-subhead: -0.24px;
     --ls-footnote: -0.08px; --ls-caption1: 0; --ls-caption2: 0.07px;
   }
+}
+:root[data-theme="dark"]:not([data-palette]) {
+  --bg: #010409;
+  --card: #151B23;
+  --chrome: rgba(1, 4, 9, .78);
+  --fill: rgba(101, 108, 118, .24);
+  --press-pill: rgba(101, 108, 118, .28);
+  --sep: rgba(61, 68, 77, .72);
+  --label: #F0F6FC;
+  --label-2: #9198A1;
+  --label-3: rgba(145, 152, 161, .5);
+  --label-aa: #B7BDC8;
+  --tint: #4493F8; --tint-press: #316DCA; --tint-text: #4493F8; --tint-fill: #1F6FEB;
+  --tint-soft: rgba(68, 147, 248, .15);
+  --tone2: #316DCA; --tone3: #F85149;
+  --sw-parks-1: #4493F8; --sw-parks-2: #316DCA; --sw-parks-3: #F85149;
 }
 :root[data-theme="dark"]:not([data-face]) {
   --font-sys: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, sans-serif;
@@ -2773,9 +2804,8 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
   scrollbar-width: none;
   padding: 6px;
   border-radius: 14px;
-  background: var(--chrome);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
+  /* solid over the map: frosting live tiles costs frames on a phone */
+  background: var(--card);
   box-shadow: 0 4px 16px rgba(0, 0, 0, .14);
 }
 .map-wrap .map-card::-webkit-scrollbar { display: none; }
@@ -2918,13 +2948,7 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
   .ios-header-actions, .ios-tabbar { corner-shape: squircle; }
 }
 
-/* section names step back up to Journal's weight: Title 2, bold */
-.ios-section-title {
-  font-size: var(--fs-title2);
-  line-height: var(--lh-title2);
-  letter-spacing: var(--ls-title2);
-  font-weight: 700;
-}
+/* section names keep on-site's voice: headline size, semibold */
 
 /* --------------------------------------------------- press physics */
 /* cards scale under the finger and spring back; transform only */
@@ -3260,10 +3284,9 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
   gap: 0;
   padding: 3px;
   border-radius: 16px;
-  background: var(--glass-fill);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
-  box-shadow: inset 0 1px 0 var(--glass-spec), var(--glass-drop);
+  /* solid over the map: frosting live tiles costs frames on a phone */
+  background: var(--card);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .18);
 }
 .map-fabs .fab,
 .map-fabs .fab-bear,
@@ -3323,3 +3346,39 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
 @keyframes rise-in {
   from { opacity: 0; transform: translateY(10px); }
 }
+
+
+/* ------------------------------------------------ polish round */
+/* the search pill goes solid while it floats over the live map */
+.map-wrap .bottom-search {
+  background: var(--card);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* the iOS activity spinner: eight blades fading in turn */
+.ios-spinner {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  display: inline-block;
+  flex: none;
+}
+.ios-spinner span {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2.5px;
+  height: 6.5px;
+  margin-left: -1.25px;
+  border-radius: 2px;
+  background: var(--label-2);
+  transform-origin: 50% 11px;
+  animation: spinner-fade 0.8s linear infinite;
+}
+@keyframes spinner-fade { from { opacity: 1; } to { opacity: 0.15; } }
+.map-msg { display: grid; place-items: center; gap: 10px; align-content: center; }
+/* the account avatar breathes before the name card */
+.account-avatar { margin: 6px auto 18px; }
+/* journal spacing sits on the same rhythm as every other screen */
+.lifecard { margin-top: 8px; }
+.stat-grid { gap: 10px; }
