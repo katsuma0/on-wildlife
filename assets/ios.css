@@ -3382,3 +3382,28 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
 /* journal spacing sits on the same rhythm as every other screen */
 .lifecard { margin-top: 8px; }
 .stat-grid { gap: 10px; }
+
+/* the journal's insight card carries the unfinished total under it */
+.insight-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  font-size: var(--fs-footnote);
+  line-height: var(--lh-footnote);
+  color: rgba(255, 255, 255, .72);
+}
+.insight-bar {
+  flex: 1 1 auto;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, .22);
+  overflow: hidden;
+}
+.insight-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, .85);
+}
+.insight-foot > span:last-child { flex: none; }

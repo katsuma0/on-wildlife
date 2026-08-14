@@ -154,6 +154,7 @@
     'Loading': 'Chargement',
     'Units and language apply to this app only. Theme and text size are shared with the other outdoors apps on this device.':
       'Les unités et la langue s’appliquent à cette application seulement. Le thème et la taille du texte sont partagés avec les autres applications de plein air sur cet appareil.',
+    'Your journal': 'Votre journal', 'of': 'sur', 'in the Ontario guide': 'du guide ontarien',
     'Insights': 'Aperçus', 'spotted': 'observées', 'Days with sightings': 'Jours avec observations',
     'Total sightings': 'Observations au total', 'All Species': 'Toutes les espèces',
     'Your sighting map': 'La carte de vos observations',
@@ -2051,24 +2052,30 @@
     var view = app.settings.journalView || 'timeline';
     if (view === 'places' && !places.length) view = 'timeline';
 
-    // Zeigarnik: an honest, unfinished count is the thing that pulls you back out.
+    // The Journal opens the way the Home does, in the same card, so the two
+    // screens read as one app: the life list as the hero numeral, the counts
+    // beside it, and the honest unfinished total underneath (Zeigarnik: the
+    // gap is what pulls you back outside).
     var pct = SPECIES.length ? (life.length / SPECIES.length) * 100 : 0;
-    var body = '<div class="hpad"><div class="lifecard">' +
-      '<div class="lifecard-n">' + life.length + '</div>' +
-      '<div class="lifecard-l">' + (life.length === 1 ? 'species on your life list' : 'species on your life list') + '</div>' +
-      '<span class="riskbar"><span class="riskbar-fill" style="width:' + Math.max(1.5, pct) + '%"></span></span>' +
-      '<div class="lifecard-f">' + life.length + ' of ' + SPECIES.length + ' in the Ontario guide</div>' +
-      '</div></div>';
-
-    body += '<div class="stat-grid" style="margin-top:12px">' +
-      statLink(all.length, all.length === 1 ? Lx('Encounter') : Lx('Encounters')) +
-      statLink(entriesThisYear(), Lx('This year')) +
-      statLink(catsSeen(), catsSeen() === 1 ? Lx('Category') : Lx('Categories')) +
-      '</div>';
+    var body = '<div class="home-cards">' +
+      '<a class="insight-card tap-scale" href="#/stats">' +
+      '<div class="insight-t">' + Lx('Your journal') + '</div>' +
+      '<div class="insight-grid">' +
+      '<div class="insight-big"><div class="insight-n">' + life.length + '</div>' +
+      '<div class="insight-bl">' + Lx('Species') + ' <span>' + Lx('spotted') + '</span></div></div>' +
+      '<div class="insight-minis">' +
+      '<div class="insight-mini"><div class="n">' + spriteIcon('paw') + '<span>' + all.length + '</span></div>' +
+      '<div class="l">' + (all.length === 1 ? Lx('Encounter') : Lx('Encounters')) + '</div></div>' +
+      '<div class="insight-mini"><div class="n">' + spriteIcon('sun-moon') + '<span>' + entriesThisYear() + '</span></div>' +
+      '<div class="l">' + Lx('This year') + '</div></div>' +
+      '</div></div>' +
+      '<div class="insight-foot"><span class="insight-bar"><span style="width:' + Math.max(1.5, pct).toFixed(1) + '%"></span></span>' +
+      '<span>' + life.length + ' ' + Lx('of') + ' ' + SPECIES.length + ' ' + Lx('in the Ontario guide') + '</span></div>' +
+      '</a></div>';
 
     var segs = [['timeline', Lx('Timeline')], ['life', Lx('Life list')]];
     if (places.length) segs.push(['places', Lx('Places')]);
-    body += '<div class="hpad" style="margin-top:16px">' + segHtml('journal-view', view, segs) + '</div>';
+    body += '<div class="hpad" style="margin-top:18px">' + segHtml('journal-view', view, segs) + '</div>';
 
     // The category chips filter both the timeline and the life list.
     if (view === 'timeline' || view === 'life') body += journalFilterChips();
