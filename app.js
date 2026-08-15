@@ -150,10 +150,7 @@
     'Guide': 'Guide', 'Map': 'Carte', 'Journal': 'Journal', 'Fishing': 'Pêche', 'Birding': 'Oiseaux', 'More': 'Plus',
     'on-wildlife': 'on-wildlife', 'Account': 'Compte', 'Search': 'Recherche', 'Log an encounter': 'Noter une observation',
     'This month in Ontario': 'Ce mois-ci en Ontario', 'Ontario Wildlife': 'Faune de l’Ontario', 'Coming Soon': 'À venir',
-    'Two apps for Ontario, built to match.': 'Deux applications pour l’Ontario, conçues pour s’accorder.',
     'Loading': 'Chargement',
-    'Units and language apply to this app only. Theme and text size are shared with the other outdoors apps on this device.':
-      'Les unités et la langue s’appliquent à cette application seulement. Le thème et la taille du texte sont partagés avec les autres applications de plein air sur cet appareil.',
     'Your journal': 'Votre journal', 'of': 'sur', 'in the Ontario guide': 'du guide ontarien',
     'Insights': 'Aperçus', 'spotted': 'observées', 'Days with sightings': 'Jours avec observations',
     'Total sightings': 'Observations au total', 'All Species': 'Toutes les espèces',
@@ -200,7 +197,6 @@
     'Smart stickers are next: tap one of my stickers in the field and the right page opens in this app.': 'Les autocollants intelligents arrivent: touchez un de mes autocollants sur le terrain et la bonne page s’ouvre dans cette appli.',
     'Offline maps you download before the trip. Pick your park, carry the map with no signal, and get a campground map you can actually read, because the printed ones are hard to follow.': 'Des cartes hors ligne à télécharger avant le départ. Choisissez votre parc, gardez la carte sans signal, et ayez un plan de camping vraiment lisible, parce que les plans imprimés sont durs à suivre.',
     'Easier park entrances too, especially at parks like Hemlock where there are no signs. The long goal is to partner with a provincial park and pilot these features there.': 'Des entrées de parc plus simples aussi, surtout dans des parcs comme Hemlock où il n’y a aucun panneau. Le but à long terme est un partenariat avec un parc provincial pour y piloter ces fonctions.',
-    'Units and language apply to this app only. Theme and text size are shared with the other outdoors apps on this device.': 'Les unités et la langue s’appliquent à cette appli seulement. Le thème, le verre et la taille du texte sont partagés avec les autres applis plein air de cet appareil.',
     'More from the Ontario outdoors': 'Plus du plein air ontarien',
     'Rate Ontario Parks campsites': 'Évaluez les emplacements des parcs de l’Ontario',
     'Zones, seasons and catch limits': 'Zones, saisons et limites de prise',
@@ -2203,12 +2199,11 @@
       '</div></div>' +
       appearSegRow(Lx('Language'), 'set-lang', (app.settings.lang === 'fr' ? 'fr' : 'en'), [['en', 'English'], ['fr', 'Français']], 200) +
       appearSegRow(Lx('Third tab'), 'set-pursuit', (app.settings.primaryPursuit === 'birding' ? 'birding' : 'fishing'), [['fishing', Lx('Fishing')], ['birding', Lx('Birding')]], 200) +
-      '</div>' +
-      '<p class="ios-group-foot">' + Lx('Units and language apply to this app only. Theme and text size are shared with the other outdoors apps on this device.') + '</p>';
+      '</div>';
 
     body += sectionTitle(Lx('More from the Ontario outdoors')) + '<nav class="ios-group">' +
       iosRow({ href: 'https://katsuma0.github.io/on-camp/', ext: true, title: 'on-site', sub: Lx('Rate Ontario Parks campsites') }) +
-      '</nav><p class="ios-group-foot">' + Lx('Two apps for Ontario, built to match.') + '</p>';
+      '</nav>';
 
     body += sectionTitle(Lx('Your data')) + '<div class="ios-group">' +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log'), sub: Lx('Your whole log in one file') }) +
@@ -2219,10 +2214,9 @@
 
     body += sectionTitle(Lx('About')) + '<div class="ios-group">' +
       '<div class="info-row"><div class="info-v">on-wildlife is a private field guide and journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario. Look a species up, read the longer account, and log what you see. It works offline and installs to your home screen.</div></div><div class="info-row"><div class="info-v">I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</div></div>' +
-      '<div class="info-row"><div class="info-v">ON Fishing is now part of ON Wildlife: the fishing zones live on the map, every fish page carries its seasons and limits, and your catch log shows up in the journal.</div></div>' +
       iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: Lx('on-fishing, the solo site'), sub: Lx('The standalone zone map stays up') }) +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.2', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.3', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca', sub: Lx('Apps, projects and the rest') }) +
       '</div>';
 
@@ -2246,7 +2240,7 @@
     body += '<div class="ios-group" style="margin-top:8px">' +
       '<div class="field"><label class="field-label" for="display-name">' + Lx('Name') + '</label>' +
       '<input type="text" id="display-name" placeholder="' + Lx('Your name') + '" autocomplete="off" autocorrect="off" value="' + esc(profileName()) + '"></div>' +
-      '</div><p class="ios-group-foot">Your avatar initial, shared with the other outdoors apps. Never leaves this phone.</p>';
+      '</div>';
 
     body += '<div class="stat-grid">' +
       stat(life.length, Lx('Life list')) +
@@ -2259,7 +2253,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.2', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.3', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: Lx('Back'), body: body });
