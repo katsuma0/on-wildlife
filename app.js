@@ -150,10 +150,7 @@
     'Guide': 'Guide', 'Map': 'Carte', 'Journal': 'Journal', 'Fishing': 'Pêche', 'Birding': 'Oiseaux', 'More': 'Plus',
     'on-wildlife': 'on-wildlife', 'Account': 'Compte', 'Search': 'Recherche', 'Log an encounter': 'Noter une observation',
     'This month in Ontario': 'Ce mois-ci en Ontario', 'Ontario Wildlife': 'Faune de l’Ontario', 'Coming Soon': 'À venir',
-    'Two apps for Ontario, built to match.': 'Deux applications pour l’Ontario, conçues pour s’accorder.',
     'Loading': 'Chargement',
-    'Units and language apply to this app only. Theme and text size are shared with the other outdoors apps on this device.':
-      'Les unités et la langue s’appliquent à cette application seulement. Le thème et la taille du texte sont partagés avec les autres applications de plein air sur cet appareil.',
     'Your journal': 'Votre journal', 'of': 'sur', 'in the Ontario guide': 'du guide ontarien',
     'Insights': 'Aperçus', 'spotted': 'observées', 'Days with sightings': 'Jours avec observations',
     'Total sightings': 'Observations au total', 'All Species': 'Toutes les espèces',
@@ -200,8 +197,13 @@
     'Smart stickers are next: tap one of my stickers in the field and the right page opens in this app.': 'Les autocollants intelligents arrivent: touchez un de mes autocollants sur le terrain et la bonne page s’ouvre dans cette appli.',
     'Offline maps you download before the trip. Pick your park, carry the map with no signal, and get a campground map you can actually read, because the printed ones are hard to follow.': 'Des cartes hors ligne à télécharger avant le départ. Choisissez votre parc, gardez la carte sans signal, et ayez un plan de camping vraiment lisible, parce que les plans imprimés sont durs à suivre.',
     'Easier park entrances too, especially at parks like Hemlock where there are no signs. The long goal is to partner with a provincial park and pilot these features there.': 'Des entrées de parc plus simples aussi, surtout dans des parcs comme Hemlock où il n’y a aucun panneau. Le but à long terme est un partenariat avec un parc provincial pour y piloter ces fonctions.',
-    'Units and language apply to this app only. Theme and text size are shared with the other outdoors apps on this device.': 'Les unités et la langue s’appliquent à cette appli seulement. Le thème, le verre et la taille du texte sont partagés avec les autres applis plein air de cet appareil.',
     'More from the Ontario outdoors': 'Plus du plein air ontarien',
+    'Legal': 'Mentions légales', 'Privacy policy': 'Politique de confidentialité',
+    'What stays on this phone, and what does not': 'Ce qui reste sur ce téléphone, et ce qui n’y reste pas',
+    'Terms of use': 'Conditions d’utilisation',
+    'Including what this app is not safe for': 'Y compris ce pour quoi cette appli n’est pas sûre',
+    'Support': 'Assistance', 'Help, and how to reach me': 'Aide, et comment me joindre',
+    'Not affiliated with Ontario Parks, the Government of Ontario, Parks Canada or Apple. Map images come from CARTO using OpenStreetMap data. Reference photos come from iNaturalist under their contributors\u2019 licences.': 'Sans lien avec Parcs Ontario, le gouvernement de l\u2019Ontario, Parcs Canada ou Apple. Les images de carte viennent de CARTO à partir des données OpenStreetMap. Les photos de référence viennent d\u2019iNaturalist sous les licences de leurs auteurs.',
     'Rate Ontario Parks campsites': 'Évaluez les emplacements des parcs de l’Ontario',
     'Zones, seasons and catch limits': 'Zones, saisons et limites de prise',
     'Three field guides for Ontario, built to match.': 'Trois guides de terrain pour l’Ontario, conçus pour s’accorder.',
@@ -2203,12 +2205,11 @@
       '</div></div>' +
       appearSegRow(Lx('Language'), 'set-lang', (app.settings.lang === 'fr' ? 'fr' : 'en'), [['en', 'English'], ['fr', 'Français']], 200) +
       appearSegRow(Lx('Third tab'), 'set-pursuit', (app.settings.primaryPursuit === 'birding' ? 'birding' : 'fishing'), [['fishing', Lx('Fishing')], ['birding', Lx('Birding')]], 200) +
-      '</div>' +
-      '<p class="ios-group-foot">' + Lx('Units and language apply to this app only. Theme and text size are shared with the other outdoors apps on this device.') + '</p>';
+      '</div>';
 
     body += sectionTitle(Lx('More from the Ontario outdoors')) + '<nav class="ios-group">' +
       iosRow({ href: 'https://katsuma0.github.io/on-camp/', ext: true, title: 'on-site', sub: Lx('Rate Ontario Parks campsites') }) +
-      '</nav><p class="ios-group-foot">' + Lx('Two apps for Ontario, built to match.') + '</p>';
+      '</nav>';
 
     body += sectionTitle(Lx('Your data')) + '<div class="ios-group">' +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log'), sub: Lx('Your whole log in one file') }) +
@@ -2219,11 +2220,20 @@
 
     body += sectionTitle(Lx('About')) + '<div class="ios-group">' +
       '<div class="info-row"><div class="info-v">on-wildlife is a private field guide and journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario. Look a species up, read the longer account, and log what you see. It works offline and installs to your home screen.</div></div><div class="info-row"><div class="info-v">I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</div></div>' +
-      '<div class="info-row"><div class="info-v">ON Fishing is now part of ON Wildlife: the fishing zones live on the map, every fish page carries its seasons and limits, and your catch log shows up in the journal.</div></div>' +
       iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: Lx('on-fishing, the solo site'), sub: Lx('The standalone zone map stays up') }) +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.2', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.4', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca', sub: Lx('Apps, projects and the rest') }) +
+      '</div>';
+
+    // The App Store asks for the privacy policy to be reachable inside the
+    // app, not only from the listing, and the not-affiliated line keeps the
+    // park and programme names in this app clearly descriptive.
+    body += sectionTitle(Lx('Legal')) + '<div class="ios-group">' +
+      iosRow({ href: 'https://katsuma.ca/privacy.html', ext: true, title: Lx('Privacy policy'), sub: Lx('What stays on this phone, and what does not') }) +
+      iosRow({ href: 'https://katsuma.ca/terms.html', ext: true, title: Lx('Terms of use'), sub: Lx('Including what this app is not safe for') }) +
+      iosRow({ href: 'https://katsuma.ca/support.html', ext: true, title: Lx('Support'), sub: Lx('Help, and how to reach me') }) +
+      '<div class="info-row"><div class="info-v">' + Lx('Not affiliated with Ontario Parks, the Government of Ontario, Parks Canada or Apple. Map images come from CARTO using OpenStreetMap data. Reference photos come from iNaturalist under their contributors’ licences.') + '</div></div>' +
       '</div>';
 
     body += sectionTitle(Lx('Future of this project')) + '<div class="ios-group">' +
@@ -2246,7 +2256,7 @@
     body += '<div class="ios-group" style="margin-top:8px">' +
       '<div class="field"><label class="field-label" for="display-name">' + Lx('Name') + '</label>' +
       '<input type="text" id="display-name" placeholder="' + Lx('Your name') + '" autocomplete="off" autocorrect="off" value="' + esc(profileName()) + '"></div>' +
-      '</div><p class="ios-group-foot">Your avatar initial, shared with the other outdoors apps. Never leaves this phone.</p>';
+      '</div>';
 
     body += '<div class="stat-grid">' +
       stat(life.length, Lx('Life list')) +
@@ -2259,7 +2269,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.2', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.4', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: Lx('Back'), body: body });
@@ -3089,6 +3099,42 @@
     screen({ title: 'Community', backAction: true, backText: 'Back', body: body });
     loadCommunityFeed();
   }
+  /* Anything the community feed shows comes from someone else's phone, so it
+     needs the controls the App Store asks any app with other people's content
+     to have: hide it, report it, and reach a person. The feed itself carries
+     no free text, only species ids, hazard types and blurred times, so hiding
+     is per item and per phone, which is also what a block amounts to when
+     there are no accounts to block. */
+  function reportKey(v) { return String(v.e || '') + '|' + String(v.when || ''); }
+  function hiddenReports() {
+    var h = app.settings.hiddenReports;
+    return (h && typeof h === 'object' && !Array.isArray(h)) ? h : {};
+  }
+  function hiddenReportCount() { return Object.keys(hiddenReports()).length; }
+  function isReportHidden(k) { return !!hiddenReports()[k]; }
+  function hideReport(k) {
+    var h = hiddenReports(); h[k] = Date.now();
+    app.settings.hiddenReports = h; saveSettings();
+  }
+  function unhideReports() { app.settings.hiddenReports = {}; saveSettings(); }
+  function openReportMenu(k) {
+    if (!k) return;
+    var mail = 'mailto:katsuma123@gmail.com?subject=' + encodeURIComponent('on-wildlife: report content') +
+      '&body=' + encodeURIComponent('Reported item: ' + k + '\n\nWhat is wrong with it:\n');
+    var rows = '<button class="cell tap" data-action="hide-report" data-key="' + esc(k) + '">' +
+      '<span class="cell-body"><span class="cell-title">Hide this report</span>' +
+      '<span class="cell-sub">It stops showing on this phone</span></span></button>' +
+      '<a class="cell tap" href="' + esc(mail) + '" data-action="hide-report" data-key="' + esc(k) + '">' +
+      '<span class="cell-body"><span class="cell-title">Hide it and tell me about it</span>' +
+      '<span class="cell-sub">Opens an email so I can act on it</span></span></a>';
+    $('#sheet-root').innerHTML = '<div class="scrim" data-action="close-sheet"></div>' +
+      '<div class="sheet" id="sheet"><div class="sheet-grabber"></div>' +
+      '<div class="sheet-nav"><span style="width:44px"></span><span class="t">This report</span>' +
+      '<button class="nav-btn" data-action="close-sheet">' + Lx('Cancel') + '</button></div>' +
+      '<div class="sheet-body"><div class="group" style="margin-top:4px"><div class="list">' + rows + '</div></div></div></div>';
+    requestAnimationFrame(function () { var sh = $('#sheet'); if (sh) sh.classList.add('show'); var sc = $('.scrim'); if (sc) sc.classList.add('show'); });
+    afterSheetOpen();
+  }
   function loadCommunityFeed() {
     var go = function (lat, lng) {
       Community.feed(lat, lng).then(function (d) {
@@ -3101,12 +3147,22 @@
           h += '</div></div>';
         }
         var events = (d.bears || []).map(function (b) { return { e: '\u{1F43B} Bear', when: b.when }; }).concat((d.hazards || []).map(function (z) { return { e: '⚠️ ' + (hazardType(z.type).name), when: z.when }; }));
+        events = events.filter(function (v) { return !isReportHidden(reportKey(v)); });
         if (events.length) {
           h += '<div class="group"><div class="group-header">Recent bear & hazard activity nearby</div><div class="list">';
-          events.slice(0, 10).forEach(function (v) { h += '<div class="cell"><span class="cell-body"><span class="cell-title" style="font-size:15px">' + esc(v.e) + '</span><span class="cell-sub">' + esc(v.when ? fmtDay(v.when) : '') + '</span></span></div>'; });
-          h += '</div><div class="group-footer">Locations are approximate (coarsened for privacy). These are community reports, not official alerts.</div></div>';
+          events.slice(0, 10).forEach(function (v) {
+            h += '<div class="cell"><span class="cell-body"><span class="cell-title" style="font-size:15px">' + esc(v.e) + '</span><span class="cell-sub">' + esc(v.when ? fmtDay(v.when) : '') + '</span></span>' +
+              '<button class="cell-more" data-action="report-item" data-key="' + esc(reportKey(v)) + '" aria-label="Report or hide this report">' + spriteIcon('ellipsis') + '</button></div>';
+          });
+          h += '</div><div class="group-footer">Locations are approximate (coarsened for privacy). These are community reports, not official alerts. Anything wrong or offensive can be hidden and reported from the button on the row.</div></div>';
         }
         if (!(d.topSpecies && d.topSpecies.length) && !events.length) h += '<div class="empty"><div class="e">\u{1F331}</div><h3>Quiet so far</h3><p>No community sightings near you this week.</p></div>';
+        // Guideline 1.2 wants a way to reach a person about content, in the app.
+        h += '<div class="group"><div class="list">' +
+          '<a class="cell tap" href="mailto:katsuma123@gmail.com?subject=' + encodeURIComponent('on-wildlife: report content') + '"><span class="cell-body"><span class="cell-title">Report a problem with this feed</span><span class="cell-sub">Email me and I will act on it</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+          (hiddenReportCount() ? '<button class="cell tap" data-action="unhide-reports"><span class="cell-body"><span class="cell-title">Show hidden reports</span><span class="cell-sub">' + hiddenReportCount() + ' hidden on this phone</span></span></button>' : '') +
+          '<a class="cell tap" href="https://katsuma.ca/terms.html" target="_blank" rel="noopener"><span class="cell-body"><span class="cell-title">Terms of use</span><span class="cell-sub">What may not be posted</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+          '</div></div>';
         box.innerHTML = h;
       });
     };
@@ -3920,6 +3976,15 @@
         ev.preventDefault();
         if (app.map) { app.placeMode = 'hazard'; updateMapHint(); toast('Tap the map to place the hazard'); }
         else openHazardReport({});
+        break;
+      case 'report-item': openReportMenu(t.getAttribute('data-key')); ev.preventDefault(); break;
+      case 'hide-report':
+        ev.preventDefault();
+        hideReport(t.getAttribute('data-key')); closeSheet(); loadCommunityFeed(); toast('Hidden on this phone');
+        break;
+      case 'unhide-reports':
+        ev.preventDefault();
+        unhideReports(); loadCommunityFeed(); toast('Hidden reports restored');
         break;
       case 'map-filter': {
         ev.preventDefault();
