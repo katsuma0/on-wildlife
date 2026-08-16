@@ -1069,21 +1069,6 @@ a.stat:active { background: var(--card-pressed); }
 .lifecard .riskbar-fill { background: var(--tint); }
 .lifecard-f { font-size: var(--fs-footnote); color: var(--label-2); margin-top: 7px; }
 
-/* The lifer mark, only on the encounter that started a species' record */
-.pill-new {
-  display: inline-block;
-  vertical-align: 2px;
-  margin-left: 7px;
-  padding: 1px 6px;
-  border-radius: 5px;
-  background: var(--tint);
-  color: var(--on-tint);
-  font-size: var(--fs-caption2);
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
 /* A species already in the journal, seen while browsing the guide */
 .seen-tick {
   display: inline-flex;
@@ -1306,9 +1291,6 @@ a.stat:active { background: var(--card-pressed); }
 /* ------------------------------------------ Reliability / anomaly bars */
 .riskbar { display: block; margin-top: 8px; height: 6px; border-radius: 3px; background: var(--fill-strong); overflow: hidden; }
 .riskbar-fill { display: block; height: 100%; border-radius: 3px; transition: width 0.4s var(--ease); }
-.risk-hi { background: var(--red); }
-.risk-mid { background: var(--orange); }
-.risk-lo { background: var(--tint); }
 .zrow { padding: 9px 16px; }
 .zrow-top { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--fs-footnote); }
 
@@ -2296,7 +2278,7 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
 /* tone 3 belongs to bars and fills so every palette shows its warmth */
 .riskbar-fill, .clprog-fill, .pprog-fill { background: var(--tone3); }
 /* tone 2 carries secondary highlights */
-.pill-new, .badge-info.on { background: var(--tone2); }
+.badge-info.on { background: var(--tone2); }
 
 /* =====================================================================
    Appearance wiring, app side. Everything the appearance layer above
@@ -2751,68 +2733,6 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
 }
 
 /* ------------------------------------ sections, the github home way */
-/* a section is a named card of rows with an ellipsis that opens its
-   edit sheet: include, remove, reorder. */
-.sec-head { display: flex; align-items: center; padding: 0 16px; margin: 22px 0 8px; }
-.sec-head .ios-section-title { margin: 0; padding: 0; }
-.sec-edit {
-  margin-left: auto;
-  flex: 0 0 44px;
-  width: 44px;
-  height: 44px;
-  margin-right: -8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  color: var(--label-2);
-  background: none;
-}
-.sec-edit svg { width: 20px; height: 20px; }
-.sec-edit:active { background: var(--fill); }
-
-.secedit-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  min-height: 54px;
-  padding: 0 4px;
-  touch-action: pan-y;
-  background: var(--card);
-}
-.secedit-row + .secedit-row { border-top: 0.5px solid var(--sep); }
-.secedit-check {
-  width: 26px;
-  height: 26px;
-  flex: 0 0 26px;
-  border-radius: 50%;
-  border: 2px solid var(--label-3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--on-tint);
-  background: none;
-}
-.secedit-row.on .secedit-check { background: var(--tint); border-color: var(--tint); }
-.secedit-check svg { width: 15px; height: 15px; opacity: 0; }
-.secedit-row.on .secedit-check svg { opacity: 1; }
-.secedit-tile { font-size: 22px; line-height: 1; flex: 0 0 auto; }
-.secedit-label { flex: 1; font-size: var(--fs-body); letter-spacing: var(--ls-body); color: var(--label); text-align: left; }
-.secedit-row:not(.on) .secedit-label { color: var(--label-2); }
-.secedit-handle {
-  flex: 0 0 auto;
-  padding: 10px 8px;
-  color: var(--label-3);
-  cursor: grab;
-  touch-action: none;
-}
-.secedit-handle svg { width: 18px; height: 18px; }
-.secedit-row.dragging {
-  position: relative;
-  z-index: 2;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
-  border-radius: 10px;
-}
 
 /* =====================================================================
    ios.css polish round: gated saves, the quiet appearance panel, and
@@ -2859,8 +2779,8 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
    and Maps. Liquid glass returns to the chrome layer only (the header
    cluster and round controls; content stays standard material, as the
    HIG's layer model asks). Grouped cards grow to 26px corners with a
-   squircle where the browser has one, the Journal wears its insight
-   card, and motion rides one curve at two speeds.
+   squircle where the browser has one, and motion rides one curve at
+   two speeds.
    ===================================================================== */
 
 /* ------------------------------------------------- tokens, this round */
@@ -2876,9 +2796,6 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
   --glass-lit: rgba(255, 255, 255, .75);
   --glass-lit-2: rgba(255, 255, 255, .25);
   --glass-drop: 0 8px 24px rgba(0, 0, 0, .12);
-  /* insights card: the parks accent as Journal wears its indigo */
-  --grad-insight: linear-gradient(160deg, #7FA0D8 0%, #4A6CA4 40%, #30497B 75%, #22365A 100%);
-  --grad-numeral: linear-gradient(180deg, #FFFFFF 18%, #C9D8F0 100%);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -2978,7 +2895,7 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
 /* ----------------------------------------- 26px cards, squircle where */
 .list, .ios-group { border-radius: var(--r-card); }
 @supports (corner-shape: squircle) {
-  .list, .ios-group, .insight-card,
+  .list, .ios-group,
   .ios-header-actions, .ios-tabbar { corner-shape: squircle; }
 }
 
@@ -2992,74 +2909,6 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
 }
 .tap-scale:active { transform: scale(.97); transition-duration: 120ms; }
 
-/* ------------------------------------------------ the insights card */
-.home-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin: 6px 16px 8px;
-}
-.insight-card {
-  display: block;
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--r-card);
-  padding: 14px 18px 18px;
-  background: var(--grad-insight);
-  color: var(--on-tint);
-  text-decoration: none;
-}
-.insight-t {
-  font-size: var(--fs-body);
-  letter-spacing: var(--ls-body);
-  font-weight: 700;
-  margin-bottom: 6px;
-}
-.insight-grid {
-  display: flex;
-  align-items: flex-end;
-  gap: 16px;
-}
-.insight-big { flex: 1 1 auto; min-width: 0; }
-.insight-n {
-  font-size: 72px;
-  font-weight: 700;
-  line-height: 1.02;
-  letter-spacing: -1px;
-  background: var(--grad-numeral);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.insight-bl {
-  font-size: var(--fs-body);
-  letter-spacing: var(--ls-body);
-  font-weight: 600;
-  margin-top: 2px;
-}
-.insight-bl span { color: rgba(255, 255, 255, .62); font-weight: 400; }
-.insight-minis {
-  flex: 0 0 46%;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding-bottom: 4px;
-}
-.insight-mini .n {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--fs-title3);
-  letter-spacing: var(--ls-title3);
-  font-weight: 700;
-}
-.insight-mini .n svg { width: 16px; height: 16px; opacity: .85; flex: none; }
-.insight-mini .l {
-  font-size: var(--fs-subhead);
-  letter-spacing: var(--ls-subhead);
-  color: rgba(255, 255, 255, .62);
-  margin-top: 1px;
-}
 
 /* ----------------------------- the home list, Journal's row voice */
 .home-list .cell { min-height: 52px; }
@@ -3356,30 +3205,6 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
 .lifecard { margin-top: 8px; }
 .stat-grid { gap: 10px; }
 
-/* the journal's insight card carries the unfinished total under it */
-.insight-foot {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 14px;
-  font-size: var(--fs-footnote);
-  line-height: var(--lh-footnote);
-  color: rgba(255, 255, 255, .72);
-}
-.insight-bar {
-  flex: 1 1 auto;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, .22);
-  overflow: hidden;
-}
-.insight-bar span {
-  display: block;
-  height: 100%;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, .85);
-}
-.insight-foot > span:last-child { flex: none; }
 
 /* the journal's category filter: a native select in a settings row, so the
    system menu does the picking and nine categories never scroll sideways.
