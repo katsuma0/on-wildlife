@@ -593,7 +593,8 @@ button, .tap, .cell, .tab, .chip, .seg-opt {
 
 /* Large title (collapses as the user scrolls) */
 .large-title {
-  padding: 4px 20px 6px;
+  /* the same 16px grid the section titles and cards sit on */
+  padding: 4px 16px 6px;
   background: var(--chrome);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   backdrop-filter: blur(24px) saturate(180%);
@@ -2373,6 +2374,45 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
   .field:has(> .segmented) { flex-wrap: wrap; }
   .field:has(> .segmented) > .segmented { width: 100% !important; margin-top: 6px; }
 }
+
+/* pushed screens name themselves below the back bar, like on-site's park
+   pages: the page title sits at the park-name size, on the 16px grid */
+.page-title h1 { font-size: var(--fs-title1); line-height: var(--lh-title1); letter-spacing: var(--ls-title1); }
+
+/* the species head, on-site's park-head structure: emoji tile, then the
+   name and scientific name at the left, the favourite pill at the right */
+.sp-head { padding: 6px 16px 0; }
+.sp-titlerow { display: flex; align-items: center; gap: 12px; }
+.sp-titlerow .sp-emoji { width: 48px; height: 48px; font-size: 26px; border-radius: 12px; display: grid; place-items: center; flex: none; margin: 0; }
+.sp-name { flex: 1 1 auto; min-width: 0; }
+.sp-name h1 { margin: 0; font-size: var(--fs-title1); line-height: var(--lh-title1); letter-spacing: var(--ls-title1); font-weight: 700; }
+.sp-name .sci { color: var(--label-2); font-style: italic; font-size: var(--fs-subhead); margin-top: 1px; }
+.sp-badges { margin-top: 10px; }
+
+/* the favourite pill, exactly as on-site draws it beside a park's name */
+.favpill {
+  flex: none;
+  min-height: var(--ctl);
+  padding: 10px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 99px;
+  background: var(--fill);
+  color: var(--label);
+  font-family: var(--font-sys);
+  font-size: var(--fs-subhead);
+  letter-spacing: var(--ls-subhead);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform .1s;
+}
+.favpill svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.favpill.on { color: var(--tone3); }
+.favpill.on svg { fill: currentColor; }
+.favpill:active { transform: scale(.96); }
 
 /* the About story reads as plain paragraphs, exactly as on-site sets it */
 .aboutbody { margin: 0 calc(var(--gutter) + 4px); }
