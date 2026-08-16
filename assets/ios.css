@@ -722,7 +722,13 @@ button.cell {
   white-space: nowrap;
 }
 .cell-emoji svg { width: 26px; height: 26px; display: block; margin: 0 auto; }
-.cell-value { color: var(--label-2); font-size: var(--fs-callout); flex: none; margin-left: auto; }
+/* the value yields and wraps before it can squeeze the title into it:
+   at the large text sizes a long value ("Mammals · Large Mammals")
+   otherwise collides with its label */
+.cell-value { color: var(--label-2); font-size: var(--fs-callout); flex: 0 1 auto; min-width: 0; margin-left: auto; text-align: right; }
+/* and the label keeps its natural width beside a value, so the flex
+   fight can never clip a short word like "Category" */
+.cell-body:has(+ .cell-value) { flex: 0 0 auto; max-width: 55%; }
 .chevron { color: var(--label-3); flex: none; margin-left: auto; }
 .cell-value + .chevron { margin-left: 8px; }
 .chevron svg { width: 14px; height: 20px; display: block; }
@@ -891,7 +897,7 @@ textarea.notes {
   display: flex;
   align-items: center;
   gap: 6px;
-  height: 36px;
+  height: var(--ctl-sm);
   padding: 0 8px;
   border-radius: 10px;
   background: var(--fill-strong);
