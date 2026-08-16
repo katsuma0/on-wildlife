@@ -587,6 +587,9 @@ button, .tap, .cell, .tab, .chip, .seg-opt {
 .nav-btn:active { opacity: 0.4; }
 .nav-btn.bold { font-weight: 600; }
 .nav-btn svg { width: 17px; height: 17px; }
+/* the on-site back button: tinted chevron with the destination written
+   out beside it, exactly as the partnered app draws "‹ All Parks" */
+.nav-btn.backbtn svg { width: 20px; height: 20px; flex: none; }
 
 /* Large title (collapses as the user scrolls) */
 .large-title {
@@ -765,6 +768,9 @@ button.cell {
   overflow-x: auto;
   padding: 4px 16px 8px;
   scrollbar-width: none;
+  /* a sheet is a flex column; without this the scrolling list below
+     crushes the filter chips to a sliver */
+  flex-shrink: 0;
 }
 .chip-row::-webkit-scrollbar { display: none; }
 .chip {
@@ -2386,6 +2392,11 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
   .field:has(> .segmented) > .segmented { width: 100% !important; margin-top: 6px; }
 }
 
+/* the About story reads as plain paragraphs, exactly as on-site sets it */
+.aboutbody { margin: 0 calc(var(--gutter) + 4px); }
+.aboutbody p { margin: 1em 0; font-size: var(--fs-callout); line-height: 1.5; color: var(--label); }
+.aboutbody p:first-child { margin-top: 0; }
+
 /* Appearance rows, the same pattern the on-site app wears: the control
    sits inside a standard row, so an Appearance row stands as tall as a
    Learn or About row, not taller: compact options whose real hit area
@@ -3055,9 +3066,9 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
 .home-list .cell-value { font-size: var(--fs-body); }
 
 /* ------------------------------------------- step 2: pushed screens */
-/* the back button is a floating glass circle now, chevron only, the
-   way Apple's own pushed screens carry it. the label lives on in the
-   aria-label. */
+/* glass circles remain for the right-side screen actions (search,
+   the species menu); the back button itself is the labelled tint
+   chevron above. */
 .nav-btn.nav-circle {
   width: 44px;
   height: 44px;

@@ -172,7 +172,6 @@
     'Community and data': 'Communauté et données', 'Community': 'Communauté',
     'What’s near you this week': 'Près de chez vous cette semaine',
     'Ontario and Canada resources': 'Ressources de l’Ontario et du Canada', 'Trusted sites': 'Sites de confiance',
-    'Data reliability': 'Fiabilité des données', 'Anomaly detection, a demo': 'Détection d’anomalies, une démo',
     'Privacy': 'Confidentialité', 'Private, on this phone': 'Privé, sur ce téléphone',
     'Appearance': 'Apparence', 'Theme': 'Thème', 'Auto': 'Auto', 'Light': 'Clair', 'Dark': 'Sombre',
     'Glass': 'Verre', 'Frosted bars and buttons': 'Barres et boutons givrés', 'Text size': 'Taille du texte',
@@ -613,7 +612,7 @@
         '<a class="cell-cover" href="#/species/' + esc(s.id) + '" aria-label="' + esc(s.name) + '"></a>' +
         '<span class="cell-title">' + esc(s.name) + tick + '</span>' +
         '<span class="cell-sub"><i>' + esc(s.sci) + '</i></span>' +
-        '<span class="cell-foot"><span class="meta">' + esc(seenLabel(s.seen)) + (s.atRisk ? ' · ' + Lx('At risk') : '') + '</span>' +
+        '<span class="cell-foot"><span class="meta"></span>' +
         '<button type="button" class="cell-more" data-action="species-menu" data-id="' + esc(s.id) + '" aria-label="' + Lx('More') + ': ' + esc(s.name) + '">' + spriteIcon('ellipsis') + '</button></span>' +
         '</span></div>';
     }
@@ -698,7 +697,6 @@
     'more-community': { title: 'Community and data', items: function () { return [
       { id: 'community', label: 'Community' },
       { id: 'resources', label: 'Ontario and Canada resources' },
-      { id: 'trust', label: 'Data reliability' },
       { id: 'privacy', label: 'Privacy' }
     ]; } }
   };
@@ -858,6 +856,8 @@
     newScreen.addEventListener('transitionend', function h(e) { if (e.propertyName === 'transform') { clearTimeout(t); newScreen.removeEventListener('transitionend', h); cleanup(); } });
   }
   function backLabel(t) { return String(t == null ? 'Back' : t); }
+  // the same chevron on-site draws in front of "All Parks"
+  var BACK_CHEV = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>';
   /* iOS swaps a back label for the word "Back" when the real one will not fit
      beside the title. Character counts cannot predict that, since it depends on
      how wide the title itself renders, so measure the two once the screen is in
@@ -885,13 +885,15 @@
       // Root screens carry the shared iOS header instead of a nav-bar row.
       nav = iosHeaderHtml(cfg.actions === false);
     } else {
-      // Pushed screens carry a floating glass back circle, chevron only;
-      // the destination lives on in the aria-label.
+      // Pushed screens carry the on-site back button: a tinted chevron with
+      // the destination written out, "‹ Guide", "‹ Journal", the same
+      // pattern the partnered app wears above its park pages.
       var backAria = esc(Lx('Back')) + (cfg.backText ? ': ' + esc(backLabel(cfg.backText)) : '');
+      var backInner = BACK_CHEV + '<span class="lbl">' + esc(backLabel(cfg.backText)) + '</span>';
       var navLeft = cfg.back
-        ? '<div class="nav-left"><a class="nav-btn nav-circle" href="' + esc(cfg.back) + '" aria-label="' + backAria + '">' + I.back + '</a></div>'
+        ? '<div class="nav-left"><a class="nav-btn backbtn" href="' + esc(cfg.back) + '" aria-label="' + backAria + '">' + backInner + '</a></div>'
         : cfg.backAction
-          ? '<div class="nav-left"><button class="nav-btn nav-circle" data-action="nav-back" aria-label="' + backAria + '">' + I.back + '</button></div>'
+          ? '<div class="nav-left"><button class="nav-btn backbtn" data-action="nav-back" aria-label="' + backAria + '">' + backInner + '</button></div>'
           : (cfg.navLeft ? '<div class="nav-left">' + cfg.navLeft + '</div>' : '');
       var navRight = cfg.navRight ? '<div class="nav-right">' + cfg.navRight + '</div>' : '';
       // cfg.cover hides the inline title until content scrolls, so a
@@ -1227,7 +1229,7 @@
     return '<button type="button" class="cell tap" data-action="open-entry" data-id="' + esc(e.id) + '">' +
       thumb +
       '<span class="cell-body"><span class="cell-title">' + esc(e.speciesName) +
-      (opts.lifer ? '<span class="pill-new">New</span>' : '') + '</span>' +
+      '</span>' +
       '<span class="cell-sub">' + esc(parts.join(' · ')) + '</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></button>';
   }
@@ -1562,10 +1564,8 @@
       '<div class="hero">' +
       '<div class="hero-emoji" id="sp-emoji" style="background:' + tintFor(s.cat) + '22">' + s.emoji + '</div>' +
       '<h1>' + esc(s.name) + '</h1><div class="sci">' + esc(s.sci) + '</div>' +
-      '<div class="badges">' + statusBadge(s) +
-      '<span class="badge badge-info">' + esc(seenLabel(s.seen)) + '</span>' +
-      (isFloraCat(s.cat) ? '' : '<span class="badge badge-info">' + esc(activityLabel(s.activity)) + '</span>') +
-      '</div></div>';
+      (isFloraCat(s.cat) ? '' : '<div class="badges"><span class="badge badge-info">' + esc(activityLabel(s.activity)) + '</span></div>') +
+      '</div>';
 
     if (s.caution) body += '<div class="wrap-note danger"><span class="i">⚠️</span><span>' + esc(s.caution) + '</span></div>';
 
@@ -1646,7 +1646,6 @@
   }
   function info(k, v) { return '<div class="info-row"><div class="info-k">' + esc(k) + '</div><div class="info-v">' + esc(v) + '</div></div>'; }
   function cap(x) { return x.charAt(0).toUpperCase() + x.slice(1); }
-  function seenLabel(x) { return x === 'common' ? 'Commonly seen' : x === 'uncommon' ? 'Uncommon' : 'Rarely seen'; }
   function activityLabel(x) {
     return x === 'diurnal' ? 'Active by day' : x === 'nocturnal' ? 'Active at night' :
       x === 'crepuscular' ? 'Dawn & dusk' : 'Active anytime';
@@ -1744,7 +1743,7 @@
         '<span class="chevron">' + I.chevron + '</span></a>';
     }
     body += '</div><div class="group-footer">Season status is computed for today. Always confirm against the official summary before you fish.</div></div>';
-    screen({ title: 'Fishing zones', backAction: true, backText: 'Back', body: body });
+    screen({ title: 'Fishing zones', backAction: true, backText: 'Fishing', body: body });
   }
   // One zone: species and limits (closed first, then by popularity, exactly
   // fishing's ordering), the special-rules waters, and the general notes.
@@ -1993,32 +1992,12 @@
     var all = journalEntries();
     if (!all.length) return journalEmpty();
 
-    var life = lifeList();
     var lifers = firstEntryBySpecies();
 
-    // The Journal opens on its card: the life list as the hero numeral, the
-    // counts beside it, and the honest unfinished total underneath
-    // (Zeigarnik: the gap is what pulls you back outside).
-    var pct = SPECIES.length ? (life.length / SPECIES.length) * 100 : 0;
-    var body = '<div class="home-cards">' +
-      '<a class="insight-card tap-scale" href="#/stats">' +
-      '<div class="insight-t">' + Lx('Your journal') + '</div>' +
-      '<div class="insight-grid">' +
-      '<div class="insight-big"><div class="insight-n">' + life.length + '</div>' +
-      '<div class="insight-bl">' + Lx('Species') + ' <span>' + Lx('spotted') + '</span></div></div>' +
-      '<div class="insight-minis">' +
-      '<div class="insight-mini"><div class="n">' + spriteIcon('paw') + '<span>' + all.length + '</span></div>' +
-      '<div class="l">' + (all.length === 1 ? Lx('Encounter') : Lx('Encounters')) + '</div></div>' +
-      '<div class="insight-mini"><div class="n">' + spriteIcon('sun-moon') + '<span>' + entriesThisYear() + '</span></div>' +
-      '<div class="l">' + Lx('This year') + '</div></div>' +
-      '</div></div>' +
-      '<div class="insight-foot"><span class="insight-bar"><span style="width:' + Math.max(1.5, pct).toFixed(1) + '%"></span></span>' +
-      '<span>' + life.length + ' ' + Lx('of') + ' ' + SPECIES.length + ' ' + Lx('in the Ontario guide') + '</span></div>' +
-      '</a></div>';
-
-    // One view, the chronological timeline. Species and place pages are
-    // reached from the entries themselves and from the guide.
-    body += journalFilterSelect();
+    // The journal opens straight onto its entries, the way on-site's
+    // journal does: the filter, then the timeline. The numbers live in
+    // Stats under More.
+    var body = journalFilterSelect();
 
     // resolve the filter once: it reads the whole log to validate itself
     var filter = journalFilter();
@@ -2081,14 +2060,17 @@
       '</div></div>';
   }
   function viewFishingHub() {
-    var catches = journalEntries().filter(function (e) { return e.cat === 'fish' && e.fish && e.fish.caught; })
+    /* every fish encounter belongs here, wherever it was logged: a
+       smallmouth bass saved from the Journal counts the same as one
+       saved from this screen */
+    var catches = journalEntries().filter(function (e) { return e.cat === 'fish'; })
       .sort(function (a, b) { return new Date(b.when) - new Date(a.when); });
     var spSet = {};
     catches.forEach(function (e) { spSet[e.speciesId || e.speciesName] = 1; });
     var y = new Date().getFullYear();
     var thisYear = catches.filter(function (e) { var d = new Date(e.when); return !isNaN(d) && d.getFullYear() === y; }).length;
     var big = null;
-    catches.forEach(function (e) { if (e.fish.length != null && (!big || e.fish.length > big.fish.length)) big = e; });
+    catches.forEach(function (e) { if (e.fish && e.fish.length != null && (!big || e.fish.length > big.fish.length)) big = e; });
     var bigLabel = big ? (big.fish.length + '&nbsp;' + (big.fish.units === 'imperial' ? 'in' : 'cm')) : '–';
 
     var body = '<div class="stat-grid" style="margin-top:8px">' +
@@ -2175,7 +2157,6 @@
       case 'stats': return iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats'), sub: Lx('Your numbers') });
       case 'community': return iosRow({ href: '#/community', tile: ['green', 'globe'], title: Lx('Community'), sub: (Community.on() ? 'Sharing on · see nearby activity' : app.settings.communityUrl ? 'Connected · sharing off' : Lx('What’s near you this week')) });
       case 'resources': return iosRow({ href: '#/resources', tile: ['blue', 'link-out'], title: Lx('Ontario and Canada resources'), sub: Lx('Trusted sites') });
-      case 'trust': return iosRow({ href: '#/trust', tile: ['graphite', 'shield'], title: Lx('Data reliability'), sub: Lx('Anomaly detection, a demo') });
       case 'privacy': return iosRow({ href: '#/privacy', tile: ['grey', 'lock'], title: Lx('Privacy'), sub: Lx('Private, on this phone') });
     }
     return '';
@@ -2193,11 +2174,15 @@
     // Learn and the feature rows follow, then Appearance, Your data, the
     // sibling apps and the future, with Legal holding the bottom.
     var body = '';
-    body += sectionTitle(Lx('About')) + '<div class="ios-group">' +
-      '<div class="info-row"><div class="info-v">on-wildlife is a private field guide and journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario. Look a species up, read the longer account, and log what you see. It works offline and installs to your home screen.</div></div><div class="info-row"><div class="info-v">I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</div></div>' +
+    // the About text reads as plain paragraphs, the way on-site tells its
+    // story, with the counts in a small group underneath
+    body += sectionTitle(Lx('About')) + '<div class="aboutbody">' +
+      '<p>on-wildlife is a private field guide and journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario. Look a species up, read the longer account, and log what you see. It works offline and installs to your home screen.</p>' +
+      '<p>I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</p>' +
+      '</div><div class="ios-group" style="margin-top:16px">' +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.6', chevron: false }) +
-      iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca', sub: Lx('Apps, projects and the rest') }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.7', chevron: false }) +
+      iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca' }) +
       '</div>';
 
     // Learn moved out of the tab bar to make room for the Journal, so it lives
@@ -2272,7 +2257,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.6', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.7', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: Lx('Back'), body: body });
@@ -2295,7 +2280,7 @@
       });
       body += '</div>';
     }
-    screen({ title: 'Photos', backAction: true, backText: 'Back', body: body });
+    screen({ title: 'Photos', backAction: true, backText: 'Account', body: body });
   }
 
   function moreCell(emoji, title, sub, action, data) {
@@ -2822,7 +2807,7 @@
       t.links.forEach(function (l) { body += linkCell(l.label, l.url, l.note); });
       body += '</div><div class="group-footer">Opens external sites in your browser.</div></div>';
     }
-    screen({ title: t.title, backAction: true, backText: 'Back', body: body });
+    screen({ title: t.title, backAction: true, backText: 'Learn', body: body });
   }
   function calloutHtml(c) {
     var cls = c.style === 'danger' ? 'callout-danger' : c.style === 'warn' ? 'callout-warn' : 'callout-info';
@@ -2904,65 +2889,6 @@
     return html;
   }
 
-  /* ============================================ DATA RELIABILITY (anomaly demo) */
-  function riskClass(label) { return label === 'Flagged' ? 'risk-hi' : label === 'Review' ? 'risk-mid' : 'risk-lo'; }
-  function trustBadgeClass(label) { return label === 'Flagged' ? 'badge-danger' : label === 'Review' ? 'badge-risk' : 'badge-ok'; }
-  function viewTrust() {
-    var T = window.TRUST;
-    if (!T || !T.result) return viewMore();
-    var cs = T.result.contributors;
-    var flagged = cs.filter(function (c) { return c.label === 'Flagged'; }).length;
-    var review = cs.filter(function (c) { return c.label === 'Review'; }).length;
-    var maxRisk = Math.max(1, cs.reduce(function (m, c) { return Math.max(m, c.risk); }, 0));
-    var body = '';
-    body += '<div class="wrap-note"><span class="i">\u{1F9EA}</span><span><b>Demo.</b> Crowdsourced sightings only help conservation if they’re trustworthy. This runs a statistical model over <b>simulated</b> contributors, including a deliberately fake “sham” account with skewed, mostly false data, and flags anomalies. Not real user data.</span></div>';
-    body += '<div class="stat-grid" style="margin-top:4px">' + stat(cs.length, 'Accounts') + stat(flagged, 'Flagged') + stat(review, 'To review') + '</div>';
-    body += '<div class="group"><div class="group-header">Contributors by anomaly risk</div><div class="list">';
-    cs.forEach(function (c) {
-      body += '<a class="cell tap" href="#/trust/' + encodeURIComponent(c.account) + '">' +
-        '<span class="cell-body"><span class="cell-title">' + esc(c.account) + '</span>' +
-        '<span class="cell-sub">' + c.obsCount + ' sightings · ' + esc(c.home) + '</span>' +
-        '<span class="riskbar"><span class="riskbar-fill ' + riskClass(c.label) + '" style="width:' + Math.round(c.risk / maxRisk * 100) + '%"></span></span></span>' +
-        '<span class="badge ' + trustBadgeClass(c.label) + '" style="flex-shrink:0">' + esc(c.label) + '</span>' +
-        '<span class="chevron">' + I.chevron + '</span></a>';
-    });
-    body += '</div><div class="group-footer">Robust z-scores (median/MAD) across six behavioural & plausibility features, combined into a 0–100 risk score. Tap an account for the breakdown.</div></div>';
-    screen({ title: 'Data reliability', large: true, subtitle: 'Anomaly detection (demo)', body: body });
-  }
-  function viewTrustAccount(id) {
-    var T = window.TRUST; if (!T || !T.result) return viewTrust();
-    var acc = decodeURIComponent(id || ''), c = null;
-    T.result.contributors.forEach(function (x) { if (x.account === acc) c = x; });
-    if (!c) return viewTrust();
-    var res = T.result;
-    var heroBg = c.label === 'Flagged' ? '#ff3b3022' : c.label === 'Review' ? '#ff950022' : 'var(--tint-soft)';
-    var heroIco = c.label === 'Flagged' ? '⚠️' : c.label === 'Review' ? '\u{1F50D}' : '✓';
-    var body = '<div class="hero" style="padding:18px 20px 6px"><div class="hero-emoji" style="width:64px;height:64px;font-size:30px;background:' + heroBg + '">' + heroIco + '</div>' +
-      '<h1 style="font-size:22px">' + esc(c.account) + '</h1>' +
-      '<div class="badges"><span class="badge ' + trustBadgeClass(c.label) + '">' + esc(c.label) + '</span><span class="badge badge-info">Risk ' + c.risk + '/100</span><span class="badge badge-info">' + c.obsCount + ' sightings</span>' + (c.sham ? '<span class="badge badge-danger">simulated sham</span>' : '') + '</div></div>';
-    if (c.reasons.length) {
-      body += '<div class="group"><div class="group-header">Why it was flagged</div><div class="list">';
-      c.reasons.forEach(function (r) { body += '<div class="cell"><span class="cell-emoji">⚠️</span><span class="cell-body"><span class="cell-title" style="font-size:15px">' + esc(r) + '</span></span></div>'; });
-      body += '</div></div>';
-    } else {
-      body += '<div class="wrap-note"><span class="i">✓</span><span>No significant anomalies. This contributor’s data is consistent with peers.</span></div>';
-    }
-    body += '<div class="group"><div class="group-header">Feature deviation (robust z-score)</div><div class="list" style="padding:8px 0">';
-    res.keys.forEach(function (k) {
-      var z = c.z[k]; var pct = Math.max(2, Math.min(100, Math.round(Math.min(Math.abs(z), 4) / 4 * 100)));
-      var cls = z >= 1.8 ? 'risk-hi' : z >= 1 ? 'risk-mid' : 'risk-lo';
-      body += '<div class="zrow"><div class="zrow-top"><span>' + esc(res.labels[k]) + '</span><span class="muted">' + (z >= 0 ? '+' : '') + z.toFixed(1) + 'σ</span></div>' +
-        '<span class="riskbar"><span class="riskbar-fill ' + cls + '" style="width:' + pct + '%"></span></span></div>';
-    });
-    body += '</div><div class="group-footer">σ = deviations from the peer median (median/MAD). Higher = more unusual.</div></div>';
-    if (c.examples.length) {
-      body += '<div class="group"><div class="group-header">Suspicious sightings</div><div class="list">';
-      c.examples.forEach(function (ex) { body += '<div class="cell"><span class="cell-body"><span class="cell-title" style="font-size:15px">' + esc(ex.name) + '</span><span class="cell-sub">' + esc(ex.why) + '</span></span></div>'; });
-      body += '</div></div>';
-    }
-    screen({ title: c.account, backAction: true, backText: 'Reliability', body: body });
-  }
-
   /* ================================================================ BADGES */
   function viewBadges() {
     var earned = {}; earnedBadgeIds().forEach(function (id) { earned[id] = 1; });
@@ -2982,7 +2908,7 @@
     });
     body += '</div>';
     if (!earned.emblems) body += '<div class="group-footer hpad" style="text-align:center">One badge is hidden until you earn it.</div>';
-    screen({ title: 'Badges', backAction: true, backText: 'Back', body: body });
+    screen({ title: 'Badges', backAction: true, backText: 'Stats', body: body });
   }
 
   /* ================================================================= STATS */
@@ -3046,7 +2972,7 @@
       linkCell('EDDMapS Ontario, report online', 'https://www.eddmaps.org/ontario/', '') +
       linkCell('Ontario: Invasive species', 'https://www.ontario.ca/page/invasive-species-ontario', '') +
       '</div></div>';
-    screen({ title: 'Invasive Species', backAction: true, backText: 'Back', body: body });
+    screen({ title: 'Invasive Species', backAction: true, backText: 'More', body: body });
   }
 
   /* =============================================================== PRIVACY */
@@ -3088,7 +3014,7 @@
         '<div class="field"><input type="url" id="community-url" placeholder="https://your-server.example" style="text-align:left;flex:1" autocapitalize="none" autocorrect="off" spellcheck="false"></div>' +
         '</div><div class="group-footer">No server yet? Anyone can deploy the free, open-source one in a couple of minutes. See <b>server/README</b> in the project. Leave this blank to stay fully offline.</div></div>';
       body += '<div class="hpad"><button class="btn btn-primary btn-block" data-action="community-connect">Connect</button></div>';
-      screen({ title: 'Community', backAction: true, backText: 'Back', body: body });
+      screen({ title: 'Community', backAction: true, backText: 'More', body: body });
       return;
     }
     body += '<div class="group"><div class="group-header">Connection</div><div class="list">' +
@@ -3099,7 +3025,7 @@
       '<button class="cell tap" data-action="community-disconnect"><span class="cell-emoji">\u{1F50C}</span><span class="cell-body"><span class="cell-title" style="color:var(--red)">Disconnect</span></span></button>' +
       '</div><div class="group-footer">' + (app.settings.community ? 'Your sightings are shared <b>pseudonymously</b>, with a random device id and no name. A server operator could group your reports by that id, so you can reset it anytime above. At-risk locations are coarsened before they leave your phone.' : 'Sharing is off. You can still see the community feed below.') + '</div></div>';
     body += '<div id="community-feed"><div class="empty"><div class="e">\u{1F4E1}</div><p>Loading community activity…</p></div></div>';
-    screen({ title: 'Community', backAction: true, backText: 'Back', body: body });
+    screen({ title: 'Community', backAction: true, backText: 'More', body: body });
     loadCommunityFeed();
   }
   /* Anything the community feed shows comes from someone else's phone, so it
@@ -3203,14 +3129,21 @@
   function openLog(prefill) {
     prefill = prefill || {};
     var sp = prefill.species ? byId[prefill.species] : null;
+    /* logging from the Fishing or Birding screen starts the picker on
+       that category, so the list is already the right one */
+    var routeCat = '';
+    var h = (location.hash || '').replace(/^#\//, '');
+    if (h.indexOf('fishing-hub') === 0 || h.indexOf('zones') === 0 || h.indexOf('zone/') === 0) routeCat = 'fish';
+    else if (h.indexOf('birding') === 0) routeCat = 'birds';
+    var cat = sp ? sp.cat : (prefill.cat || routeCat || '');
     app.draft = {
       speciesId: sp ? sp.id : null,
       speciesName: sp ? sp.name : '',
       customName: '',
-      cat: sp ? sp.cat : (prefill.cat || ''),
+      cat: cat,
       sub: sp ? sp.sub : (prefill.sub || ''),
       emoji: sp ? sp.emoji : '',
-      evidence: (prefill.cat === 'fish' || (sp && sp.cat === 'fish')) ? 'caught' : 'saw',
+      evidence: cat === 'fish' ? 'caught' : 'saw',
       count: 1,
       when: localDatetimeValue(new Date()),
       lat: null, lng: null,
@@ -3456,7 +3389,6 @@
         '<span class="cell-emoji">' + s.emoji + '</span>' +
         '<span class="cell-body" style="text-align:left"><span class="cell-title">' + esc(s.name) + '</span>' +
         '<span class="cell-sub"><i>' + esc(s.sci) + '</i></span></span>' +
-        (s.atRisk ? '<span class="badge ' + (s.caution ? 'badge-danger' : 'badge-risk') + '">' + esc(s.status) + '</span>' : '') +
         '</button>';
     });
     html += '</div></div>';
@@ -3858,7 +3790,7 @@
         h.indexOf('badges') === 0) return 'journal';
     // Learn now lives inside More, so its screens highlight More.
     if (h.indexOf('learn') === 0 || h.indexOf('alerts') === 0 || h.indexOf('invasives') === 0 || h.indexOf('roads') === 0 ||
-        h.indexOf('more') === 0 || h.indexOf('resources') === 0 || h.indexOf('trust') === 0 ||
+        h.indexOf('more') === 0 || h.indexOf('resources') === 0 ||
         h.indexOf('privacy') === 0 || h.indexOf('community') === 0) return 'more';
     if (h.indexOf('explore') === 0 || h.indexOf('species') === 0 || h.indexOf('atrisk') === 0 ||
         h.indexOf('zones') === 0 || h.indexOf('fishing') === 0 || h.indexOf('log') === 0) return 'explore';
@@ -3911,7 +3843,6 @@
     else if (r === 'badges') viewBadges();
     else if (r === 'stats') viewStats();
     else if (r === 'privacy') viewPrivacy();
-    else if (r === 'trust') { if (parts[1]) viewTrustAccount(parts[1]); else viewTrust(); }
     else if (r === 'learn') { if (parts[1]) viewLearn(parts[1]); else viewLearnHub(); }
     else if (r === 'resources') viewResources();
     else if (r === 'more') viewMore();

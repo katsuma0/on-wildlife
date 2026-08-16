@@ -84,6 +84,5 @@ you find across Ontario. Everything below is built and working.
 ## Under the hood
 
 - The app is zero-dependency plain HTML, CSS, and JS, with no build step.
-- An anomaly-detection demo shows how crowdsourced sightings can be vetted.
 - CI runs syntax, data-integrity, a live server round-trip, and headless UI tests
   on every push. See `tests/`.
