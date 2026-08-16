@@ -14,7 +14,6 @@
     more: '<svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="7" cy="14" r="1.6" fill="currentColor" stroke="none"/><circle cx="14" cy="14" r="1.6" fill="currentColor" stroke="none"/><circle cx="21" cy="14" r="1.6" fill="currentColor" stroke="none"/></svg>',
     chevron: '<svg viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l6 6-6 6"/></svg>',
     check: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.4l3.4 3.4L12 3.6"/></svg>',
-    back: '<svg viewBox="0 0 12 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 1 2 10l8 9"/></svg>',
     search: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg>',
     tabsearch: '<svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12.5" cy="12.5" r="8"/><path d="M18.5 18.5 23 23"/></svg>',
     learn: '<svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6.5A1.5 1.5 0 0 1 6.5 5H21a2.5 2.5 0 0 1 2.5 2.5V22H7.5A2.5 2.5 0 0 0 5 24.5Z"/><path d="M23.5 22a2.5 2.5 0 0 0-2.5 2.5H7.5"/></svg>',
@@ -682,9 +681,9 @@
   }
   function sectionTitle(t) { return '<h2 class="ios-section-title">' + esc(t) + '</h2>'; }
 
-  /* ---- sections, the github home way: a named card of rows whose owner
-     picks what is in it and in what order, from the ellipsis edit sheet.
-     Saved per section under settings.sections as [{id, on}]. ---- */
+  /* ---- sections: a named card of rows. A saved order from the retired
+     edit sheet is still honoured, but every row always shows, and the
+     titles stand plain the way on-site draws them. ---- */
   var SECTION_DEFS = {
     'guide-cats': { title: 'Ontario Wildlife', items: function () { return CATEGORIES.map(function (c) { return { id: c.id, label: c.name, emoji: c.emoji }; }); } },
     'more-learn': { title: 'Learn', items: function () { return [
@@ -714,78 +713,7 @@
     return out;
   }
   function sectionHead(key) {
-    var t = SECTION_DEFS[key].title;
-    return '<div class="sec-head"><h2 class="ios-section-title">' + esc(Lx(t)) + '</h2>' +
-      '<button type="button" class="sec-edit" data-action="edit-section" data-key="' + key + '" aria-label="' + Lx('Edit') + ' ' + esc(Lx(t)) + '">' + spriteIcon('ellipsis') + '</button></div>';
-  }
-  function openSectionEditor(key) {
-    app._secKey = key;
-    app._secDraft = sectionOrder(key).map(function (r) { return { id: r.def.id, on: r.on }; });
-    var defs = {};
-    SECTION_DEFS[key].items().forEach(function (d) { defs[d.id] = d; });
-    var body = '<div class="group"><div class="list" id="sec-rows">';
-    app._secDraft.forEach(function (r) {
-      var d = defs[r.id];
-      body += '<div class="secedit-row' + (r.on ? ' on' : '') + '" data-id="' + esc(r.id) + '">' +
-        '<button type="button" class="secedit-check" data-action="sec-toggle" data-id="' + esc(r.id) + '" role="checkbox" aria-checked="' + (r.on ? 'true' : 'false') + '" aria-label="' + Lx('Include') + ' ' + esc(Lx(d.label)) + '">' + spriteIcon('check') + '</button>' +
-        (d.emoji ? '<span class="secedit-tile">' + d.emoji + '</span>' : '') +
-        '<span class="secedit-label">' + esc(Lx(d.label)) + '</span>' +
-        '<span class="secedit-handle" data-drag="' + esc(r.id) + '" aria-hidden="true">' + spriteIcon('grip') + '</span>' +
-        '</div>';
-    });
-    body += '</div></div><p class="ios-group-foot">' + Lx('Drag the handle to reorder. Unchecked rows are hidden from this page and can be checked again any time.') + '</p>';
-    var html = '<div class="scrim" data-action="close-sheet"></div>' +
-      '<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Edit ' + esc(SECTION_DEFS[key].title) + '"><div class="sheet-grabber"></div>' +
-      '<div class="sheet-nav"><span style="width:44px"></span><span class="t">' + Lx('Edit') + ' ' + esc(Lx(SECTION_DEFS[key].title)) + '</span>' +
-      '<button class="nav-btn bold" data-action="sec-done">' + Lx('Done') + '</button></div>' +
-      '<div class="sheet-body">' + body + '</div></div>';
-    $('#sheet-root').innerHTML = html;
-    requestAnimationFrame(function () { var s = $('#sheet'); if (s) s.classList.add('show'); var sc = $('.scrim'); if (sc) sc.classList.add('show'); });
-    afterSheetOpen();
-    wireSecDrag();
-  }
-  // pointer-drag reorder: the row follows the finger, siblings swap under it
-  function wireSecDrag() {
-    var list = $('#sec-rows'); if (!list) return;
-    var row = null, startY = 0, activeId = null;
-    function place(ev) { row.style.transform = 'translateY(' + (ev.clientY - startY) + 'px)'; }
-    list.addEventListener('pointerdown', function (ev) {
-      if (row) return;   // one drag at a time; a second finger is ignored
-      var h = ev.target.closest('[data-drag]'); if (!h) return;
-      row = h.closest('.secedit-row');
-      startY = ev.clientY;
-      activeId = ev.pointerId;
-      row.classList.add('dragging');
-      try { h.setPointerCapture(ev.pointerId); } catch (e) {}
-      ev.preventDefault();
-    });
-    list.addEventListener('pointermove', function (ev) {
-      if (!row || ev.pointerId !== activeId) return;
-      place(ev);
-      var sibs = [].slice.call(list.children);
-      var i = sibs.indexOf(row);
-      var r = row.getBoundingClientRect();
-      var prev = sibs[i - 1], next = sibs[i + 1];
-      if (prev && r.top + r.height / 2 < prev.getBoundingClientRect().top + prev.offsetHeight / 2) {
-        list.insertBefore(row, prev);
-        startY -= prev.offsetHeight;
-        place(ev);
-      } else if (next && r.top + r.height / 2 > next.getBoundingClientRect().top + next.offsetHeight / 2) {
-        list.insertBefore(next, row);
-        startY += next.offsetHeight;
-        place(ev);
-      }
-    });
-    function drop(ev) {
-      if (!row || (ev && ev.pointerId !== activeId)) return;
-      row.style.transform = '';
-      row.classList.remove('dragging');
-      var order = [].map.call(list.children, function (r) { return r.getAttribute('data-id'); });
-      app._secDraft.sort(function (a, b) { return order.indexOf(a.id) - order.indexOf(b.id); });
-      row = null; activeId = null;
-    }
-    list.addEventListener('pointerup', drop);
-    list.addEventListener('pointercancel', drop);
+    return '<h2 class="ios-section-title">' + esc(Lx(SECTION_DEFS[key].title)) + '</h2>';
   }
 
   /* --------------------------------------------------------- Screen frame
@@ -856,6 +784,17 @@
     newScreen.addEventListener('transitionend', function h(e) { if (e.propertyName === 'transform') { clearTimeout(t); newScreen.removeEventListener('transitionend', h); cleanup(); } });
   }
   function backLabel(t) { return String(t == null ? 'Back' : t); }
+  /* screens reachable from more than one place read the destination off
+     the nav stack, so the back button still names where it really goes */
+  function cameFromLabel() {
+    var cur = location.hash || '#/explore';
+    var s = (app.nav && app.nav.stack) || [];
+    var i = s.length - 1;
+    if (i >= 0 && s[i] === cur) i--;
+    var top = i >= 0 ? s[i].replace(/^#\/?/, '').split('/')[0] : '';
+    var names = { explore: 'Guide', journal: 'Journal', map: 'Map', more: 'More', 'fishing-hub': 'Fishing', birding: 'Birding', account: 'Account', stats: 'Stats', learn: 'Learn', search: 'Search', community: 'Community', photos: 'Photos' };
+    return names[top] ? Lx(names[top]) : Lx('Back');
+  }
   // the same chevron on-site draws in front of "All Parks"
   var BACK_CHEV = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>';
   /* iOS swaps a back label for the word "Back" when the real one will not fit
@@ -1202,8 +1141,7 @@
     });
   }
 
-  /* opts.hideDay drops the date when the row already sits under a day header.
-     opts.lifer marks the encounter that first put this species on the life list. */
+  /* opts.hideDay drops the date when the row already sits under a day header. */
   function entryCell(e, opts) {
     opts = opts || {};
     var parts = [];
@@ -1251,7 +1189,6 @@
       '<span class="cell-value">' + atRiskN + '</span>' +
       '<span class="chevron">' + I.chevron + '</span></a>';
     sectionOrder('guide-cats').forEach(function (r) {
-      if (!r.on) return;
       var count = speciesInCat(r.def.id).length;
       body += '<a class="cell tap" href="#/explore/' + esc(r.def.id) + '">' +
         '<span class="cell-emoji">' + r.def.emoji + '</span>' +
@@ -1352,7 +1289,7 @@
     body += '<div id="search-results"></div>';
     body += '<div id="search-hint" class="empty" style="padding-top:40px"><div class="e">' + I.search + '</div>' +
       '<h3>' + Lx('Search the guide') + '</h3><p>' + Lx('All') + ' ' + SPECIES.length + ' ' + Lx('species, every category and every provincial park. Searches stay on this phone.') + '</p></div>';
-    screen({ title: Lx('Search'), large: true, backAction: true, backText: Lx('Back'), body: body });
+    screen({ title: Lx('Search'), large: true, backAction: true, backText: cameFromLabel(), body: body });
     // No autofocus: the keyboard comes up when the person taps the field.
     // Autofocusing made iOS Safari pan the page and hide the top of the screen.
     wireLiveSearch('uni-search', 'search-results', ['search-hint']);
@@ -1441,7 +1378,7 @@
       '<a class="cell tap" href="#/resources"><span class="cell-body"><span class="cell-title">Ontario and Canada resources</span><span class="cell-sub">Trusted sites</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       '</div></div>';
 
-    screen({ title: 'Learn', large: true, subtitle: 'Safety guides and ways to help wildlife', body: body });
+    screen({ title: 'Learn', large: true, subtitle: 'Safety guides and ways to help wildlife', backAction: true, backText: cameFromLabel(), body: body });
   }
 
   function viewAtRisk() {
@@ -1960,7 +1897,7 @@
   // per-species and per-place views so they all read the same way. A month
   // is the span a season of outings actually fits in, so the headers stay
   // few enough to scan; each row still names its own day underneath.
-  function timelineHtml(entries, lifers) {
+  function timelineHtml(entries) {
     var sorted = entries.slice().sort(function (a, b) { return new Date(b.when) - new Date(a.when); });
     var html = '', curMonth = null;
     sorted.forEach(function (e) {
@@ -1971,7 +1908,7 @@
         html += '<div class="group"><div class="group-header">' + esc(fmtMonth(e.when)) + '</div><div class="list">';
         curMonth = key;
       }
-      html += entryCell(e, { lifer: lifers && lifers[e.speciesId] === e });
+      html += entryCell(e);
     });
     if (curMonth !== null) html += '</div></div>';
     return html;
@@ -1992,7 +1929,6 @@
     var all = journalEntries();
     if (!all.length) return journalEmpty();
 
-    var lifers = firstEntryBySpecies();
 
     // The journal opens straight onto its entries, the way on-site's
     // journal does: the filter, then the timeline. The numbers live in
@@ -2002,7 +1938,7 @@
     // resolve the filter once: it reads the whole log to validate itself
     var filter = journalFilter();
     var shown = filter === 'all' ? all : all.filter(function (e) { return e.cat === filter; });
-    if (shown.length) body += timelineHtml(shown, lifers);
+    if (shown.length) body += timelineHtml(shown);
     else body += '<div class="empty" style="padding-top:32px"><div class="e">\u{1F50D}</div><h3>' + Lx('Nothing in this filter') + '</h3><p>' + Lx('No encounters match. Choose All to see everything.') + '</p></div>';
 
     screen({ title: Lx('Journal'), large: true, header: true, body: body });
@@ -2030,7 +1966,7 @@
       (sp ? '<a class="cell tap" href="#/species/' + esc(sp.id) + '"><span class="cell-body"><span class="cell-title">Read the guide entry</span><span class="cell-sub">Identification, habitat and seasons</span></span><span class="chevron">' + I.chevron + '</span></a>' : '') +
       '</div></div>';
 
-    body += timelineHtml(mine, null);
+    body += timelineHtml(mine);
 
     screen({ title: name, back: '#/journal', backText: 'Journal', body: body });
   }
@@ -2045,7 +1981,7 @@
       '<div class="cell"><span class="cell-body"><span class="cell-title">Species here</span></span><span class="cell-value">' + ns + '</span></div>' +
       '<div class="cell"><span class="cell-body"><span class="cell-title">Encounters</span></span><span class="cell-value">' + g.entries.length + '</span></div>' +
       '</div></div>';
-    body += timelineHtml(g.entries, firstEntryBySpecies());
+    body += timelineHtml(g.entries);
     screen({ title: g.name, back: '#/journal', backText: 'Journal', body: body });
   }
 
@@ -2162,9 +2098,7 @@
     return '';
   }
   function moreSection(key, foot) {
-    var rows = sectionOrder(key).filter(function (r) { return r.on; });
-    // an emptied section keeps its head, or the way back in disappears
-    if (!rows.length) return sectionHead(key) + '<p class="ios-group-foot">' + Lx('Every row in this section is hidden. Use the edit button to show them again.') + '</p>';
+    var rows = sectionOrder(key);
     return sectionHead(key) + '<nav class="ios-group">' +
       rows.map(function (r) { return moreRow(r.def.id); }).join('') + '</nav>' +
       (foot ? '<p class="ios-group-foot">' + foot + '</p>' : '');
@@ -2181,7 +2115,7 @@
       '<p>I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</p>' +
       '</div><div class="ios-group" style="margin-top:16px">' +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.7', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.8', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca' }) +
       '</div>';
 
@@ -2203,9 +2137,9 @@
       '</div>';
 
     body += sectionTitle(Lx('Your data')) + '<div class="ios-group">' +
-      iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log'), sub: Lx('Your whole log in one file') }) +
-      iosRow({ action: 'import-data', tile: ['grey', 'upload'], title: Lx('Import a backup'), sub: Lx('From an exported file') }) +
-      iosRow({ action: 'reset-data', danger: true, title: Lx('Reset all data'), chevron: false }) +
+      iosRow({ action: 'export-data', tile: ['blue', 'download'], title: Lx('Export my log'), sub: Lx('Your whole log in one file') }) +
+      iosRow({ action: 'import-data', tile: ['green', 'upload'], title: Lx('Import a backup'), sub: Lx('From an exported file') }) +
+      iosRow({ action: 'reset-data', tile: ['red', 'trash'], danger: true, title: Lx('Reset all data') }) +
       '<input type="file" id="import-input" accept=".json,application/json" style="display:none" aria-hidden="true">' +
       '</div><p class="ios-group-foot">' + Lx('Import merges by id and skips anything already saved. Reset asks for confirmation twice.') + '</p>';
 
@@ -2227,8 +2161,7 @@
       iosRow({ href: 'https://katsuma.ca/privacy.html', ext: true, title: Lx('Privacy policy'), sub: Lx('What stays on this phone, and what does not') }) +
       iosRow({ href: 'https://katsuma.ca/terms.html', ext: true, title: Lx('Terms of use'), sub: Lx('Including what this app is not safe for') }) +
       iosRow({ href: 'https://katsuma.ca/support.html', ext: true, title: Lx('Support'), sub: Lx('Help, and how to reach me') }) +
-      '<div class="info-row"><div class="info-v">' + Lx('Not affiliated with Ontario Parks, the Government of Ontario, Parks Canada or Apple. Map images come from CARTO using OpenStreetMap data. Reference photos come from iNaturalist under their contributors’ licences.') + '</div></div>' +
-      '</div>';
+      '</div><p class="ios-group-foot">' + Lx('Not affiliated with Ontario Parks, the Government of Ontario, Parks Canada or Apple. Map images come from CARTO using OpenStreetMap data. Reference photos come from iNaturalist under their contributors’ licences.') + '</p>';
     // The bottom search pill, as Settings carries it; it opens the
     // existing universal search.
     body += '<a class="bottom-search" href="#/search">' + I.search + '<span>' + Lx('Search') + '</span></a><div class="spacer-pill"></div>';
@@ -2257,10 +2190,10 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.7', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.8', chevron: false }) +
       '</nav>';
 
-    screen({ title: Lx('Account'), backAction: true, backText: Lx('Back'), body: body });
+    screen({ title: Lx('Account'), backAction: true, backText: cameFromLabel(), body: body });
   }
 
   /* ------------------------------------------------------------- Photos */
@@ -2923,7 +2856,7 @@
     });
     var speciesN = Object.keys(spSet).length, catsN = Object.keys(catSet).length;
     if (!all.length) {
-      screen({ title: 'Stats', large: true, subtitle: 'Your field record',
+      screen({ title: 'Stats', large: true, subtitle: 'Your field record', backAction: true, backText: cameFromLabel(),
         body: '<div class="empty"><div class="e">\u{1F4CA}</div><h3>No stats yet</h3><p>Log a few encounters and your totals, badges and community comparison will appear here.</p><div class="spacer"></div><div class="hpad"><a class="btn btn-tinted" href="#/log">Start logging</a></div></div>' });
       return;
     }
@@ -2941,7 +2874,7 @@
     body += '<div class="group"><div class="list">' +
       '<a class="cell tap" href="#/badges"><span class="cell-emoji">\u{1F3C5}</span><span class="cell-body"><span class="cell-title">Badges</span><span class="cell-sub">' + earned + ' earned</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       '</div></div>';
-    screen({ title: 'Stats', large: true, subtitle: 'Your field record', body: body });
+    screen({ title: 'Stats', large: true, subtitle: 'Your field record', backAction: true, backText: cameFromLabel(), body: body });
   }
   function progressRow(label, got, total, color) {
     var p = total ? Math.round(got / total * 100) : 0;
@@ -4025,21 +3958,6 @@
         break;
       }
       case 'set-units': ev.preventDefault(); app.settings.units = t.getAttribute('data-val'); saveSettings(); rerenderKeepScroll(); break;
-      case 'edit-section': ev.preventDefault(); openSectionEditor(t.getAttribute('data-key')); break;
-      case 'sec-toggle': ev.preventDefault(); (function () {
-        var id = t.getAttribute('data-id');
-        app._secDraft.forEach(function (r) { if (r.id === id) r.on = !r.on; });
-        var rowEl = t.closest('.secedit-row');
-        if (rowEl) {
-          rowEl.classList.toggle('on');
-          t.setAttribute('aria-checked', rowEl.classList.contains('on') ? 'true' : 'false');
-        }
-      })(); break;
-      case 'sec-done': ev.preventDefault(); (function () {
-        app.settings.sections = app.settings.sections || {};
-        app.settings.sections[app._secKey] = app._secDraft;
-        saveSettings(); closeSheet(); route();
-      })(); break;
       case 'appear-theme': ev.preventDefault(); setAppearance('theme', t.getAttribute('data-v')); rerenderKeepScroll(); break;
       case 'appear-size': ev.preventDefault(); setAppearance('size', t.getAttribute('data-v')); rerenderKeepScroll(); break;
       case 'set-pursuit': {
