@@ -1397,7 +1397,7 @@
     });
 
     body += '<div class="group"><div class="list">' +
-      '<a class="cell tap" href="https://katsuma0.github.io/on-camp/" target="_blank" rel="noopener noreferrer">' +
+      '<a class="cell tap" href="https://katsuma.ca/on-site/" target="_blank" rel="noopener noreferrer">' +
       '<span class="cell-body"><span class="cell-title">Rate its campsites in on-camp</span>' +
       '<span class="cell-sub">Campgrounds, sites and trails</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       (p.url ? '<a class="cell tap" href="' + esc(p.url) + '" target="_blank" rel="noopener noreferrer">' +
@@ -2208,7 +2208,7 @@
       '</div>';
 
     body += sectionTitle(Lx('More from the Ontario outdoors')) + '<nav class="ios-group">' +
-      iosRow({ href: 'https://katsuma0.github.io/on-camp/', ext: true, title: 'on-site', sub: Lx('Rate Ontario Parks campsites') }) +
+      iosRow({ href: 'https://katsuma.ca/on-site/', ext: true, title: 'on-site', sub: Lx('Rate Ontario Parks campsites') }) +
       '</nav>';
 
     body += sectionTitle(Lx('Your data')) + '<div class="ios-group">' +
@@ -2222,7 +2222,7 @@
       '<div class="info-row"><div class="info-v">on-wildlife is a private field guide and journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario. Look a species up, read the longer account, and log what you see. It works offline and installs to your home screen.</div></div><div class="info-row"><div class="info-v">I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</div></div>' +
       iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: Lx('on-fishing, the solo site'), sub: Lx('The standalone zone map stays up') }) +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.4', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.5', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca', sub: Lx('Apps, projects and the rest') }) +
       '</div>';
 
@@ -2269,7 +2269,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.4', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.5', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: Lx('Back'), body: body });
