@@ -116,7 +116,6 @@ data/
   categories.js         Category and subcategory metadata
   species.js            The Ontario species database (778 species)
   learn.js              Educational articles, resource links, hazard types
-  trust.js              Anomaly-detection demo: synthetic data and statistical model
   badges.js             Collectible naturalist badge definitions
 manifest.webmanifest    PWA manifest (name, icons, theme, standalone)
 service-worker.js       Offline caching and Web Push handlers
