@@ -2145,21 +2145,23 @@
      Five controls, identical markup and copy across the three apps: Theme,
      Colours, Glass, Text size, Face. Every change applies live (data
      attributes on <html>) and persists to the shared key. */
-  function appearSegRow(label, action, cur, opts, width) {
+  function appearSegRow(label, action, cur, opts) {
     var segs = '';
     opts.forEach(function (o) {
       segs += '<button type="button" class="seg-opt' + (cur === o[0] ? ' on' : '') + '" aria-pressed="' + (cur === o[0] ? 'true' : 'false') + '" data-action="' + action + '" data-v="' + o[0] + '">' + esc(o[1]) + '</button>';
     });
-    return '<div class="field"><span class="field-label">' + esc(label) + '</span><div style="flex:1"></div>' +
-      '<div class="segmented" style="width:' + width + 'px">' + segs + '</div></div>';
+    /* the on-site row pattern: title and compact control share one
+       standard-height row, so these stand level with the rows around them */
+    return '<div class="ios-row ios-row--plain ap-row"><span class="ios-row-body"><span class="ios-row-title">' + esc(label) + '</span></span>' +
+      '<div class="segmented ap-seg" role="group" aria-label="' + esc(label) + '">' + segs + '</div></div>';
   }
   function appearancePanel() {
     var a = app.appearance || APPEAR_DEFAULT;
     // theme, glass and text size, nothing else: the look itself is not a
     // choice here, this app simply wears its own colours and type
     var h = '<div class="ios-group">';
-    h += appearSegRow(Lx('Theme'), 'appear-theme', a.theme, [['auto', Lx('Auto')], ['light', Lx('Light')], ['dark', Lx('Dark')]], 216);
-    h += appearSegRow(Lx('Text size'), 'appear-size', a.size, [['s', 'S'], ['m', 'M'], ['l', 'L'], ['xl', 'XL']], 180);
+    h += appearSegRow(Lx('Theme'), 'appear-theme', a.theme, [['auto', Lx('Auto')], ['light', Lx('Light')], ['dark', Lx('Dark')]]);
+    h += appearSegRow(Lx('Text size'), 'appear-size', a.size, [['s', 'S'], ['m', 'M'], ['l', 'L'], ['xl', 'XL']]);
     h += '</div>';
     return h;
   }
@@ -2187,9 +2189,17 @@
       (foot ? '<p class="ios-group-foot">' + foot + '</p>' : '');
   }
   function viewMore() {
-    // Settings' voice: grouped rows, straight in. What the app is belongs to
-    // the About section further down, which already says it.
+    // The same shape as on-site's More, the partnered app: About leads,
+    // Learn and the feature rows follow, then Appearance, Your data, the
+    // sibling apps and the future, with Legal holding the bottom.
     var body = '';
+    body += sectionTitle(Lx('About')) + '<div class="ios-group">' +
+      '<div class="info-row"><div class="info-v">on-wildlife is a private field guide and journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario. Look a species up, read the longer account, and log what you see. It works offline and installs to your home screen.</div></div><div class="info-row"><div class="info-v">I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</div></div>' +
+      iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.6', chevron: false }) +
+      iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca', sub: Lx('Apps, projects and the rest') }) +
+      '</div>';
+
     // Learn moved out of the tab bar to make room for the Journal, so it lives
     // here as an ordinary row into the same hub screen.
     body += moreSection('more-learn');
@@ -2198,18 +2208,14 @@
 
     body += sectionTitle(Lx('Appearance')) + appearancePanel() +
       '<div class="ios-group">' +
-      '<div class="field"><span class="field-label">' + Lx('Units') + '</span><div style="flex:1"></div>' +
-      '<div class="segmented" style="width:180px">' +
+      '<div class="ios-row ios-row--plain ap-row"><span class="ios-row-body"><span class="ios-row-title">' + Lx('Units') + '</span></span>' +
+      '<div class="segmented ap-seg" role="group" aria-label="' + Lx('Units') + '">' +
       '<button type="button" class="seg-opt' + (app.settings.units === 'metric' ? ' on' : '') + '" aria-pressed="' + (app.settings.units === 'metric' ? 'true' : 'false') + '" data-action="set-units" data-val="metric">' + Lx('Metric') + '</button>' +
       '<button type="button" class="seg-opt' + (app.settings.units === 'imperial' ? ' on' : '') + '" aria-pressed="' + (app.settings.units === 'imperial' ? 'true' : 'false') + '" data-action="set-units" data-val="imperial">' + Lx('Imperial') + '</button>' +
       '</div></div>' +
-      appearSegRow(Lx('Language'), 'set-lang', (app.settings.lang === 'fr' ? 'fr' : 'en'), [['en', 'English'], ['fr', 'Français']], 200) +
-      appearSegRow(Lx('Third tab'), 'set-pursuit', (app.settings.primaryPursuit === 'birding' ? 'birding' : 'fishing'), [['fishing', Lx('Fishing')], ['birding', Lx('Birding')]], 200) +
+      appearSegRow(Lx('Language'), 'set-lang', (app.settings.lang === 'fr' ? 'fr' : 'en'), [['en', 'English'], ['fr', 'Français']]) +
+      appearSegRow(Lx('Third tab'), 'set-pursuit', (app.settings.primaryPursuit === 'birding' ? 'birding' : 'fishing'), [['fishing', Lx('Fishing')], ['birding', Lx('Birding')]]) +
       '</div>';
-
-    body += sectionTitle(Lx('More from the Ontario outdoors')) + '<nav class="ios-group">' +
-      iosRow({ href: 'https://katsuma.ca/on-site/', ext: true, title: 'on-site', sub: Lx('Rate Ontario Parks campsites') }) +
-      '</nav>';
 
     body += sectionTitle(Lx('Your data')) + '<div class="ios-group">' +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log'), sub: Lx('Your whole log in one file') }) +
@@ -2218,12 +2224,15 @@
       '<input type="file" id="import-input" accept=".json,application/json" style="display:none" aria-hidden="true">' +
       '</div><p class="ios-group-foot">' + Lx('Import merges by id and skips anything already saved. Reset asks for confirmation twice.') + '</p>';
 
-    body += sectionTitle(Lx('About')) + '<div class="ios-group">' +
-      '<div class="info-row"><div class="info-v">on-wildlife is a private field guide and journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario. Look a species up, read the longer account, and log what you see. It works offline and installs to your home screen.</div></div><div class="info-row"><div class="info-v">I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</div></div>' +
-      iosRow({ href: 'https://katsuma0.github.io/on-fishing/', ext: true, title: Lx('on-fishing, the solo site'), sub: Lx('The standalone zone map stays up') }) +
-      iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.5', chevron: false }) +
-      iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca', sub: Lx('Apps, projects and the rest') }) +
+    body += sectionTitle(Lx('More from the Ontario outdoors')) + '<nav class="ios-group">' +
+      iosRow({ href: 'https://katsuma.ca/on-site/', ext: true, title: 'on-site', sub: Lx('Rate Ontario Parks campsites') }) +
+      iosRow({ href: 'https://katsuma.ca/on-fishing/', ext: true, title: Lx('on-fishing, the solo site'), sub: Lx('The standalone zone map stays up') }) +
+      '</nav>';
+
+    body += sectionTitle(Lx('Future of this project')) + '<div class="ios-group">' +
+      '<div class="info-row"><div class="info-v">' + Lx('Smart stickers are next: tap one of my stickers in the field and the right page opens in this app.') + '</div></div>' +
+      '<div class="info-row"><div class="info-v">' + Lx('Offline maps you download before the trip. Pick your park, carry the map with no signal, and get a campground map you can actually read, because the printed ones are hard to follow.') + '</div></div>' +
+      '<div class="info-row"><div class="info-v">' + Lx('Easier park entrances too, especially at parks like Hemlock where there are no signs. The long goal is to partner with a provincial park and pilot these features there.') + '</div></div>' +
       '</div>';
 
     // The App Store asks for the privacy policy to be reachable inside the
@@ -2234,12 +2243,6 @@
       iosRow({ href: 'https://katsuma.ca/terms.html', ext: true, title: Lx('Terms of use'), sub: Lx('Including what this app is not safe for') }) +
       iosRow({ href: 'https://katsuma.ca/support.html', ext: true, title: Lx('Support'), sub: Lx('Help, and how to reach me') }) +
       '<div class="info-row"><div class="info-v">' + Lx('Not affiliated with Ontario Parks, the Government of Ontario, Parks Canada or Apple. Map images come from CARTO using OpenStreetMap data. Reference photos come from iNaturalist under their contributors’ licences.') + '</div></div>' +
-      '</div>';
-
-    body += sectionTitle(Lx('Future of this project')) + '<div class="ios-group">' +
-      '<div class="info-row"><div class="info-v">' + Lx('Smart stickers are next: tap one of my stickers in the field and the right page opens in this app.') + '</div></div>' +
-      '<div class="info-row"><div class="info-v">' + Lx('Offline maps you download before the trip. Pick your park, carry the map with no signal, and get a campground map you can actually read, because the printed ones are hard to follow.') + '</div></div>' +
-      '<div class="info-row"><div class="info-v">' + Lx('Easier park entrances too, especially at parks like Hemlock where there are no signs. The long goal is to partner with a provincial park and pilot these features there.') + '</div></div>' +
       '</div>';
     // The bottom search pill, as Settings carries it; it opens the
     // existing universal search.
@@ -2269,7 +2272,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.5', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.6', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: Lx('Back'), body: body });
