@@ -149,6 +149,7 @@
     'Guide': 'Guide', 'Map': 'Carte', 'Journal': 'Journal', 'Fishing': 'Pêche', 'Birding': 'Oiseaux', 'More': 'Plus',
     'on-wildlife': 'on-wildlife', 'Account': 'Compte', 'Search': 'Recherche', 'Log an encounter': 'Noter une observation',
     'This month in Ontario': 'Ce mois-ci en Ontario', 'Ontario Wildlife': 'Faune de l’Ontario', 'Coming Soon': 'À venir',
+    'Favourites': 'Favoris', 'Favourite': 'Ajouter aux favoris', 'Favourited': 'Dans vos favoris', 'Saved to your favourites': 'Enregistré dans vos favoris',
     'Loading': 'Chargement',
     'Your journal': 'Votre journal', 'of': 'sur', 'in the Ontario guide': 'du guide ontarien',
     'Insights': 'Aperçus', 'spotted': 'observées', 'Days with sightings': 'Jours avec observations',
@@ -591,6 +592,29 @@
   }
   function tintFor(catId) { var c = catMeta(catId); return c ? c.color : 'var(--tint)'; }
 
+  /* ---- favourites, the on-site way: the species page is the one place a
+     species can be favourited, and the control says so in words ---- */
+  function isFavSpecies(id) { return !!(app.settings.favSpecies || {})[id]; }
+  function favPillHtml(id) {
+    var on = isFavSpecies(id);
+    return '<button class="favpill' + (on ? ' on' : '') + '" type="button" data-action="toggle-fav" data-id="' + esc(id) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5 4.6 13.3a4.6 4.6 0 1 1 6.5-6.5l.9.9.9-.9a4.6 4.6 0 1 1 6.5 6.5z"/></svg>' +
+      '<span class="favpill-t">' + (on ? Lx('Favourited') : Lx('Favourite')) + '</span></button>';
+  }
+  function toggleFavSpecies(id, btn) {
+    app.settings.favSpecies = app.settings.favSpecies || {};
+    if (app.settings.favSpecies[id]) delete app.settings.favSpecies[id];
+    else app.settings.favSpecies[id] = 1;
+    saveSettings();
+    if (btn) {
+      var on = isFavSpecies(id);
+      btn.classList.toggle('on', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      var lbl = btn.querySelector('.favpill-t');
+      if (lbl) lbl.textContent = on ? Lx('Favourited') : Lx('Favourite');
+    }
+  }
+
   function speciesCell(s, opts) {
     opts = opts || {};
     var logged = opts.loggedIds && opts.loggedIds[s.id];
@@ -838,7 +862,9 @@
       // cfg.cover hides the inline title until content scrolls, so a
       // full-bleed hero owns the top of the screen (has-large reuses
       // the existing show-title machinery).
-      nav = '<div class="nav' + (cfg.large || cfg.cover ? ' has-large' : '') + '" id="nav">' +
+      /* every pushed screen shows its title below the bar, so the bar's own
+         centred title stays hidden until content scrolls under it */
+      nav = '<div class="nav has-large" id="nav">' +
         '<div class="nav-row">' + navLeft +
         '<div class="nav-title"' + (cfg.large ? '' : ' role="heading" aria-level="1"') + '>' + esc(cfg.title || '') + '</div>' + navRight +
         '</div></div>';
@@ -847,7 +873,11 @@
       ? '<div class="large-title"><div class="large-head"><h1>' + esc(cfg.title) + '</h1>' +
         (cfg.version ? '<button class="ver" data-action="version-tap">' + esc(cfg.version) + '</button>' : '') + '</div>' +
         (cfg.subtitle ? '<div class="subtitle">' + esc(cfg.subtitle) + '</div>' : '') + '</div>'
-      : '';
+      : (!cfg.header && !cfg.cover)
+        /* pushed screens carry their name below the back bar, the way
+           on-site sets a park's name under its "All Parks" bar */
+        ? '<div class="large-title page-title"><div class="large-head"><h1>' + esc(cfg.title || '') + '</h1></div></div>'
+        : '';
     var tail = cfg.bare ? '' : '<div class="spacer-lg"></div>';
     // The stack always advances, but browser-driven navigation (native swipe,
     // back/forward) renders with no animation of ours on top of Safari's.
@@ -1181,6 +1211,23 @@
       body += '<div class="wrap-note" style="align-items:flex-start;margin-top:2px"><span class="i">\u{1F4F2}</span><span><b>Add to Home Screen</b> to use this like a real app, fullscreen and offline. Tap the <b>Share</b> button, then <b>Add to Home Screen</b>. <button data-action="dismiss-install" style="padding:0;font-weight:600;color:var(--tint);background:none">Got it</button></span></div>';
     }
 
+    // Favourites lead the guide, the way they lead on-site's parks list
+    var favIds = Object.keys(app.settings.favSpecies || {}).filter(function (id) { return byId[id]; });
+    if (favIds.length) {
+      body += sectionTitle(Lx('Favourites'));
+      body += '<div class="group home-list"><div class="list">';
+      favIds.map(function (id) { return byId[id]; })
+        .sort(function (a, b) { return a.name.localeCompare(b.name); })
+        .forEach(function (s) {
+          body += '<a class="cell tap" href="#/species/' + esc(s.id) + '">' +
+            '<span class="cell-emoji">' + s.emoji + '</span>' +
+            '<span class="cell-body"><span class="cell-title">' + esc(s.name) + '</span>' +
+            '<span class="cell-sub">' + Lx('Saved to your favourites') + '</span></span>' +
+            '<span class="chevron">' + I.chevron + '</span></a>';
+        });
+      body += '</div></div>';
+    }
+
     var atRiskN = SPECIES.filter(function (s) { return s.atRisk; }).length;
     body += sectionHead('guide-cats');
     body += '<div class="group home-list"><div class="list">';
@@ -1495,13 +1542,17 @@
     var c = catMeta(s.cat), sub = subMeta(s.cat, s.sub);
 
     // The photo, when one arrives, runs edge to edge under the transparent
-    // nav and melts into the page; the emoji hero stays as the offline and
-    // photos-off fallback.
+    // nav and melts into the page; the emoji tile stays as the offline and
+    // photos-off fallback. The head wears on-site's park-page structure:
+    // the name at the left under the back bar, the favourite pill beside it.
     var body = '<div class="sp-hero" id="sp-hero"><div id="sp-photo" class="sp-photo-full"></div></div>' +
-      '<div class="hero">' +
-      '<div class="hero-emoji" id="sp-emoji" style="background:' + tintFor(s.cat) + '22">' + s.emoji + '</div>' +
-      '<h1>' + esc(s.name) + '</h1><div class="sci">' + esc(s.sci) + '</div>' +
-      (isFloraCat(s.cat) ? '' : '<div class="badges"><span class="badge badge-info">' + esc(activityLabel(s.activity)) + '</span></div>') +
+      '<div class="sp-head">' +
+      '<div class="sp-titlerow">' +
+      '<div class="hero-emoji sp-emoji" id="sp-emoji" style="background:' + tintFor(s.cat) + '22">' + s.emoji + '</div>' +
+      '<div class="sp-name"><h1>' + esc(s.name) + '</h1><div class="sci">' + esc(s.sci) + '</div></div>' +
+      favPillHtml(s.id) +
+      '</div>' +
+      (isFloraCat(s.cat) ? '' : '<div class="badges sp-badges"><span class="badge badge-info">' + esc(activityLabel(s.activity)) + '</span></div>') +
       '</div>';
 
     if (s.caution) body += '<div class="wrap-note danger"><span class="i">⚠️</span><span>' + esc(s.caution) + '</span></div>';
@@ -2115,7 +2166,7 @@
       '<p>I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</p>' +
       '</div><div class="ios-group" style="margin-top:16px">' +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.8', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.9', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca' }) +
       '</div>';
 
@@ -2190,7 +2241,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.8', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.9', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: cameFromLabel(), body: body });
@@ -3826,6 +3877,7 @@
       case 'close-sheet': ev.preventDefault(); closeSheet(); break;
       case 'close-sheet-nav': closeSheet(); break; // let the link navigate too
       case 'species-menu': ev.preventDefault(); openSpeciesMenu(t.getAttribute('data-id')); break;
+      case 'toggle-fav': ev.preventDefault(); toggleFavSpecies(t.getAttribute('data-id'), t); break;
       case 'focus-filter': {
         ev.preventDefault();
         window.scrollTo(0, 0);
