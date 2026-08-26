@@ -480,6 +480,8 @@
     'Hidden on this phone': 'Masqué sur ce téléphone', 'Hidden reports restored': 'Signalements masqués restaurés',
     'New species. That is #{n} on your life list.': 'Nouvelle espèce. C’est la {n}e sur votre liste de vie.',
     'Exported {n} encounters': '{n} observations exportées',
+    'Imported {n} encounter': '{n} observation importée', 'Imported {n} encounters': '{n} observations importées',
+    'and {n} hazard': 'et {n} danger', 'and {n} hazards': 'et {n} dangers',
     '🐾 Thanks for logging what you see.': '🐾 Merci de noter ce que vous voyez.',
     '🐻 Saved to your log (on your phone)': '🐻 Enregistré dans votre journal (sur votre téléphone)',
     '⚠️ Hazard saved': '⚠️ Danger enregistré',
@@ -2591,7 +2593,7 @@
       '<p>' + Lx('I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.') + '</p>' +
       '</div><div class="ios-group" style="margin-top:16px">' +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.22', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.23', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca' }) +
       '</div>';
 
@@ -2666,7 +2668,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.22', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.23', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: cameFromLabel(), body: body });
@@ -4143,8 +4145,8 @@
         .concat(newHazards.map(function (h) { app.hazards.push(h); return Store.put(h, 'hazards'); }));
       Promise.all(writes).then(function () {
         haptic();
-        var msg = 'Imported ' + newEntries.length + (newEntries.length === 1 ? ' encounter' : ' encounters');
-        if (newHazards.length) msg += ' and ' + newHazards.length + (newHazards.length === 1 ? ' hazard' : ' hazards');
+        var msg = Lx(newEntries.length === 1 ? 'Imported {n} encounter' : 'Imported {n} encounters').replace('{n}', newEntries.length);
+        if (newHazards.length) msg += ' ' + Lx(newHazards.length === 1 ? 'and {n} hazard' : 'and {n} hazards').replace('{n}', newHazards.length);
         toast(msg);
         route();
       }).catch(function () { toast('Couldn’t save the import. Storage may be full.'); route(); });
