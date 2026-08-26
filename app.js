@@ -528,7 +528,28 @@
     'locked': 'verrouillé',
     'Community server address': 'Adresse du serveur communautaire',
     'in your journal': 'dans votre journal',
-    'Photo you attached to this sighting': 'Photo que vous avez jointe à cette observation'
+    'Photo you attached to this sighting': 'Photo que vous avez jointe à cette observation',
+    /* ---- r5 audit fixes: fishing-zones intro, photos empty state, About, shared limit, map pins, species links ---- */
+    'is open right now in': 'est ouvert en ce moment dans',
+    'fisheries management zones.': 'zones de gestion des pêches.',
+    'is closed in every zone right now.': 'est fermé dans toutes les zones en ce moment.',
+    'Seasons and limits come from the Ontario fishing regulations summary.': 'Les saisons et les limites proviennent du sommaire des règlements de pêche de l’Ontario.',
+    'No photos yet': 'Aucune photo pour l’instant',
+    'Attach a photo when you log an encounter and it will land here, newest first.': 'Joignez une photo lorsque vous notez une observation et elle apparaîtra ici, les plus récentes en premier.',
+    'on-wildlife is a private field guide and journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario. Look a species up, read the longer account, and log what you see. It works offline and installs to your home screen.': 'on-wildlife est un guide de terrain et un journal privés pour les mammifères, oiseaux, reptiles, amphibiens, poissons, arbres, plantes, insectes et champignons de l’Ontario. Cherchez une espèce, lisez le compte rendu détaillé et notez ce que vous voyez. L’appli fonctionne hors ligne et s’installe sur votre écran d’accueil.',
+    'I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.': 'Je l’ai créée parce que je voulais un seul endroit pour nommer ce que je croise dehors et en garder une trace. L’appli n’a aucune publicité, aucun compte et aucun suivi. Tout ce que vous notez reste sur cet appareil ; il n’y a aucun serveur. Les lieux sensibles, comme les observations d’ours, sont floutés sur une grille plus grossière avant de pouvoir atteindre la couche communautaire optionnelle.',
+    'Regulated as {n}, so the season and catch limit are shared, not separate per species.': 'Réglementé comme {n}, donc la saison et la limite de prises sont partagées, et non distinctes par espèce.',
+    'Field guide': 'Fiche du guide',
+    'See photos on': 'Voir les photos sur',
+    'Look up on': 'Rechercher sur',
+    'Ontario fishing & regulations': 'Pêche et règlements de l’Ontario',
+    'Species at risk in Ontario': 'Espèces en péril en Ontario',
+    'Photos, range map & observations': 'Photos, aire de répartition et observations',
+    'Bird records across Ontario': 'Mentions d’oiseaux partout en Ontario',
+    'Seasons, limits & licences': 'Saisons, limites et permis',
+    'Reptile & amphibian conservation': 'Conservation des reptiles et amphibiens',
+    'Species profiles & videos': 'Fiches d’espèces et vidéos',
+    'Status, recovery & how to help': 'Statut, rétablissement et comment aider'
   };
   function Lx(s) { return (app.settings && app.settings.lang === 'fr' && FR[s]) || s; }
   /* ---- Shared profile -------------------------------------------------
@@ -1323,8 +1344,8 @@
   function linkCell(label, url, note) {
     return '<a class="cell tap" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' +
       '<span class="cell-emoji" style="color:var(--tint)">' + I.link + '</span>' +
-      '<span class="cell-body"><span class="cell-title">' + esc(label) + '</span>' +
-      (note ? '<span class="cell-sub">' + esc(note) + '</span>' : '') + '</span></a>';
+      '<span class="cell-body"><span class="cell-title">' + esc(Lx(label)) + '</span>' +
+      (note ? '<span class="cell-sub">' + esc(Lx(note)) + '</span>' : '') + '</span></a>';
   }
 
   /* ---- Badges ---- */
@@ -1965,8 +1986,8 @@
   }
   function speciesLinks(s) {
     var q = encodeURIComponent(s.sci || s.name);
-    var out = linkCell('See photos on iNaturalist', 'https://www.inaturalist.org/search?q=' + q, 'Photos, range map & observations');
-    if (s.cat === 'birds') out += linkCell('Look up on eBird', 'https://ebird.org/canada', 'Bird records across Ontario');
+    var out = linkCell(Lx('See photos on') + ' iNaturalist', 'https://www.inaturalist.org/search?q=' + q, 'Photos, range map & observations');
+    if (s.cat === 'birds') out += linkCell(Lx('Look up on') + ' eBird', 'https://ebird.org/canada', 'Bird records across Ontario');
     else if (s.cat === 'fish') out += linkCell('Ontario fishing & regulations', 'https://www.ontario.ca/page/fishing', 'Seasons, limits & licences');
     else if (s.cat === 'reptiles' || s.cat === 'amphibians') out += linkCell('Ontario Nature', 'https://ontarionature.org', 'Reptile & amphibian conservation');
     else out += linkCell('Hinterland Who’s Who', 'https://www.hww.ca', 'Species profiles & videos');
@@ -2017,7 +2038,7 @@
       regStatusBadge(openN ? 'open' : 'closed') + '</div>' +
       info('Season, most zones', def[0]) +
       info('Limits, most zones', def[1]) +
-      (combined ? info('Shared limit', 'Regulated as ' + combined + ', so the season and catch limit are shared, not separate per species.') : '') +
+      (combined ? info('Shared limit', Lx('Regulated as {n}, so the season and catch limit are shared, not separate per species.').replace('{n}', combined)) : '') +
       '<a class="cell tap" href="#/fishing/' + esc(s.id) + '">' +
       '<span class="cell-body"><span class="cell-title">' + Lx('Zones and seasons') + '</span>' +
       '<span class="cell-sub">' + Lx('Every zone, open or closed right now') + '</span></span>' +
@@ -2043,9 +2064,9 @@
         '<span class="cell-sub" style="white-space:normal">' + esc(m.rec.limits) + '</span></span>' +
         regStatusBadge(ss.status) + '</a>';
     });
-    var body = '<p class="article-intro">' + esc(s.name) + ' is ' +
-      (open ? 'open right now in ' + open + ' of ' + total + ' fisheries management zones.' : 'closed in every zone right now.') +
-      ' Seasons and limits come from the Ontario fishing regulations summary.</p>' +
+    var body = '<p class="article-intro">' + esc(s.name) + ' ' +
+      (open ? Lx('is open right now in') + ' ' + open + ' ' + Lx('of') + ' ' + total + ' ' + Lx('fisheries management zones.') : Lx('is closed in every zone right now.')) +
+      ' ' + Lx('Seasons and limits come from the Ontario fishing regulations summary.') + '</p>' +
       '<div class="group"><div class="group-header">' + Lx('Seasons by zone') + '</div><div class="list">' + rows + '</div>' +
       '<div class="group-footer">' + Lx('S is the sport licence limit and C the conservation licence limit. Tap a zone for its full rules.') + '</div></div>';
     screen({ title: 'Zones and seasons', back: '#/species/' + id, backText: s.name, body: body });
@@ -2372,7 +2393,7 @@
 
     body += timelineHtml(mine);
 
-    screen({ title: name, back: '#/journal', backText: 'Journal', body: body });
+    screen({ title: name, back: '#/journal', backText: 'Journal', body: body, cover: true });
   }
 
   function viewJournalPlace(key) {
@@ -2520,11 +2541,11 @@
     // the About text reads as plain paragraphs, the way on-site tells its
     // story, with the counts in a small group underneath
     body += sectionTitle(Lx('About')) + '<div class="aboutbody">' +
-      '<p>on-wildlife is a private field guide and journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario. Look a species up, read the longer account, and log what you see. It works offline and installs to your home screen.</p>' +
-      '<p>I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</p>' +
+      '<p>' + Lx('on-wildlife is a private field guide and journal for the mammals, birds, reptiles, amphibians, fish, trees, plants, insects and fungi of Ontario. Look a species up, read the longer account, and log what you see. It works offline and installs to your home screen.') + '</p>' +
+      '<p>' + Lx('I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.') + '</p>' +
       '</div><div class="ios-group" style="margin-top:16px">' +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.19', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.20', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca' }) +
       '</div>';
 
@@ -2599,7 +2620,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.19', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.20', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: cameFromLabel(), body: body });
@@ -2611,8 +2632,8 @@
       .sort(function (a, b) { return new Date(b.when) - new Date(a.when); });
     var body;
     if (!list.length) {
-      body = '<div class="empty"><div class="e">\u{1F4F7}</div><h3>No photos yet</h3>' +
-        '<p>Attach a photo when you log an encounter and it will land here, newest first.</p></div>';
+      body = '<div class="empty"><div class="e">\u{1F4F7}</div><h3>' + esc(Lx('No photos yet')) + '</h3>' +
+        '<p>' + esc(Lx('Attach a photo when you log an encounter and it will land here, newest first.')) + '</p></div>';
     } else {
       body = '<div class="photo-grid">';
       list.forEach(function (e) {
@@ -2622,7 +2643,7 @@
       });
       body += '</div>';
     }
-    screen({ title: 'Photos', backAction: true, backText: 'Account', body: body });
+    screen({ title: Lx('Photos'), backAction: true, backText: Lx('Account'), body: body });
   }
 
   function moreCell(emoji, title, sub, action, data) {
@@ -2759,10 +2780,10 @@
         popup = '<b>' + esc(Lx(ht.name)) + '</b><br>' + esc(fmtDay(r.when) + ' · ' + fmtTime(r.when)) + (r.notes ? '<br>' + esc(r.notes) : '');
       } else if (r.kind === 'bear') {
         icon = pinIcon('\u{1F43B}', 'pin-bear');
-        popup = '<b>' + esc(r.speciesName || 'Bear') + '</b><br>' + esc(fmtDay(r.when) + ' · ' + fmtTime(r.when)) + (r.bearReport && r.bearReport.cubs ? '<br>Cubs present' : '');
+        popup = '<b>' + esc(r.speciesName || 'Bear') + '</b><br>' + esc(fmtDay(r.when) + ' · ' + fmtTime(r.when)) + (r.bearReport && r.bearReport.cubs ? '<br>' + esc(Lx('Cubs present')) : '');
       } else {
         icon = pinIcon(r.emoji || '\u{1F43E}', 'pin-wild');
-        popup = '<b>' + esc(r.speciesName) + '</b><br>' + esc(fmtDay(r.when) + ' · ' + fmtTime(r.when)) + (r.speciesId ? '<br><a href="#/species/' + esc(r.speciesId) + '">Field guide ›</a>' : '');
+        popup = '<b>' + esc(r.speciesName) + '</b><br>' + esc(fmtDay(r.when) + ' · ' + fmtTime(r.when)) + (r.speciesId ? '<br><a href="#/species/' + esc(r.speciesId) + '">' + Lx('Field guide') + ' ›</a>' : '');
       }
       L.marker([r.lat, r.lng], { icon: icon }).bindPopup(popup).addTo(group);
     });
@@ -3151,7 +3172,7 @@
       t.links.forEach(function (l) { body += linkCell(l.label, l.url, l.note); });
       body += '</div><div class="group-footer">' + Lx('Opens external sites in your browser.') + '</div></div>';
     }
-    screen({ title: t.title, backAction: true, backText: 'Learn', body: body });
+    screen({ title: t.title, backAction: true, backText: 'Learn', body: body, cover: true });
   }
   function calloutHtml(c) {
     var cls = c.style === 'danger' ? 'callout-danger' : c.style === 'warn' ? 'callout-warn' : 'callout-info';
@@ -3207,14 +3228,14 @@
       '<button class="btn btn-gray btn-block" data-action="report-hazard">⚠️ ' + Lx('Hazard') + '</button></div>';
 
     body += '<div class="group"><div class="group-header">' + Lx('Safety guides') + '</div><div class="list">' +
-      learnCell('\u{1F577}️', 'Ticks & Lyme disease', 'Identify, prevent & remove', 'ticks') +
-      learnCell('\u{1F43B}', 'Bear safety (Bear Wise)', 'Prevent encounters & report', 'bears') +
-      learnCell('☠️', 'Dangerous plants', 'Poison ivy, giant hogweed & more', 'plants') +
-      learnCell('\u{1F6E3}️', 'Wildlife on roads', 'Deer, moose & turtles', 'roads') +
+      learnCell('\u{1F577}️', 'Ticks and Lyme disease', 'Identify, prevent, remove, when to see a doctor', 'ticks') +
+      learnCell('\u{1F43B}', 'Bear safety (Bear Wise)', 'Prevent encounters and how to report a bear', 'bears') +
+      learnCell('☠️', 'Dangerous plants', 'Poison ivy, wild parsnip, giant hogweed', 'plants') +
+      learnCell('\u{1F6E3}️', 'Wildlife on roads', 'Deer, moose, turtles and road hazards', 'roads') +
       '</div></div>';
 
     body += dangerousList();
-    screen({ title: 'Safety & Alerts', large: true, subtitle: 'Dangers to know & report', body: body });
+    screen({ title: 'Safety and alerts', large: true, subtitle: 'Dangers to know & report', body: body });
   }
   function dangerousList() {
     var flagged = SPECIES.filter(isDanger);
@@ -3316,7 +3337,7 @@
       linkCell('EDDMapS Ontario, report online', 'https://www.eddmaps.org/ontario/', '') +
       linkCell('Ontario: Invasive species', 'https://www.ontario.ca/page/invasive-species-ontario', '') +
       '</div></div>';
-    screen({ title: 'Invasive Species', backAction: true, backText: 'More', body: body });
+    screen({ title: 'Invasive Species', backAction: true, backText: 'More', body: body, cover: true });
   }
 
   /* =============================================================== PRIVACY */
@@ -3340,7 +3361,7 @@
       (app.settings.communityUrl ? '<button class="cell tap" data-action="delete-shared"><span class="cell-emoji" aria-hidden="true">\u{1F310}</span><span class="cell-body"><span class="cell-title" style="color:var(--red)">' + Lx('Delete my shared data') + '</span><span class="cell-sub">' + Lx('Remove everything from the community server') + '</span></span></button>' : '') +
       '<button class="cell tap" data-action="clear-data"><span class="cell-emoji" aria-hidden="true">\u{1F5D1}️</span><span class="cell-body"><span class="cell-title" style="color:var(--red)">' + Lx('Delete all my data on this device') + '</span></span></button>' +
       '</div></div>';
-    screen({ title: 'Privacy', backAction: true, backText: 'More', body: body });
+    screen({ title: 'Privacy', backAction: true, backText: 'More', body: body, cover: true });
   }
   function infoRow2(emoji, title, sub) {
     return '<div class="cell"><span class="cell-emoji" aria-hidden="true">' + emoji + '</span>' +
@@ -3358,7 +3379,7 @@
         '<div class="field"><input type="url" id="community-url" aria-label="' + esc(Lx('Community server address')) + '" placeholder="https://your-server.example" style="text-align:left;flex:1" autocapitalize="none" autocorrect="off" spellcheck="false"></div>' +
         '</div><div class="group-footer">' + Lx('No server yet? Anyone can deploy the free, open-source one in a couple of minutes. See <b>server/README</b> in the project. Leave this blank to stay fully offline.') + '</div></div>';
       body += '<div class="hpad"><button class="btn btn-primary btn-block" data-action="community-connect">' + Lx('Connect') + '</button></div>';
-      screen({ title: 'Community', backAction: true, backText: 'More', body: body });
+      screen({ title: 'Community', backAction: true, backText: 'More', body: body, cover: true });
       return;
     }
     body += '<div class="group"><div class="group-header">' + Lx('Connection') + '</div><div class="list">' +
@@ -3369,7 +3390,7 @@
       '<button class="cell tap" data-action="community-disconnect"><span class="cell-emoji" aria-hidden="true">\u{1F50C}</span><span class="cell-body"><span class="cell-title" style="color:var(--red)">' + Lx('Disconnect') + '</span></span></button>' +
       '</div><div class="group-footer">' + (app.settings.community ? Lx('Your sightings are shared <b>pseudonymously</b>, with a random device id and no name. A server operator could group your reports by that id, so you can reset it anytime above. At-risk locations are coarsened before they leave your phone.') : Lx('Sharing is off. You can still see the community feed below.')) + '</div></div>';
     body += '<div id="community-feed"><div class="empty"><div class="e">\u{1F4E1}</div><p>' + Lx('Loading community activity…') + '</p></div></div>';
-    screen({ title: 'Community', backAction: true, backText: 'More', body: body });
+    screen({ title: 'Community', backAction: true, backText: 'More', body: body, cover: true });
     loadCommunityFeed();
   }
   /* Anything the community feed shows comes from someone else's phone, so it
@@ -3928,7 +3949,7 @@
     var it = { t: 'wl', n: e.speciesName, e: e.emoji || '\u{1F43E}', cat: e.cat, ev: e.evidence, w: e.when };
     if (sp && sp.sci) it.sci = sp.sci;
     if (e.count > 1) it.c = e.count;
-    if (e.notes) it.note = e.notes.length > 200 ? e.notes.slice(0, 197) + '…' : e.notes;
+    if (e.notes) it.note = Array.from(e.notes).length > 200 ? Array.from(e.notes).slice(0, 197).join('') + '…' : e.notes;
     /* recompute sensitivity at share time, exactly as export does: a stale
        or missing saved flag must never leak an at-risk or den location at
        street precision into a share link */
