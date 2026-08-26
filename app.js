@@ -416,7 +416,73 @@
     'Count': 'Nombre', 'Location': 'Position', 'Fishing zone': 'Zone de pêche', 'Tracks / signs': 'Traces / indices',
     'Share this sighting': 'Partager cette observation', 'Edit encounter': 'Modifier l’observation',
     'View in field guide': 'Voir dans le guide de terrain', 'Delete this encounter': 'Supprimer cette observation',
-    'Logged in <b>ON Fishing</b> on this device. It shows here read-only, so edit or delete it over there.': 'Noté dans <b>ON Fishing</b> sur cet appareil. Il apparaît ici en lecture seule, alors modifiez-le ou supprimez-le là-bas.'
+    'Logged in <b>ON Fishing</b> on this device. It shows here read-only, so edit or delete it over there.': 'Noté dans <b>ON Fishing</b> sur cet appareil. Il apparaît ici en lecture seule, alors modifiez-le ou supprimez-le là-bas.',
+    /* ---- Map hint (bear/hazard placement) ---- */
+    'Tap the map where you saw the bear': 'Touchez la carte à l’endroit où vous avez vu l’ours',
+    'Tap the map to place the hazard': 'Touchez la carte pour placer le danger',
+    'or place at map centre': 'ou placer au centre de la carte',
+    'No mapped reports yet. Tap 🐻 or ⚠️, then tap the map. Sightings you log with a location show up here too.': 'Aucun signalement cartographié pour l’instant. Touchez 🐻 ou ⚠️, puis touchez la carte. Les observations que vous notez avec une position apparaissent ici aussi.',
+    /* ---- Location cell (bear/hazard reports) ---- */
+    'Location set': 'Position définie', 'Use my location': 'Utiliser ma position',
+    'Tap to capture GPS, or drop a pin on the map': 'Touchez pour capter le GPS, ou déposez une épingle sur la carte',
+    /* ---- Bear report sheet ---- */
+    'Saving here adds it to <b>your own log</b>. It does <b>not</b> alert authorities. For an immediate threat call <b>911</b>. For non-emergency bear problems call Bear Wise <b>1-866-514-2327</b> (Apr to Nov).': 'Enregistrer ici l’ajoute à <b>votre propre journal</b>. Cela n’alerte <b>pas</b> les autorités. En cas de menace immédiate, composez le <b>911</b>. Pour un problème d’ours non urgent, appelez Bear Wise au <b>1-866-514-2327</b> (avril à novembre).',
+    'Bear safety ›': 'Sécurité face aux ours ›',
+    'The bear': 'L’ours', 'Type': 'Type', 'Cubs present': 'Oursons présents', 'Where & when': 'Où et quand',
+    'Black bear': 'Ours noir', 'Polar bear': 'Ours polaire',
+    'Calm / moved off': 'Calme / parti', 'Curious': 'Curieux', 'Aggressive': 'Agressif',
+    'Location details, what it was doing…': 'Détails du lieu, ce qu’il faisait…',
+    'Save Bear Sighting': 'Enregistrer l’observation d’ours',
+    /* ---- Hazard report sheet ---- */
+    'Hazard type': 'Type de danger', 'Date and time': 'Date et heure',
+    'What & where exactly…': 'Quoi et où exactement…', 'Save Hazard': 'Enregistrer le danger',
+    /* ---- Privacy screen ---- */
+    'Your Privacy': 'Votre confidentialité', 'Private by default': 'Privé par défaut',
+    'Your log, including sightings, photos, locations and notes, is stored <b>only on this device</b>. There are no accounts, ads or trackers, and <b>nothing you log is uploaded</b> unless you turn on Community sharing. Two other features reach the internet: connecting to a Community server (off until you set one up), and loading reference photos (on by default, and you can turn it off below). The <b>Map</b> loads its background tiles from <b>CARTO</b>, drawn from OpenStreetMap data, so opening the Map tab sends the area you are viewing, and your device IP, to that tile service. It never sends your saved sightings.': 'Votre journal, y compris les observations, les photos, les positions et les notes, est stocké <b>uniquement sur cet appareil</b>. Il n’y a ni comptes, ni publicités, ni traqueurs, et <b>rien de ce que vous notez n’est téléversé</b> à moins d’activer le partage communautaire. Deux autres fonctions accèdent à Internet: la connexion à un serveur communautaire (désactivée tant que vous n’en configurez pas un) et le chargement des photos de référence (activé par défaut, et vous pouvez le désactiver ci-dessous). La <b>Carte</b> charge ses tuiles de fond depuis <b>CARTO</b>, à partir des données OpenStreetMap, donc ouvrir l’onglet Carte envoie la zone que vous consultez, ainsi que l’adresse IP de votre appareil, à ce service de tuiles. Elle n’envoie jamais vos observations enregistrées.',
+    'On this device': 'Sur cet appareil',
+    'Stored locally': 'Stocké localement',
+    'Your journal lives in this app’s private storage on your phone.': 'Votre journal réside dans le stockage privé de cette appli sur votre téléphone.',
+    'No accounts or trackers': 'Aucun compte ni traqueur', 'No sign-in, no ads, no analytics.': 'Aucune connexion, aucune publicité, aucune analyse.',
+    'Export and delete': 'Exporter et supprimer',
+    'Export your whole log to a file, or delete everything, anytime.': 'Exportez tout votre journal dans un fichier, ou supprimez tout, en tout temps.',
+    'Reference photos': 'Photos de référence', 'Load species photos': 'Charger les photos des espèces',
+    'Load species reference photos from iNaturalist': 'Charger les photos de référence des espèces depuis iNaturalist',
+    'On by default. When on, species pages fetch one openly-licensed (Creative Commons) photo from <b>iNaturalist</b>, which means your device contacts iNaturalist. Off keeps everything to the built-in illustrations.': 'Activé par défaut. Lorsque c’est activé, les pages des espèces récupèrent une photo sous licence ouverte (Creative Commons) depuis <b>iNaturalist</b>, ce qui signifie que votre appareil contacte iNaturalist. Désactivé, tout se limite aux illustrations intégrées.',
+    'Community sharing': 'Partage communautaire', 'Sharing is ON': 'Partage activé',
+    'Not connected': 'Non connecté', 'Set up or change sharing': 'Configurer ou modifier le partage',
+    'Sharing is off unless you connect a server you choose and switch it on. What gets sent is <b>pseudonymous</b>, a random device id and not your name, with coordinates <b>coarsened to about a 5&nbsp;km grid</b> (about 22&nbsp;km for Species at Risk) and times blurred to the hour, before anything leaves your phone. You can delete everything you have shared below.': 'Le partage est désactivé à moins que vous ne connectiez un serveur de votre choix et ne l’activiez. Ce qui est envoyé est <b>pseudonyme</b>: un identifiant d’appareil aléatoire et non votre nom, avec des coordonnées <b>rendues approximatives à une grille d’environ 5&nbsp;km</b> (environ 22&nbsp;km pour les espèces en péril) et des heures floutées à l’heure près, avant que quoi que ce soit ne quitte votre téléphone. Vous pouvez supprimer ci-dessous tout ce que vous avez partagé.',
+    'Export my data': 'Exporter mes données',
+    'Delete my shared data': 'Supprimer mes données partagées', 'Remove everything from the community server': 'Tout retirer du serveur communautaire',
+    'Delete all my data on this device': 'Supprimer toutes mes données sur cet appareil',
+    /* toast messages */
+    'Undo': 'Annuler',
+    'Connect a server first': 'Connectez d’abord un serveur',
+    'Connecting…': 'Connexion…', 'Connected': 'Connecté', 'Disconnected': 'Déconnecté',
+    'Enter a server address': 'Entrez une adresse de serveur',
+    'Couldn’t reach that server': 'Impossible de joindre ce serveur',
+    'Device id reset': 'Identifiant d’appareil réinitialisé',
+    'Push isn’t supported on this device': 'Les notifications push ne sont pas prises en charge sur cet appareil',
+    'This server hasn’t set up alerts yet': 'Ce serveur n’a pas encore configuré les alertes',
+    'Notifications not allowed': 'Notifications non autorisées',
+    'Nearby bear & hazard alerts enabled': 'Alertes d’ours et de dangers à proximité activées',
+    'Couldn’t enable alerts': 'Impossible d’activer les alertes',
+    'Encounter deleted': 'Observation supprimée', 'Encounter restored': 'Observation restaurée',
+    'Nothing to export yet': 'Rien à exporter pour l’instant',
+    'Could not read that image': 'Impossible de lire cette image',
+    'Couldn’t read that file': 'Impossible de lire ce fichier',
+    'That file isn’t a wildlife log backup': 'Ce fichier n’est pas une sauvegarde du journal de faune',
+    'Nothing new in that backup': 'Rien de nouveau dans cette sauvegarde',
+    'Couldn’t save the import. Storage may be full.': 'Impossible d’enregistrer l’import. Le stockage est peut-être plein.',
+    'Couldn’t save. Storage may be full.': 'Impossible d’enregistrer. Le stockage est peut-être plein.',
+    'Couldn’t save. Your device storage may be full. Try removing the photo.': 'Impossible d’enregistrer. Le stockage de votre appareil est peut-être plein. Essayez de retirer la photo.',
+    'Sharing is not available': 'Le partage n’est pas disponible',
+    'Link copied, card saved': 'Lien copié, carte enregistrée',
+    'Hidden on this phone': 'Masqué sur ce téléphone', 'Hidden reports restored': 'Signalements masqués restaurés',
+    'New species. That is #{n} on your life list.': 'Nouvelle espèce. C’est la {n}e sur votre liste de vie.',
+    'Exported {n} encounters': '{n} observations exportées',
+    '🐾 Thanks for logging what you see.': '🐾 Merci de noter ce que vous voyez.',
+    '🐻 Saved to your log (on your phone)': '🐻 Enregistré dans votre journal (sur votre téléphone)',
+    '⚠️ Hazard saved': '⚠️ Danger enregistré'
   };
   function Lx(s) { return (app.settings && app.settings.lang === 'fr' && FR[s]) || s; }
   /* ---- Shared profile -------------------------------------------------
@@ -760,7 +826,7 @@
   var toastTimer;
   function toast(msg) {
     var root = $('#toast-root');
-    root.innerHTML = '<div class="toast" id="the-toast">' + esc(msg) + '</div>';
+    root.innerHTML = '<div class="toast" id="the-toast">' + esc(Lx(msg)) + '</div>';
     var t = $('#the-toast');
     requestAnimationFrame(function () { t.classList.add('show'); });
     clearTimeout(toastTimer);
@@ -771,8 +837,8 @@
   function toastUndo(msg, onUndo) {
     var root = $('#toast-root');
     root.innerHTML = '<div class="toast toast-action" id="the-toast">' +
-      '<span>' + esc(msg) + '</span>' +
-      '<button type="button" class="toast-btn" id="toast-undo">Undo</button></div>';
+      '<span>' + esc(Lx(msg)) + '</span>' +
+      '<button type="button" class="toast-btn" id="toast-undo">' + Lx('Undo') + '</button></div>';
     var t = $('#the-toast');
     requestAnimationFrame(function () { t.classList.add('show'); });
     clearTimeout(toastTimer);
@@ -2404,7 +2470,7 @@
       '<p>I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</p>' +
       '</div><div class="ios-group" style="margin-top:16px">' +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.15', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.16', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca' }) +
       '</div>';
 
@@ -2479,7 +2545,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.15', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.16', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: cameFromLabel(), body: body });
@@ -2773,11 +2839,11 @@
     var el = document.getElementById('map-hint'); if (!el) return;
     clearTimeout(app._hintTimer);
     if (app.placeMode) {
-      el.innerHTML = (app.placeMode === 'bear' ? '🐻 Tap the map where you saw the bear' : '⚠️ Tap the map to place the hazard') +
-        ' <button type="button" class="hint-btn" data-action="place-center">or place at map centre</button>';
+      el.innerHTML = (app.placeMode === 'bear' ? '🐻 ' + Lx('Tap the map where you saw the bear') : '⚠️ ' + Lx('Tap the map to place the hazard')) +
+        ' <button type="button" class="hint-btn" data-action="place-center">' + Lx('or place at map centre') + '</button>';
       el.classList.add('show');
     } else if (!locatedRecords().length) {
-      el.innerHTML = 'No mapped reports yet. Tap 🐻 or ⚠️, then tap the map. Sightings you log with a location show up here too.';
+      el.innerHTML = Lx('No mapped reports yet. Tap 🐻 or ⚠️, then tap the map. Sightings you log with a location show up here too.');
       el.classList.add('show');
       // informational only, so it steps out of the way after a few seconds
       app._hintTimer = setTimeout(function () { el.classList.remove('show'); }, 4000);
@@ -2794,15 +2860,15 @@
   /* ===================================================== BEAR & HAZARD REPORTS */
   function segHtml(action, current, opts) {
     var h = '<div class="segmented">';
-    opts.forEach(function (o) { h += '<button type="button" class="seg-opt' + (current === o[0] ? ' on' : '') + '" aria-pressed="' + (current === o[0] ? 'true' : 'false') + '" data-action="' + action + '" data-v="' + o[0] + '">' + esc(o[1]) + '</button>'; });
+    opts.forEach(function (o) { h += '<button type="button" class="seg-opt' + (current === o[0] ? ' on' : '') + '" aria-pressed="' + (current === o[0] ? 'true' : 'false') + '" data-action="' + action + '" data-v="' + o[0] + '">' + esc(Lx(o[1])) + '</button>'; });
     return h + '</div>';
   }
   function locCell(action, lat, lng) {
     var has = lat != null;
     return '<button class="cell tap" data-action="' + action + '">' +
       '<span class="cell-emoji" style="color:var(--tint)">' + I.pin + '</span>' +
-      '<span class="cell-body"><span class="cell-title" style="color:var(--tint)">' + (has ? 'Location set' : 'Use my location') + '</span>' +
-      '<span class="cell-sub">' + (has ? (lat.toFixed(4) + ', ' + lng.toFixed(4)) : 'Tap to capture GPS, or drop a pin on the map') + '</span></span></button>';
+      '<span class="cell-body"><span class="cell-title" style="color:var(--tint)">' + (has ? Lx('Location set') : Lx('Use my location')) + '</span>' +
+      '<span class="cell-sub">' + (has ? (lat.toFixed(4) + ', ' + lng.toFixed(4)) : Lx('Tap to capture GPS, or drop a pin on the map')) + '</span></span></button>';
   }
   /* While any sheet (or the species picker riding on one) is open the page
      behind is scroll-locked: iOS Safari otherwise pans the page when the
@@ -2937,17 +3003,17 @@
   function renderBearSheet() {
     var d = app.bdraft;
     var body = '';
-    body += '<div class="wrap-note danger" style="margin:8px 16px"><span class="i">🐻</span><span>Saving here adds it to <b>your own log</b>. It does <b>not</b> alert authorities. For an immediate threat call <b>911</b>. For non-emergency bear problems call Bear Wise <b>1-866-514-2327</b> (Apr to Nov). <a href="#/learn/bears" data-action="close-sheet-nav">Bear safety ›</a></span></div>';
-    body += '<div class="group" style="margin-top:6px"><div class="group-header">The bear</div><div class="list">';
-    body += '<div class="field"><span class="field-label">Type</span><div style="flex:1"></div><div style="width:220px">' + segHtml('bear-species', d.species, [['american-black-bear', 'Black bear'], ['polar-bear', 'Polar bear']]) + '</div></div>';
-    body += '<div class="field"><span class="field-label">How many</span><div style="flex:1"></div><div class="stepper" role="group"><button data-action="bcount" data-d="-1" aria-label="Fewer">−</button><div class="sep"></div><div class="val" id="bcount-val" aria-live="polite">' + d.count + '</div><div class="sep"></div><button data-action="bcount" data-d="1" aria-label="More">+</button></div></div>';
-    body += '<div class="field"><span class="field-label">Cubs present</span><div style="flex:1"></div><label class="switch"><input type="checkbox" id="b-cubs" aria-label="Cubs present"' + (d.cubs ? ' checked' : '') + '><span class="track"></span><span class="knob"></span></label></div>';
+    body += '<div class="wrap-note danger" style="margin:8px 16px"><span class="i">🐻</span><span>' + Lx('Saving here adds it to <b>your own log</b>. It does <b>not</b> alert authorities. For an immediate threat call <b>911</b>. For non-emergency bear problems call Bear Wise <b>1-866-514-2327</b> (Apr to Nov).') + ' <a href="#/learn/bears" data-action="close-sheet-nav">' + Lx('Bear safety ›') + '</a></span></div>';
+    body += '<div class="group" style="margin-top:6px"><div class="group-header">' + Lx('The bear') + '</div><div class="list">';
+    body += '<div class="field"><span class="field-label">' + Lx('Type') + '</span><div style="flex:1"></div><div style="width:220px">' + segHtml('bear-species', d.species, [['american-black-bear', 'Black bear'], ['polar-bear', 'Polar bear']]) + '</div></div>';
+    body += '<div class="field"><span class="field-label">' + Lx('How many') + '</span><div style="flex:1"></div><div class="stepper" role="group"><button data-action="bcount" data-d="-1" aria-label="' + esc(Lx('Fewer')) + '">−</button><div class="sep"></div><div class="val" id="bcount-val" aria-live="polite">' + d.count + '</div><div class="sep"></div><button data-action="bcount" data-d="1" aria-label="' + esc(Lx('More')) + '">+</button></div></div>';
+    body += '<div class="field"><span class="field-label">' + Lx('Cubs present') + '</span><div style="flex:1"></div><label class="switch"><input type="checkbox" id="b-cubs" aria-label="' + esc(Lx('Cubs present')) + '"' + (d.cubs ? ' checked' : '') + '><span class="track"></span><span class="knob"></span></label></div>';
     body += '</div></div>';
-    body += '<div class="group"><div class="group-header">Behaviour</div><div class="list"><div style="padding:12px 16px">' + segHtml('bear-behaviour', d.behaviour, [['calm', 'Calm / moved off'], ['curious', 'Curious'], ['aggressive', 'Aggressive']]) + '</div></div></div>';
-    body += '<div class="group"><div class="group-header">Where & when</div><div class="list">' + locCell('bear-locate', d.lat, d.lng) +
-      '<div class="field"><span class="field-label">When</span><input type="datetime-local" id="b-when" aria-label="Date and time seen" value="' + esc(d.when) + '"></div></div></div>';
-    body += '<div class="group"><div class="group-header">Notes</div><div class="list"><textarea class="notes" id="b-notes" aria-label="Notes" placeholder="Location details, what it was doing…"></textarea></div></div>';
-    body += '<div class="hpad"><button class="btn btn-primary btn-block" data-action="save-bear">Save Bear Sighting</button></div>';
+    body += '<div class="group"><div class="group-header">' + Lx('Behaviour') + '</div><div class="list"><div style="padding:12px 16px">' + segHtml('bear-behaviour', d.behaviour, [['calm', 'Calm / moved off'], ['curious', 'Curious'], ['aggressive', 'Aggressive']]) + '</div></div></div>';
+    body += '<div class="group"><div class="group-header">' + Lx('Where & when') + '</div><div class="list">' + locCell('bear-locate', d.lat, d.lng) +
+      '<div class="field"><span class="field-label">' + Lx('When') + '</span><input type="datetime-local" id="b-when" aria-label="' + esc(Lx('Date and time seen')) + '" value="' + esc(d.when) + '"></div></div></div>';
+    body += '<div class="group"><div class="group-header">' + Lx('Notes') + '</div><div class="list"><textarea class="notes" id="b-notes" aria-label="' + esc(Lx('Notes')) + '" placeholder="' + esc(Lx('Location details, what it was doing…')) + '"></textarea></div></div>';
+    body += '<div class="hpad"><button class="btn btn-primary btn-block" data-action="save-bear">' + Lx('Save Bear Sighting') + '</button></div>';
     mountSheet('Report a Bear', body, 'save-bear');
     setVal('b-notes', d.notes);
   }
@@ -2988,11 +3054,11 @@
     });
     grid += '</div>';
     var body = '';
-    body += '<div class="group" style="margin-top:6px"><div class="group-header">Hazard type</div>' + grid + '</div>';
-    body += '<div class="group"><div class="group-header">Where & when</div><div class="list">' + locCell('hazard-locate', d.lat, d.lng) +
-      '<div class="field"><span class="field-label">When</span><input type="datetime-local" id="h-when" aria-label="Date and time" value="' + esc(d.when) + '"></div></div></div>';
-    body += '<div class="group"><div class="group-header">Notes</div><div class="list"><textarea class="notes" id="h-notes" aria-label="Notes" placeholder="What & where exactly…"></textarea></div></div>';
-    body += '<div class="hpad"><button class="btn btn-primary btn-block" data-action="save-hazard">Save Hazard</button></div>';
+    body += '<div class="group" style="margin-top:6px"><div class="group-header">' + Lx('Hazard type') + '</div>' + grid + '</div>';
+    body += '<div class="group"><div class="group-header">' + Lx('Where & when') + '</div><div class="list">' + locCell('hazard-locate', d.lat, d.lng) +
+      '<div class="field"><span class="field-label">' + Lx('When') + '</span><input type="datetime-local" id="h-when" aria-label="' + esc(Lx('Date and time')) + '" value="' + esc(d.when) + '"></div></div></div>';
+    body += '<div class="group"><div class="group-header">' + Lx('Notes') + '</div><div class="list"><textarea class="notes" id="h-notes" aria-label="' + esc(Lx('Notes')) + '" placeholder="' + esc(Lx('What & where exactly…')) + '"></textarea></div></div>';
+    body += '<div class="hpad"><button class="btn btn-primary btn-block" data-action="save-hazard">' + Lx('Save Hazard') + '</button></div>';
     mountSheet('Report a Hazard', body, 'save-hazard');
     setVal('h-notes', d.notes);
   }
@@ -3201,24 +3267,24 @@
 
   /* =============================================================== PRIVACY */
   function viewPrivacy() {
-    var body = '<div class="hero" style="padding-bottom:2px"><div class="hero-emoji" style="background:var(--tint-soft)">\u{1F512}</div><h1>Your Privacy</h1><div class="sci" style="font-style:normal">Private by default</div></div>';
-    body += '<p class="article-intro">Your log, including sightings, photos, locations and notes, is stored <b>only on this device</b>. There are no accounts, ads or trackers, and <b>nothing you log is uploaded</b> unless you turn on Community sharing. Two other features reach the internet: connecting to a Community server (off until you set one up), and loading reference photos (on by default, and you can turn it off below). The <b>Map</b> loads its background tiles from <b>CARTO</b>, drawn from OpenStreetMap data, so opening the Map tab sends the area you are viewing, and your device IP, to that tile service. It never sends your saved sightings.</p>';
-    body += '<div class="group"><div class="group-header">On this device</div><div class="list">' +
-      infoRow2('\u{1F4F1}', 'Stored locally', 'Your journal lives in this app’s private storage on your phone.') +
-      infoRow2('\u{1F6AB}', 'No accounts or trackers', 'No sign-in, no ads, no analytics.') +
-      infoRow2('\u{1F4E4}', 'Export and delete', 'Export your whole log to a file, or delete everything, anytime.') +
+    var body = '<div class="hero" style="padding-bottom:2px"><div class="hero-emoji" style="background:var(--tint-soft)">\u{1F512}</div><h1>' + Lx('Your Privacy') + '</h1><div class="sci" style="font-style:normal">' + Lx('Private by default') + '</div></div>';
+    body += '<p class="article-intro">' + Lx('Your log, including sightings, photos, locations and notes, is stored <b>only on this device</b>. There are no accounts, ads or trackers, and <b>nothing you log is uploaded</b> unless you turn on Community sharing. Two other features reach the internet: connecting to a Community server (off until you set one up), and loading reference photos (on by default, and you can turn it off below). The <b>Map</b> loads its background tiles from <b>CARTO</b>, drawn from OpenStreetMap data, so opening the Map tab sends the area you are viewing, and your device IP, to that tile service. It never sends your saved sightings.') + '</p>';
+    body += '<div class="group"><div class="group-header">' + Lx('On this device') + '</div><div class="list">' +
+      infoRow2('\u{1F4F1}', Lx('Stored locally'), Lx('Your journal lives in this app’s private storage on your phone.')) +
+      infoRow2('\u{1F6AB}', Lx('No accounts or trackers'), Lx('No sign-in, no ads, no analytics.')) +
+      infoRow2('\u{1F4E4}', Lx('Export and delete'), Lx('Export your whole log to a file, or delete everything, anytime.')) +
       '</div></div>';
-    body += '<div class="group"><div class="group-header">Reference photos</div><div class="list">' +
-      '<div class="field"><span class="field-label" style="flex:1">Load species photos</span>' +
-      '<label class="switch"><input type="checkbox" id="photos-toggle" aria-label="Load species reference photos from iNaturalist"' + (app.settings.photos ? ' checked' : '') + '><span class="track"></span><span class="knob"></span></label></div>' +
-      '</div><div class="group-footer">On by default. When on, species pages fetch one openly-licensed (Creative Commons) photo from <b>iNaturalist</b>, which means your device contacts iNaturalist. Off keeps everything to the built-in illustrations.</div></div>';
-    body += '<div class="group"><div class="group-header">Community sharing</div><div class="list">' +
-      '<a class="cell tap" href="#/community"><span class="cell-emoji" aria-hidden="true">\u{1F30D}</span><span class="cell-body"><span class="cell-title">' + (Community.on() ? 'Sharing is ON' : app.settings.communityUrl ? 'Connected · sharing off' : 'Not connected') + '</span><span class="cell-sub" style="white-space:normal">Set up or change sharing</span></span><span class="chevron">' + I.chevron + '</span></a>' +
-      '</div><div class="group-footer">Sharing is off unless you connect a server you choose and switch it on. What gets sent is <b>pseudonymous</b>, a random device id and not your name, with coordinates <b>coarsened to about a 5&nbsp;km grid</b> (about 22&nbsp;km for Species at Risk) and times blurred to the hour, before anything leaves your phone. You can delete everything you have shared below.</div></div>';
+    body += '<div class="group"><div class="group-header">' + Lx('Reference photos') + '</div><div class="list">' +
+      '<div class="field"><span class="field-label" style="flex:1">' + Lx('Load species photos') + '</span>' +
+      '<label class="switch"><input type="checkbox" id="photos-toggle" aria-label="' + esc(Lx('Load species reference photos from iNaturalist')) + '"' + (app.settings.photos ? ' checked' : '') + '><span class="track"></span><span class="knob"></span></label></div>' +
+      '</div><div class="group-footer">' + Lx('On by default. When on, species pages fetch one openly-licensed (Creative Commons) photo from <b>iNaturalist</b>, which means your device contacts iNaturalist. Off keeps everything to the built-in illustrations.') + '</div></div>';
+    body += '<div class="group"><div class="group-header">' + Lx('Community sharing') + '</div><div class="list">' +
+      '<a class="cell tap" href="#/community"><span class="cell-emoji" aria-hidden="true">\u{1F30D}</span><span class="cell-body"><span class="cell-title">' + (Community.on() ? Lx('Sharing is ON') : app.settings.communityUrl ? Lx('Connected · sharing off') : Lx('Not connected')) + '</span><span class="cell-sub" style="white-space:normal">' + Lx('Set up or change sharing') + '</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      '</div><div class="group-footer">' + Lx('Sharing is off unless you connect a server you choose and switch it on. What gets sent is <b>pseudonymous</b>, a random device id and not your name, with coordinates <b>coarsened to about a 5&nbsp;km grid</b> (about 22&nbsp;km for Species at Risk) and times blurred to the hour, before anything leaves your phone. You can delete everything you have shared below.') + '</div></div>';
     body += '<div class="group"><div class="list">' +
-      '<button class="cell tap" data-action="export-data"><span class="cell-emoji" aria-hidden="true">\u{1F4E4}</span><span class="cell-body"><span class="cell-title">Export my data</span></span><span class="chevron">' + I.chevron + '</span></button>' +
-      (app.settings.communityUrl ? '<button class="cell tap" data-action="delete-shared"><span class="cell-emoji" aria-hidden="true">\u{1F310}</span><span class="cell-body"><span class="cell-title" style="color:var(--red)">Delete my shared data</span><span class="cell-sub">Remove everything from the community server</span></span></button>' : '') +
-      '<button class="cell tap" data-action="clear-data"><span class="cell-emoji" aria-hidden="true">\u{1F5D1}️</span><span class="cell-body"><span class="cell-title" style="color:var(--red)">Delete all my data on this device</span></span></button>' +
+      '<button class="cell tap" data-action="export-data"><span class="cell-emoji" aria-hidden="true">\u{1F4E4}</span><span class="cell-body"><span class="cell-title">' + Lx('Export my data') + '</span></span><span class="chevron">' + I.chevron + '</span></button>' +
+      (app.settings.communityUrl ? '<button class="cell tap" data-action="delete-shared"><span class="cell-emoji" aria-hidden="true">\u{1F310}</span><span class="cell-body"><span class="cell-title" style="color:var(--red)">' + Lx('Delete my shared data') + '</span><span class="cell-sub">' + Lx('Remove everything from the community server') + '</span></span></button>' : '') +
+      '<button class="cell tap" data-action="clear-data"><span class="cell-emoji" aria-hidden="true">\u{1F5D1}️</span><span class="cell-body"><span class="cell-title" style="color:var(--red)">' + Lx('Delete all my data on this device') + '</span></span></button>' +
       '</div></div>';
     screen({ title: 'Privacy', backAction: true, backText: 'More', body: body });
   }
@@ -3461,10 +3527,10 @@
           '</div></div></div>';
       }
       body += '<div class="field"><span class="field-label">' + Lx('Length') + '</span>' +
-        '<input type="number" inputmode="decimal" id="f-length" aria-label="' + esc(Lx('Length in ' + (u === 'metric' ? 'centimetres' : 'inches'))) + '" placeholder="0" step="0.1">' +
+        '<input type="number" inputmode="decimal" id="f-length" aria-label="' + esc(Lx('Length in ' + (u === 'metric' ? 'centimetres' : 'inches'))) + '" placeholder="0" min="0" step="0.1">' +
         '<span class="muted" style="margin-left:6px">' + (u === 'metric' ? 'cm' : 'in') + '</span></div>';
       body += '<div class="field"><span class="field-label">' + Lx('Weight') + '</span>' +
-        '<input type="number" inputmode="decimal" id="f-weight" aria-label="' + esc(Lx('Weight in ' + (u === 'metric' ? 'kilograms' : 'pounds'))) + '" placeholder="0" step="0.01">' +
+        '<input type="number" inputmode="decimal" id="f-weight" aria-label="' + esc(Lx('Weight in ' + (u === 'metric' ? 'kilograms' : 'pounds'))) + '" placeholder="0" min="0" step="0.01">' +
         '<span class="muted" style="margin-left:6px">' + (u === 'metric' ? 'kg' : 'lb') + '</span></div>';
       body += '<div class="field"><span class="field-label">' + Lx('Bait / lure') + '</span>' +
         '<input type="text" id="f-bait" aria-label="' + esc(Lx('Bait or lure')) + '" placeholder="' + esc(Lx('e.g. jig & minnow')) + '"></div>';
@@ -3650,6 +3716,9 @@
     if (app._saving) return; app._saving = true;   // guard against double-tap duplicate saves
     var sp = d.speciesId ? byId[d.speciesId] : null;
     var num = function (v) { var n = parseFloat(v); return isFinite(n) ? n : null; };
+    // Length and weight are physical measures: zero or negative is not a real
+    // value, so treat it as unset rather than storing it.
+    var posNum = function (v) { var n = num(v); return (n != null && n > 0) ? n : null; };
     var entry = {
       id: d._editId || uid(),
       speciesId: d.speciesId || null,
@@ -3670,7 +3739,7 @@
       entry.fish = {
         caught: d.evidence === 'caught',
         released: d.evidence === 'caught' ? !!d.released : false,
-        length: num(d._length), weight: num(d._weight),
+        length: posNum(d._length), weight: posNum(d._weight),
         bait: (d._bait || '').trim(), water: (d._water || '').trim(),
         // keep the units this entry was logged in: editing under a different
         // app-wide setting must not silently reinterpret 20 in as 20 cm
@@ -3705,7 +3774,7 @@
       haptic();
       closeSheet();
       // The peak of the whole flow: the first time you record a species, say so.
-      if (isLifer) toast('New species. That is #' + lifeNumber + ' on your life list.');
+      if (isLifer) toast(Lx('New species. That is #{n} on your life list.').replace('{n}', lifeNumber));
       else toast((editing ? '✓ Updated ' : '✓ Logged ') + entry.speciesName);
       setTimeout(function () { route(); }, 120);
       if (!editing) setTimeout(checkNewBadges, 1400);
@@ -3922,7 +3991,7 @@
     a.href = url; a.download = 'wildlife-log-' + new Date().toISOString().slice(0, 10) + '.json';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-    toast('Exported ' + app.entries.length + ' encounters');
+    toast(Lx('Exported {n} encounters').replace('{n}', app.entries.length));
   }
 
   /* ------------------------------------------------------- Data import */
