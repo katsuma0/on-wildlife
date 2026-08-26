@@ -549,7 +549,53 @@
     'Seasons, limits & licences': 'Saisons, limites et permis',
     'Reptile & amphibian conservation': 'Conservation des reptiles et amphibiens',
     'Species profiles & videos': 'Fiches d’espèces et vidéos',
-    'Status, recovery & how to help': 'Statut, rétablissement et comment aider'
+    'Status, recovery & how to help': 'Statut, rétablissement et comment aider',
+    'First Steps': 'Premiers pas',
+    'Log your first encounter.': 'Notez votre première observation.',
+    'Getting Started': 'Bon départ',
+    'Log 5 encounters.': 'Notez 5 observations.',
+    'Field Journalist': 'Journaliste de terrain',
+    'Log 25 encounters.': 'Notez 25 observations.',
+    'Naturalist': 'Naturaliste',
+    'Log 100 encounters.': 'Notez 100 observations.',
+    'Collector': 'Collectionneur',
+    'Log 10 different species.': 'Notez 10 espèces différentes.',
+    'Seasoned Spotter': 'Observateur aguerri',
+    'Log 25 different species.': 'Notez 25 espèces différentes.',
+    'Ontario Expert': 'Expert de l’Ontario',
+    'Log 50 different species.': 'Notez 50 espèces différentes.',
+    'Well-Rounded': 'Polyvalent',
+    'Log a species in all nine categories.': 'Notez une espèce dans les neuf catégories.',
+    'Angler': 'Pêcheur',
+    'Log 5 fish.': 'Notez 5 poissons.',
+    'Master Angler': 'Maître pêcheur',
+    'Log 15 fish.': 'Notez 15 poissons.',
+    'Catch & Release Hero': 'Héros de la remise à l’eau',
+    'Release 10 caught fish.': 'Remettez à l’eau 10 poissons capturés.',
+    'Birder': 'Ornithologue',
+    'Log 10 birds.': 'Notez 10 oiseaux.',
+    'Early Bird': 'Lève-tôt',
+    'Log a bird before 7 a.m.': 'Notez un oiseau avant 7 h.',
+    'Herper': 'Herpétologue',
+    'Log a reptile and an amphibian.': 'Notez un reptile et un amphibien.',
+    'Turtle Guardian': 'Gardien des tortues',
+    'Log a turtle.': 'Notez une tortue.',
+    'Botanist': 'Botaniste',
+    'Log 10 trees or plants.': 'Notez 10 arbres ou plantes.',
+    'At-Risk Guardian': 'Gardien des espèces en péril',
+    'Log a Species at Risk.': 'Notez une espèce en péril.',
+    'Night Owl': 'Oiseau de nuit',
+    'Log something after 10 p.m.': 'Notez quelque chose après 22 h.',
+    'Four Seasons': 'Quatre saisons',
+    'Log in all four seasons.': 'Notez des observations dans les quatre saisons.',
+    'Cartographer': 'Cartographe',
+    'Log 5 sightings with a location.': 'Notez 5 observations avec un lieu.',
+    'Good Neighbour': 'Bon voisin',
+    'File a bear or hazard report.': 'Soumettez un signalement d’ours ou de danger.',
+    'Provincial Emblems': 'Emblèmes provinciaux',
+    'Log Ontario’s emblems: the Common Loon, White Trillium and Eastern White Pine.': 'Notez les emblèmes de l’Ontario : le Common Loon, le White Trillium et le Eastern White Pine.',
+    'EDDMapS Ontario, report online': 'EDDMapS Ontario, signaler en ligne',
+    'Ontario: Invasive species': 'Ontario : Espèces envahissantes'
   };
   function Lx(s) { return (app.settings && app.settings.lang === 'fr' && FR[s]) || s; }
   /* ---- Shared profile -------------------------------------------------
@@ -1329,7 +1375,7 @@
     return h + '</div></div>';
   }
 
-  function stat(n, l) { return '<div class="stat"><div class="n">' + n + '</div><div class="l">' + esc(Lx(l)) + '</div></div>'; }
+  function stat(n, l) { var nn = (typeof n === 'number') ? n : esc(String(n)); return '<div class="stat"><div class="n">' + nn + '</div><div class="l">' + esc(Lx(l)) + '</div></div>'; }
   // Same tile, but the whole card is the tap target rather than a small link,
   // so all three are comfortably bigger than a thumb.
   function statLink(n, l) { return '<a class="stat tap" href="#/stats"><div class="n">' + n + '</div><div class="l">' + esc(l) + '</div></a>'; }
@@ -2545,7 +2591,7 @@
       '<p>' + Lx('I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.') + '</p>' +
       '</div><div class="ios-group" style="margin-top:16px">' +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.20', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.21', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca' }) +
       '</div>';
 
@@ -2620,7 +2666,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.20', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.21', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: cameFromLabel(), body: body });
@@ -3265,10 +3311,10 @@
     body += '<div class="badge-grid">';
     visible.forEach(function (b) {
       var on = earned[b.id];
-      body += '<div class="badge-card' + (on ? '' : ' locked') + '" role="group" aria-label="' + esc(b.name) + ', ' + Lx(on ? 'earned' : 'locked') + '">' +
+      body += '<div class="badge-card' + (on ? '' : ' locked') + '" role="group" aria-label="' + esc(Lx(b.name)) + ', ' + Lx(on ? 'earned' : 'locked') + '">' +
         '<div class="badge-ico">' + b.emoji + '</div>' +
-        '<div class="badge-name">' + esc(b.name) + '</div>' +
-        '<div class="badge-desc">' + esc(b.desc) + '</div>' +
+        '<div class="badge-name">' + esc(Lx(b.name)) + '</div>' +
+        '<div class="badge-desc">' + esc(Lx(b.desc)) + '</div>' +
         (on ? '<div class="badge-chk" aria-label="' + esc(Lx('Earned')) + '">✓</div>' : '') + '</div>';
     });
     body += '</div>';
@@ -3435,10 +3481,10 @@
         var box = $('#community-feed'); if (!box) return;
         if (!d || !d.ok) { box.innerHTML = '<div class="empty"><div class="e">\u{1F4F5}</div><h3>' + Lx('Couldn’t reach the server') + '</h3><p>' + Lx('Check the address, or that the server is running.') + '</p></div>'; return; }
         var st = d.stats || {};
-        var h = '<div class="stat-grid" style="margin-top:4px">' + stat(st.sightings || 0, 'This week') + stat(st.contributors || 0, 'People') + stat(st.species || 0, 'Species') + '</div>';
+        var h = '<div class="stat-grid" style="margin-top:4px">' + stat((+st.sightings || 0), 'This week') + stat((+st.contributors || 0), 'People') + stat((+st.species || 0), 'Species') + '</div>';
         if (d.topSpecies && d.topSpecies.length) {
           h += '<div class="group"><div class="group-header">' + Lx('Seen near you this week') + '</div><div class="list">';
-          d.topSpecies.forEach(function (t) { var s = byId[t.id]; h += '<a class="cell tap" href="#/species/' + esc(t.id) + '"><span class="cell-emoji" aria-hidden="true">' + ((s && s.emoji) || '\u{1F43E}') + '</span><span class="cell-body"><span class="cell-title">' + esc(s ? s.name : t.id) + '</span></span><span class="cell-value">×' + t.count + '</span></a>'; });
+          d.topSpecies.forEach(function (t) { var s = byId[t.id]; h += '<a class="cell tap" href="#/species/' + esc(t.id) + '"><span class="cell-emoji" aria-hidden="true">' + ((s && s.emoji) || '\u{1F43E}') + '</span><span class="cell-body"><span class="cell-title">' + esc(s ? s.name : t.id) + '</span></span><span class="cell-value">×' + (+t.count || 0) + '</span></a>'; });
           h += '</div></div>';
         }
         var events = (d.bears || []).map(function (b) { return { e: '\u{1F43B} ' + Lx('Bear'), when: b.when }; }).concat((d.hazards || []).map(function (z) { return { e: '⚠️ ' + Lx(hazardType(z.type).name), when: z.when }; }));
