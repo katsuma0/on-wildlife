@@ -484,6 +484,7 @@
     '🐻 Saved to your log (on your phone)': '🐻 Enregistré dans votre journal (sur votre téléphone)',
     '⚠️ Hazard saved': '⚠️ Danger enregistré',
     'Deleted {n} shared records': '{n} enregistrements partagés supprimés',
+    'Primary': 'Principal',
     '✓ Updated {n}': '✓ {n} mis à jour', '✓ Logged {n}': '✓ {n} enregistré',
     /* confirm dialogs + the two-tap reset row */
     'Tap again to erase everything': 'Touchez encore pour tout effacer',
@@ -2477,7 +2478,7 @@
       '<p>I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</p>' +
       '</div><div class="ios-group" style="margin-top:16px">' +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.17', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.18', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca' }) +
       '</div>';
 
@@ -2552,7 +2553,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.17', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.18', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: cameFromLabel(), body: body });
@@ -4090,7 +4091,9 @@
       html += '<a class="tab ios-tab' + (on ? ' active' : '') + '" data-tab="' + t[0] + '" href="' + t[1] + '"' +
         (on ? ' aria-current="page"' : '') + '>' + spriteIcon(t[3]) + '<span>' + t[2] + '</span></a>';
     });
-    $('#tabbar').innerHTML = html;
+    var tbEl = $('#tabbar');
+    tbEl.setAttribute('aria-label', Lx('Primary'));
+    tbEl.innerHTML = html;
   }
   function currentTab() {
     var h = location.hash.replace(/^#\//, '');
