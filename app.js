@@ -482,7 +482,14 @@
     'Exported {n} encounters': '{n} observations exportées',
     '🐾 Thanks for logging what you see.': '🐾 Merci de noter ce que vous voyez.',
     '🐻 Saved to your log (on your phone)': '🐻 Enregistré dans votre journal (sur votre téléphone)',
-    '⚠️ Hazard saved': '⚠️ Danger enregistré'
+    '⚠️ Hazard saved': '⚠️ Danger enregistré',
+    'Deleted {n} shared records': '{n} enregistrements partagés supprimés',
+    '✓ Updated {n}': '✓ {n} mis à jour', '✓ Logged {n}': '✓ {n} enregistré',
+    /* confirm dialogs + the two-tap reset row */
+    'Tap again to erase everything': 'Touchez encore pour tout effacer',
+    'Reset your device id? Future shared reports won’t be linkable to your past ones. Your on-device log is unaffected.': 'Réinitialiser l’identifiant de votre appareil ? Les futurs signalements partagés ne pourront pas être reliés aux précédents. Votre journal sur l’appareil n’est pas touché.',
+    'Delete everything you’ve shared to the community server? This can’t be undone.': 'Supprimer tout ce que vous avez partagé sur le serveur communautaire ? Cette action est irréversible.',
+    'Delete ALL your data on this device, every encounter, hazard, favourite and setting? This cannot be undone.': 'Supprimer TOUTES vos données sur cet appareil : chaque observation, danger, favori et réglage ? Cette action est irréversible.'
   };
   function Lx(s) { return (app.settings && app.settings.lang === 'fr' && FR[s]) || s; }
   /* ---- Shared profile -------------------------------------------------
@@ -2470,7 +2477,7 @@
       '<p>I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</p>' +
       '</div><div class="ios-group" style="margin-top:16px">' +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.16', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.17', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca' }) +
       '</div>';
 
@@ -2545,7 +2552,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.16', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.17', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: cameFromLabel(), body: body });
@@ -3775,7 +3782,7 @@
       closeSheet();
       // The peak of the whole flow: the first time you record a species, say so.
       if (isLifer) toast(Lx('New species. That is #{n} on your life list.').replace('{n}', lifeNumber));
-      else toast((editing ? '✓ Updated ' : '✓ Logged ') + entry.speciesName);
+      else toast((editing ? Lx('✓ Updated {n}') : Lx('✓ Logged {n}')).replace('{n}', entry.speciesName));
       setTimeout(function () { route(); }, 120);
       if (!editing) setTimeout(checkNewBadges, 1400);
     }).catch(function () {
@@ -4322,12 +4329,12 @@
         if (!app._resetArmed) {
           app._resetArmed = true;
           var rl = t.querySelector('.ios-row-title');
-          if (rl) rl.textContent = 'Tap again to erase everything';
+          if (rl) rl.textContent = Lx('Tap again to erase everything');
           clearTimeout(app._resetTimer);
           app._resetTimer = setTimeout(function () {
             app._resetArmed = false;
             var rl2 = document.querySelector('[data-action="reset-data"] .ios-row-title');
-            if (rl2) rl2.textContent = 'Reset all data';
+            if (rl2) rl2.textContent = Lx('Reset all data');
           }, 4000);
           break;
         }
@@ -4379,22 +4386,22 @@
       case 'enable-push': ev.preventDefault(); Community.enablePush(); break;
       case 'reset-cid':
         ev.preventDefault();
-        if (confirm('Reset your device id? Future shared reports won’t be linkable to your past ones. Your on-device log is unaffected.')) {
+        if (confirm(Lx('Reset your device id? Future shared reports won’t be linkable to your past ones. Your on-device log is unaffected.'))) {
           try { localStorage.removeItem('owl-cid'); localStorage.removeItem('owl-tok'); } catch (e) {}
           toast('Device id reset');
         }
         break;
       case 'delete-shared':
         ev.preventDefault();
-        if (confirm('Delete everything you’ve shared to the community server? This can’t be undone.')) {
-          Community.remove().then(function (r) { toast(r && r.ok ? ('Deleted ' + (r.deleted || 0) + ' shared records') : 'Couldn’t reach the server'); });
+        if (confirm(Lx('Delete everything you’ve shared to the community server? This can’t be undone.'))) {
+          Community.remove().then(function (r) { toast(r && r.ok ? Lx('Deleted {n} shared records').replace('{n}', (r.deleted || 0)) : 'Couldn’t reach the server'); });
         }
         break;
       case 'clear-data':
         ev.preventDefault();
         // "all my data" means all of it: encounters, hazards, favourites,
         // name and settings, the same wipe as More -> Reset all data
-        if (confirm('Delete ALL your data on this device, every encounter, hazard, favourite and setting? This cannot be undone.')) {
+        if (confirm(Lx('Delete ALL your data on this device, every encounter, hazard, favourite and setting? This cannot be undone.'))) {
           resetAllData();
         }
         break;
