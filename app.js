@@ -2404,7 +2404,7 @@
       '<p>I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</p>' +
       '</div><div class="ios-group" style="margin-top:16px">' +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.14', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.15', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca' }) +
       '</div>';
 
@@ -2479,7 +2479,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.14', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.15', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: cameFromLabel(), body: body });
@@ -3559,7 +3559,9 @@
       '<input type="search" id="picker-search" aria-label="' + esc(Lx('Search all species')) + '" placeholder="' + esc(Lx('Search all species')) + '" autocomplete="off" autocapitalize="none">' +
       '</div>' +
       '<div class="chip-row" id="picker-chips">' + pickerChips(startCat) + '</div>' +
-      '<div class="sheet-body" id="picker-list">' + pickerList(startCat, '') + '</div>' +
+      // the ~778-row list is built after the sheet has slid in, so opening the
+      // picker never blocks the main thread on a synchronous 200KB innerHTML
+      '<div class="sheet-body" id="picker-list"></div>' +
       '</div>';
     var root = document.createElement('div');
     root.id = 'picker-root';
@@ -3572,6 +3574,7 @@
     try { if (sheetEl) { sheetEl.setAttribute('inert', ''); sheetEl.setAttribute('aria-hidden', 'true'); } } catch (e) {}
     var inp = $('#picker-search');
     inp.addEventListener('input', function () { refreshPicker(); });
+    requestAnimationFrame(function () { var lst = $('#picker-list'); if (lst && !inp.value) lst.innerHTML = pickerList(startCat, ''); });
     setTimeout(function () { try { inp.focus({ preventScroll: true }); } catch (e) { try { inp.focus(); } catch (e2) {} } }, 60);
   }
   function pickerChips(active) {
