@@ -376,9 +376,20 @@
   }
   function regParseToken(tok, year) {
     tok = tok.trim().toLowerCase();
-    if (/before|after/.test(tok)) return null;
     if (/labour day/.test(tok)) return regNthWeekday(year, 8, 1, 1);
-    var m = tok.match(/^(first|second|third|fourth|fifth|1st|2nd|3rd|4th|5th)\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\s+in\s+([a-z]+)/);
+    /* "Friday before third Saturday in May" and friends: anchor on the nth
+       weekday, then walk to the nearest named weekday on the stated side */
+    var mb = tok.match(/^(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\s+(before|after)\s+(?:the\s+)?(first|second|third|fourth|fifth|1st|2nd|3rd|4th|5th)\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\s+in\s+([a-z]+)/);
+    if (mb && REG_WD[mb[1]] != null && REG_ORD[mb[3]] != null && REG_WD[mb[4]] != null && REG_MONTHS[mb[5]] != null) {
+      var base = regNthWeekday(year, REG_MONTHS[mb[5]], REG_WD[mb[4]], REG_ORD[mb[3]]);
+      if (!base) return null;
+      var step = mb[2] === 'before' ? -1 : 1;
+      var d2 = new Date(base);
+      do { d2.setDate(d2.getDate() + step); } while (d2.getDay() !== REG_WD[mb[1]]);
+      return d2;
+    }
+    if (/before|after/.test(tok)) return null;
+    var m = tok.match(/^(?:the\s+)?(first|second|third|fourth|fifth|1st|2nd|3rd|4th|5th)\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\s+in\s+([a-z]+)/);
     if (m && REG_ORD[m[1]] != null && REG_WD[m[2]] != null && REG_MONTHS[m[3]] != null) return regNthWeekday(year, REG_MONTHS[m[3]], REG_WD[m[2]], REG_ORD[m[1]]);
     m = tok.match(/^([a-z]+)\s+(\d{1,2})/);
     if (m && REG_MONTHS[m[1]] != null) return new Date(year, REG_MONTHS[m[1]], parseInt(m[2], 10));
@@ -394,8 +405,16 @@
       if (i < 0) { unknown = true; return; }
       var a = regParseToken(part.slice(0, i), year), b = regParseToken(part.slice(i + 4), year);
       if (!a || !b) { unknown = true; return; }
-      ranges.push([new Date(a.getFullYear(), a.getMonth(), a.getDate()),
-                   new Date(b.getFullYear(), b.getMonth(), b.getDate(), 23, 59, 59)]);
+      var A = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+      var B = new Date(b.getFullYear(), b.getMonth(), b.getDate(), 23, 59, 59);
+      if (B < A) {
+        /* a season that wraps the new year, "October 1 to May 31": both
+           halves of the calendar year are inside it */
+        ranges.push([new Date(year, 0, 1), B]);
+        ranges.push([A, new Date(year, 11, 31, 23, 59, 59)]);
+      } else {
+        ranges.push([A, B]);
+      }
     });
     return { ranges: ranges, unknown: unknown };
   }
@@ -414,6 +433,9 @@
       var days = activeEnd ? Math.ceil((activeEnd - now) / DAY) : null;
       return { status: 'open', soon: (days != null && days <= 14) ? { type: 'closing', days: days } : null };
     }
+    /* a part of the season the parser could not read might be the part
+       that is open right now: never call that Closed, say Check instead */
+    if (r.unknown) return { status: 'unknown' };
     if (r.ranges.length) {
       var days2 = nextStart ? Math.ceil((nextStart - now) / DAY) : null;
       return { status: 'closed', soon: (days2 != null && days2 <= 14) ? { type: 'opening', days: days2 } : null };
@@ -2166,7 +2188,7 @@
       '<p>I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</p>' +
       '</div><div class="ios-group" style="margin-top:16px">' +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.9', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.10', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca' }) +
       '</div>';
 
@@ -2241,7 +2263,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.9', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.10', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: cameFromLabel(), body: body });
@@ -3553,7 +3575,10 @@
     if (sp && sp.sci) it.sci = sp.sci;
     if (e.count > 1) it.c = e.count;
     if (e.notes) it.note = e.notes.length > 200 ? e.notes.slice(0, 197) + '…' : e.notes;
-    if (e.lat != null && !e.sensitiveLoc) { it.lat = +e.lat.toFixed(3); it.lng = +e.lng.toFixed(3); }
+    /* recompute sensitivity at share time, exactly as export does: a stale
+       or missing saved flag must never leak an at-risk or den location at
+       street precision into a share link */
+    if (e.lat != null && !(e.sensitiveLoc || isSensitive(e.speciesId))) { it.lat = +e.lat.toFixed(3); it.lng = +e.lng.toFixed(3); }
     else if (e.lat != null) it.prot = 1;
     if (e.fish) { it.fish = 1; if (e.fish.length != null) { it.len = e.fish.length; it.unit = e.fish.units === 'imperial' ? 'in' : 'cm'; } if (e.fish.caught) it.rel = e.fish.released ? 1 : 0; }
     return it;
@@ -4150,7 +4175,7 @@
     loadProfile();
     loadAppearance();
     applyAppearance();
-    if (window.OnShare) OnShare.config({ app: 'on-wildlife', base: 'https://katsuma0.github.io/on-wildlife/', accent: '#284162' });
+    if (window.OnShare) OnShare.config({ app: 'on-wildlife', base: 'https://katsuma.ca/on-wildlife/', accent: '#284162' });
     Store.load().then(function (entries) {
       app.entries = entries || [];
       return Store.loadHazards();
