@@ -297,6 +297,30 @@
     'right now. Closed seasons are listed first.': 'en ce moment. Les saisons fermées sont indiquées en premier.',
     'This is a convenience copy. The Ontario fishing regulations are the authority.': 'Ceci est une copie pratique. Les règlements de pêche de l’Ontario font autorité.',
     'Check the official regulations': 'Consultez les règlements officiels',
+    /* ---- journal entry meta ---- */
+    'Today': 'Aujourd’hui', 'Yesterday': 'Hier', 'Tracks': 'Traces',
+    'The guide covers': 'Le guide couvre', 'Ontario species across nine categories.': 'espèces de l’Ontario réparties en neuf catégories.',
+    /* ---- conservation status (the frequent ones; rare descriptive
+       statuses fall back to English) ---- */
+    'Native': 'Indigène', 'Common': 'Commun', 'Endangered': 'En voie de disparition',
+    'Introduced': 'Introduit', 'Invasive': 'Envahissant', 'Threatened': 'Menacé',
+    'Special concern': 'Préoccupant', 'Special Concern': 'Préoccupant', 'Extirpated': 'Disparu du pays',
+    'Not assessed as at risk': 'Non évalué comme en péril', 'Native, not at risk': 'Indigène, non en péril',
+    'Threatened to Endangered (varies by population)': 'Menacé à en voie de disparition (selon la population)',
+    'Introduced, not at risk': 'Introduit, non en péril', 'Introduced (invasive)': 'Introduit (envahissant)',
+    /* ---- month highlight card (Guide home) ---- */
+    'Deep winter. Watch for snowy owls, winter finches, and fresh tracks in the snow.': 'Cœur de l’hiver. Guettez les harfangs des neiges, les fringilles hivernaux et les traces fraîches dans la neige.',
+    'Late winter. Great horned owls are nesting and calling at dusk.': 'Fin de l’hiver. Les grands-ducs d’Amérique nichent et hululent au crépuscule.',
+    'Early spring. The first spring peepers call and maple sap runs.': 'Début du printemps. Les premières rainettes crucifères chantent et la sève d’érable coule.',
+    'Spring migration. Waterfowl and early songbirds return, and trilliums come up.': 'Migration printanière. La sauvagine et les premiers oiseaux chanteurs reviennent, et les trilles sortent de terre.',
+    'Peak migration and bloom. Songbirds pour through and turtles begin nesting.': 'Pic de migration et de floraison. Les oiseaux chanteurs affluent et les tortues commencent à pondre.',
+    'Turtles are crossing roads to nest. Help them across in the direction they are heading.': 'Les tortues traversent les routes pour pondre. Aidez-les à traverser dans la direction où elles vont.',
+    'High summer. Monarchs on milkweed, dragonflies everywhere, young birds fledging.': 'Plein été. Les monarques sur l’asclépiade, les libellules partout, les jeunes oiseaux qui s’envolent.',
+    'Late summer. Berries ripen and fish feed best in the cool mornings.': 'Fin de l’été. Les petits fruits mûrissent et les poissons mordent mieux dans la fraîcheur du matin.',
+    'Fall migration and colour. Hawks stream south and the maples turn.': 'Migration et couleurs d’automne. Les buses filent vers le sud et les érables se colorent.',
+    'Autumn. The deer rut begins and salmon run up the Great Lakes rivers.': 'Automne. Le rut du cerf commence et le saumon remonte les rivières des Grands Lacs.',
+    'Late fall. Moose are active and waterfowl stage before freeze-up.': 'Fin de l’automne. Les orignaux sont actifs et la sauvagine se rassemble avant le gel.',
+    'Winter arrives. Chickadees crowd feeders and owls hunt the short days.': 'L’hiver arrive. Les mésanges se pressent aux mangeoires et les hiboux chassent durant les courtes journées.',
     /* ---- Learn hub ---- */
     'Safety guides and ways to help wildlife': 'Guides de sécurité et façons d’aider la faune',
     'Report': 'Signaler', 'Stay safe': 'Rester en sécurité', 'Out there': 'En plein air', 'Conservation': 'Conservation',
@@ -707,17 +731,19 @@
   function fmtTime(iso) {
     var d = new Date(iso);
     var h = d.getHours(), m = d.getMinutes();
+    // French Canada writes time on the 24-hour clock (14 h 05), not AM/PM
+    if (app.settings.lang === 'fr') return h + ' h ' + (m < 10 ? '0' + m : m);
     var ap = h >= 12 ? 'PM' : 'AM'; h = h % 12; if (h === 0) h = 12;
     return h + ':' + (m < 10 ? '0' + m : m) + ' ' + ap;
   }
   function fmtDay(iso) {
     var d = startOfDay(iso), today = startOfDay(new Date());
     var diff = Math.round((today - d) / 86400000);
-    if (diff === 0) return 'Today';
-    if (diff === 1) return 'Yesterday';
+    if (diff === 0) return Lx('Today');
+    if (diff === 1) return Lx('Yesterday');
     var opts = { weekday: 'short', month: 'short', day: 'numeric' };
     if (d.getFullYear() !== today.getFullYear()) opts.year = 'numeric';
-    return d.toLocaleDateString('en-CA', opts);
+    return d.toLocaleDateString(app.settings.lang === 'fr' ? 'fr-CA' : 'en-CA', opts);
   }
   // "August 2026", and the French room gets the month name from fr-CA rather
   // than a dictionary entry per month.
@@ -761,10 +787,21 @@
   }
 
   /* ---------------------------------------------------------- UI pieces */
+  /* translate the status, and when it carries a parenthetical or trailing
+     qualifier ("Threatened (SARO and COSEWIC)"), translate the leading
+     status word and keep the qualifier, so the at-risk screen is not a mix
+     of French and English badges */
+  function statusText(status) {
+    var full = Lx(status);
+    if (full !== status || app.settings.lang !== 'fr') return full;
+    var m = status.match(/^(Endangered|Threatened|Special [Cc]oncern|Extirpated|Introduced|Invasive|Native|Common|Not at risk)\b(.*)$/);
+    if (m && Lx(m[1]) !== m[1]) return Lx(m[1]) + m[2];
+    return status;
+  }
   function statusBadge(s) {
-    if (s.caution) return '<span class="badge badge-danger">⚠ ' + esc(Lx(s.status)) + '</span>';
-    if (s.atRisk) return '<span class="badge badge-risk">✧ ' + esc(Lx(s.status)) + '</span>';
-    return '<span class="badge badge-ok">' + esc(Lx(s.status)) + '</span>';
+    if (s.caution) return '<span class="badge badge-danger">⚠ ' + esc(statusText(s.status)) + '</span>';
+    if (s.atRisk) return '<span class="badge badge-risk">✧ ' + esc(statusText(s.status)) + '</span>';
+    return '<span class="badge badge-ok">' + esc(statusText(s.status)) + '</span>';
   }
   function tintFor(catId) { var c = catMeta(catId); return c ? c.color : 'var(--tint)'; }
 
@@ -1146,7 +1183,7 @@
     var loggedSet = {}; app.entries.forEach(function (e) { if (e.speciesId) loggedSet[e.speciesId] = 1; });
     var suggest = sn.s.filter(function (id) { return byId[id] && !loggedSet[id]; })[0];
     var h = sectionTitle(Lx('This month in Ontario')) + '<div class="group"><div class="list">' +
-      '<div class="cell"><span class="cell-emoji" aria-hidden="true">\u{1F4C5}</span><span class="cell-body"><span class="cell-sub" style="white-space:normal;font-size:15px;color:var(--label)">' + esc(sn.t) + '</span></span></div>';
+      '<div class="cell"><span class="cell-emoji" aria-hidden="true">\u{1F4C5}</span><span class="cell-body"><span class="cell-sub" style="white-space:normal;font-size:15px;color:var(--label)">' + esc(Lx(sn.t)) + '</span></span></div>';
     if (suggest) {
       var s = byId[suggest];
       var lookTitle = (app.settings && app.settings.lang === 'fr')
@@ -1181,7 +1218,9 @@
   /* ---- Badges ---- */
   var BADGES = window.BADGES || [];
   function badgeCtx() {
-    var e = app.entries;
+    // count the merged log, so ON Fishing catches earn badges too, like every
+    // other post-merge screen (Stats, Fishing hub, life list)
+    var e = journalEntries();
     var sp = {}, cats = {}, fish = 0, birds = 0, rept = 0, amph = 0, flora = 0, released = 0, photos = 0, located = 0, turtle = false;
     var seasons = {}, atRisk = false, earlyBird = false, nightOwl = false, emblems = {};
     e.forEach(function (x) {
@@ -1358,14 +1397,14 @@
     var parts = [];
     if (!opts.hideDay) parts.push(fmtDay(e.when));
     parts.push(fmtTime(e.when));
-    if (e.evidence === 'heard') parts.push('Heard');
-    else if (e.evidence === 'tracks') parts.push('Tracks');
+    if (e.evidence === 'heard') parts.push(Lx('Heard'));
+    else if (e.evidence === 'tracks') parts.push(Lx('Tracks'));
     // "Caught" is left off when Kept or Released follows, which already says it.
-    else if (e.evidence === 'caught' && !(e.fish && e.fish.caught)) parts.push('Caught');
+    else if (e.evidence === 'caught' && !(e.fish && e.fish.caught)) parts.push(Lx('Caught'));
     if (e.count > 1) parts.push('×' + e.count);
     if (e.fish) {
       if (e.fish.length != null) parts.push(e.fish.length + ' ' + (e.fish.units === 'imperial' ? 'in' : 'cm'));
-      if (e.fish.caught) parts.push(e.fish.released ? 'Released' : 'Kept');
+      if (e.fish.caught) parts.push(e.fish.released ? Lx('Released') : Lx('Kept'));
       if (e.fish.water) parts.push(e.fish.water);
     }
     if (e.fishZone) parts.push('Zone ' + e.fishZone);
@@ -1788,7 +1827,7 @@
       '<div class="cell"><span class="cell-body"><span class="cell-title">' + Lx('Category') + '</span></span>' +
       '<span class="cell-value">' + esc(c ? Lx(c.name) : '') + (sub ? ' · ' + esc(Lx(sub.name)) : '') + '</span></div>' +
       '<div class="cell"><span class="cell-body"><span class="cell-title">' + Lx('Conservation status') + '</span></span>' +
-      '<span class="cell-value">' + esc(Lx(s.status)) + '</span></div>' +
+      '<span class="cell-value">' + esc(statusText(s.status)) + '</span></div>' +
       '</div></div>';
 
     // Learn more, external, reputable sources (photos, range, conservation)
@@ -2166,7 +2205,7 @@
       body: '<div class="empty" style="padding-bottom:24px"><div class="e">' + spriteIcon('notebook') + '</div><h3>' + Lx('Start your life list') + '</h3>' +
         '<p>' + Lx('Log what you see and it collects here: a timeline of your outings, a life list of the species you have found, and the places where you found them. Everything stays on this phone.') + '</p></div>' +
         '<div class="hpad"><button class="btn btn-primary btn-block" data-action="open-log">' + I.plus + Lx('Log your first encounter') + '</button></div>' +
-        '<div class="group"><div class="group-footer" style="text-align:center">The guide covers ' + SPECIES.length + ' Ontario species across nine categories.</div></div>'
+        '<div class="group"><div class="group-footer" style="text-align:center">' + Lx('The guide covers') + ' ' + SPECIES.length + ' ' + Lx('Ontario species across nine categories.') + '</div></div>'
     });
   }
 
@@ -2365,7 +2404,7 @@
       '<p>I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</p>' +
       '</div><div class="ios-group" style="margin-top:16px">' +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.13', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.14', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca' }) +
       '</div>';
 
@@ -2440,7 +2479,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.13', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.14', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: cameFromLabel(), body: body });
@@ -3409,7 +3448,10 @@
 
     // Fish-specific
     if (isFish) {
-      var u = app.settings.units;
+      // label the fields in the units this entry was logged in, not the
+      // current app setting: editing a 20 in fish while the app is metric
+      // must show "in", or the number reads as the wrong measure
+      var u = d._fishUnits || app.settings.units;
       body += '<div class="group"><div class="group-header">' + Lx('Catch Details') + '</div><div class="list">';
       if (d.evidence === 'caught') {
         body += '<div class="field"><span class="field-label">' + Lx('Kept or released?') + '</span><div style="flex:1"></div>' +
@@ -3504,7 +3546,10 @@
   /* ---- Species picker (nested sheet) ---- */
   function openPicker() {
     var d = app.draft;
-    var startCat = d.cat || 'all';
+    // only start scoped to a real category; a custom "name it later" entry
+    // carries a phantom category with no chip and no species, which would
+    // open the picker on an empty list
+    var startCat = (d.cat && CATEGORIES.some(function (c) { return c.id === d.cat; })) ? d.cat : 'all';
     var html = '<div class="scrim show" data-action="close-picker"></div>' +
       '<div class="sheet show" id="picker" role="dialog" aria-modal="true" aria-label="' + Lx('Choose Species') + '" style="height:88dvh">' +
       '<div class="sheet-grabber"></div>' +
