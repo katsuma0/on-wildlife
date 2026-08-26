@@ -479,7 +479,8 @@
     'Link copied, card saved': 'Lien copié, carte enregistrée',
     'Hidden on this phone': 'Masqué sur ce téléphone', 'Hidden reports restored': 'Signalements masqués restaurés',
     'New species. That is #{n} on your life list.': 'Nouvelle espèce. C’est la {n}e sur votre liste de vie.',
-    'Exported {n} encounters': '{n} observations exportées',
+    'Exported {n} encounters': '{n} observations exportées', 'Exported {n} encounter': '{n} observation exportée',
+    'Spring': 'Printemps', 'Summer': 'Été', 'Fall': 'Automne', 'Winter': 'Hiver',
     'Imported {n} encounter': '{n} observation importée', 'Imported {n} encounters': '{n} observations importées',
     'and {n} hazard': 'et {n} danger', 'and {n} hazards': 'et {n} dangers',
     '🐾 Thanks for logging what you see.': '🐾 Merci de noter ce que vous voyez.',
@@ -1992,7 +1993,7 @@
       info('Habitat', s.habitat) +
       info('Size', s.size) +
       (s.angling ? info('Angling tip', s.angling) : '') +
-      info('Best seasons', s.seasons.map(cap).join(', ') || Lx('Year-round')) +
+      info('Best seasons', s.seasons.map(function (x) { return Lx(cap(x)); }).join(', ') || Lx('Year-round')) +
       info('Where in Ontario', s.region) +
       info('Did you know', s.fact) +
       '</div></div>';
@@ -2593,7 +2594,7 @@
       '<p>' + Lx('I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.') + '</p>' +
       '</div><div class="ios-group" style="margin-top:16px">' +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.23', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.24', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca' }) +
       '</div>';
 
@@ -2668,7 +2669,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.23', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.24', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: cameFromLabel(), body: body });
@@ -4115,7 +4116,7 @@
     a.href = url; a.download = 'wildlife-log-' + new Date().toISOString().slice(0, 10) + '.json';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-    toast(Lx('Exported {n} encounters').replace('{n}', app.entries.length));
+    toast(Lx(app.entries.length === 1 ? 'Exported {n} encounter' : 'Exported {n} encounters').replace('{n}', app.entries.length));
   }
 
   /* ------------------------------------------------------- Data import */
