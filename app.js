@@ -2483,7 +2483,7 @@
       var cm = e.fish.units === 'imperial' ? e.fish.length * 2.54 : e.fish.length;
       if (cm > bigCm) { bigCm = cm; big = e; }
     });
-    var bigLabel = big ? (big.fish.length + '&nbsp;' + (big.fish.units === 'imperial' ? 'in' : 'cm')) : '–';
+    var bigLabel = big ? (big.fish.length + ' ' + (big.fish.units === 'imperial' ? 'in' : 'cm')) : '–';
 
     var body = '<div class="stat-grid" style="margin-top:8px">' +
       stat(Object.keys(spSet).length, Lx('Species caught')) +
@@ -2591,7 +2591,7 @@
       '<p>' + Lx('I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.') + '</p>' +
       '</div><div class="ios-group" style="margin-top:16px">' +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.21', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.22', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca' }) +
       '</div>';
 
@@ -2666,7 +2666,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.21', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.22', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: cameFromLabel(), body: body });
