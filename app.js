@@ -295,6 +295,8 @@
     'General information': 'Renseignements généraux', 'Waters with special rules': 'Eaux à règles particulières',
     'species are open in Zone': 'espèces sont ouvertes dans la zone',
     'right now. Closed seasons are listed first.': 'en ce moment. Les saisons fermées sont indiquées en premier.',
+    'This is a convenience copy. The Ontario fishing regulations are the authority.': 'Ceci est une copie pratique. Les règlements de pêche de l’Ontario font autorité.',
+    'Check the official regulations': 'Consultez les règlements officiels',
     /* ---- Learn hub ---- */
     'Safety guides and ways to help wildlife': 'Guides de sécurité et façons d’aider la faune',
     'Report': 'Signaler', 'Stay safe': 'Rester en sécurité', 'Out there': 'En plein air', 'Conservation': 'Conservation',
@@ -1915,6 +1917,16 @@
   }
   // One zone: species and limits (closed first, then by popularity, exactly
   // fishing's ordering), the special-rules waters, and the general notes.
+  /* The regulations were extracted from the government summary and some rows
+     arrived with table-pipe artifacts or cut off mid-phrase. Strip the pipe
+     junk, and mark a rule that ends on a dangling connector so it reads as an
+     abbreviated note, not a complete (and wrong) statement. The official
+     source is linked at the top of the zone for anything unclear. */
+  function cleanReg(s) {
+    s = String(s == null ? '' : s).replace(/\s*\|\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
+    if (s && /\b(to|from|and|or|the|a|of|in|at|on|than|between|greater|less|following|including)$/i.test(s)) s += ' …';
+    return s;
+  }
   function viewZone(zRaw) {
     var z = parseInt(zRaw, 10);
     var d = REGS[z];
@@ -1927,6 +1939,7 @@
       if (seasonStatus(r.season).status === 'open') open++;
     });
     var body = '<p class="article-intro">' + open + ' ' + Lx('of') + ' ' + total + ' ' + Lx('species are open in Zone') + ' ' + z + ' ' + Lx('right now. Closed seasons are listed first.') + '</p>';
+    body += '<div class="wrap-note"><span class="i">ℹ️</span><span>' + Lx('This is a convenience copy. The Ontario fishing regulations are the authority.') + ' <a href="https://www.ontario.ca/page/fishing" target="_blank" rel="noopener">' + Lx('Check the official regulations') + ' ↗</a></span></div>';
     body += '<div class="group"><div class="group-header">' + Lx('Species and limits') + '</div><div class="list">';
     sp.forEach(function (r) {
       var ss = seasonStatus(r.season);
@@ -1944,12 +1957,13 @@
     if (wb.length) {
       body += '<div class="group"><div class="group-header">' + Lx('Waters with special rules') + ' (' + wb.length + ')</div><div class="list">';
       wb.forEach(function (w) {
-        body += '<div class="info-row"><div class="info-k">' + esc(w.waterbody) + '</div>' +
-          (w.rules && w.rules.length ? '<div class="info-v">' + w.rules.map(esc).join('<br>') + '</div>' : '') + '</div>';
+        var rules = (w.rules || []).map(cleanReg).filter(Boolean);
+        body += '<div class="info-row"><div class="info-k">' + esc(cleanReg(w.waterbody)) + '</div>' +
+          (rules.length ? '<div class="info-v">' + rules.map(esc).join('<br>') + '</div>' : '') + '</div>';
       });
       body += '</div></div>';
     }
-    var gi = (d.general_info || []).filter(Boolean);
+    var gi = (d.general_info || []).map(cleanReg).filter(Boolean);
     if (gi.length) {
       body += '<div class="group"><div class="group-header">' + Lx('General information') + '</div><div class="list">';
       gi.forEach(function (t) { body += '<div class="info-row"><div class="info-v">' + esc(t) + '</div></div>'; });
@@ -2351,7 +2365,7 @@
       '<p>I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</p>' +
       '</div><div class="ios-group" style="margin-top:16px">' +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.12', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.13', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca' }) +
       '</div>';
 
@@ -2426,7 +2440,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.12', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.13', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: cameFromLabel(), body: body });
