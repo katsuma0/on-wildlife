@@ -53,7 +53,7 @@
 
   var app = {
     entries: [], hazards: [],
-    settings: { units: 'metric', theme: 'auto', homeMode: 'all', photos: true, seenPrivacy: false, seenInstall: false, community: false, communityUrl: '', badges: [], journalFilter: 'all', mapLayers: { wildlife: true, parks: false, zones: false }, mapShow: { wildlife: false, hazard: false }, displayName: '', primaryPursuit: 'fishing' },
+    settings: { units: 'metric', theme: 'auto', homeMode: 'all', photos: true, seenPrivacy: false, seenInstall: false, community: false, communityUrl: '', badges: [], journalFilter: 'all', mapLayers: { wildlife: true, parks: false, zones: false }, mapShow: { wildlife: true, hazard: true }, displayName: '', primaryPursuit: 'fishing' },
     draft: null, hdraft: null, ready: false, map: null, mapFilter: 'all', placeMode: null
   };
 
@@ -136,7 +136,7 @@
       app.settings.mapLayers = { wildlife: true, parks: false, zones: false };
     }
     if (!app.settings.mapShow || typeof app.settings.mapShow !== 'object') {
-      app.settings.mapShow = { wildlife: false, hazard: false };
+      app.settings.mapShow = { wildlife: true, hazard: true };
     }
   }
   function saveSettings() { try { localStorage.setItem('owl-settings', JSON.stringify(app.settings)); } catch (e) {} }
@@ -652,7 +652,7 @@
       // card navigates through a stretched cover link, so the ellipsis
       // can be a true button rather than a control inside a link.
       return '<div class="cell tap">' +
-        '<span class="cell-emoji">' + s.emoji + '</span>' +
+        '<span class="cell-emoji" aria-hidden="true">' + s.emoji + '</span>' +
         '<span class="cell-body">' +
         '<a class="cell-cover" href="#/species/' + esc(s.id) + '" aria-label="' + esc(s.name) + '"></a>' +
         '<span class="cell-title">' + esc(s.name) + tick + '</span>' +
@@ -662,7 +662,7 @@
         '</span></div>';
     }
     return '<a class="cell tap" href="#/species/' + esc(s.id) + '">' +
-      '<span class="cell-emoji">' + s.emoji + '</span>' +
+      '<span class="cell-emoji" aria-hidden="true">' + s.emoji + '</span>' +
       '<span class="cell-body"><span class="cell-title">' + esc(s.name) + tick +
       '</span><span class="cell-sub">' + sub + '</span></span>' +
       right + '</a>';
@@ -992,10 +992,10 @@
     var loggedSet = {}; app.entries.forEach(function (e) { if (e.speciesId) loggedSet[e.speciesId] = 1; });
     var suggest = sn.s.filter(function (id) { return byId[id] && !loggedSet[id]; })[0];
     var h = sectionTitle(Lx('This month in Ontario')) + '<div class="group"><div class="list">' +
-      '<div class="cell"><span class="cell-emoji">\u{1F4C5}</span><span class="cell-body"><span class="cell-sub" style="white-space:normal;font-size:15px;color:var(--label)">' + esc(sn.t) + '</span></span></div>';
+      '<div class="cell"><span class="cell-emoji" aria-hidden="true">\u{1F4C5}</span><span class="cell-body"><span class="cell-sub" style="white-space:normal;font-size:15px;color:var(--label)">' + esc(sn.t) + '</span></span></div>';
     if (suggest) {
       var s = byId[suggest];
-      h += '<a class="cell tap" href="#/species/' + esc(suggest) + '"><span class="cell-emoji">' + s.emoji + '</span>' +
+      h += '<a class="cell tap" href="#/species/' + esc(suggest) + '"><span class="cell-emoji" aria-hidden="true">' + s.emoji + '</span>' +
         '<span class="cell-body"><span class="cell-title">Look for ' + (/^[aeiou]/i.test(s.name) ? 'an ' : 'a ') + esc(s.name) + '</span>' +
         '<span class="cell-sub">Around now, not in your journal yet</span></span><span class="chevron">' + I.chevron + '</span></a>';
     }
@@ -1009,7 +1009,7 @@
   function catsSeen() { var m = {}; journalEntries().forEach(function (e) { if (e.cat) m[e.cat] = 1; }); return Object.keys(m).length; }
   function learnCell(emoji, title, sub, topicId) {
     return '<a class="cell tap" href="#/learn/' + esc(topicId) + '">' +
-      (emoji ? '<span class="cell-emoji">' + emoji + '</span>' : '') +
+      (emoji ? '<span class="cell-emoji" aria-hidden="true">' + emoji + '</span>' : '') +
       '<span class="cell-body"><span class="cell-title">' + esc(title) + '</span>' +
       '<span class="cell-sub">' + esc(sub) + '</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></a>';
@@ -1166,8 +1166,10 @@
     var cache = {}; try { cache = JSON.parse(localStorage.getItem('owl-photos') || '{}'); } catch (e) {}
     if (cache[s.id] && cache[s.id].url) { cb(cache[s.id]); return; }
     if (_photoTried[s.id]) { cb(null); return; }
-    _photoTried[s.id] = 1;
+    // offline: don't burn the one-try flag, so the photo can still load once
+    // the connection returns without a full app reload
     if (typeof navigator !== 'undefined' && navigator.onLine === false) { cb(null); return; }
+    _photoTried[s.id] = 1;
     var url = 'https://api.inaturalist.org/v1/taxa?q=' + encodeURIComponent(s.sci || s.name) + '&rank=species&per_page=1';
     fetch(url).then(function (r) { return r.json(); }).then(function (d) {
       var t = d && d.results && d.results[0], p = t && t.default_photo;
@@ -1215,7 +1217,7 @@
     if (e.lat != null) { var pl = placeOf(e); if (pl && pl.key.indexOf('park:') === 0) parts.push(pl.name); }
     var thumb = e.photo
       ? '<img class="thumb" src="' + e.photo + '" alt="">'
-      : '<span class="cell-emoji">' + (e.emoji || '\u{1F43E}') + '</span>';
+      : '<span class="cell-emoji" aria-hidden="true">' + (e.emoji || '\u{1F43E}') + '</span>';
     return '<button type="button" class="cell tap" data-action="open-entry" data-id="' + esc(e.id) + '">' +
       thumb +
       '<span class="cell-body"><span class="cell-title">' + esc(e.speciesName) +
@@ -1242,7 +1244,7 @@
         .sort(function (a, b) { return a.name.localeCompare(b.name); })
         .forEach(function (s) {
           body += '<a class="cell tap" href="#/species/' + esc(s.id) + '">' +
-            '<span class="cell-emoji">' + s.emoji + '</span>' +
+            '<span class="cell-emoji" aria-hidden="true">' + s.emoji + '</span>' +
             '<span class="cell-body"><span class="cell-title">' + esc(s.name) + '</span>' +
             '<span class="cell-sub">' + Lx('Saved to your favourites') + '</span></span>' +
             '<span class="chevron">' + I.chevron + '</span></a>';
@@ -1253,14 +1255,14 @@
     var atRiskN = SPECIES.filter(function (s) { return s.atRisk; }).length;
     body += sectionHead('guide-cats');
     body += '<div class="group home-list"><div class="list">';
-    body += '<a class="cell tap" href="#/atrisk"><span class="cell-emoji">\u{1F6E1}️</span>' +
+    body += '<a class="cell tap" href="#/atrisk"><span class="cell-emoji" aria-hidden="true">\u{1F6E1}️</span>' +
       '<span class="cell-body"><span class="cell-title">' + Lx('Species at Risk') + '</span></span>' +
       '<span class="cell-value">' + atRiskN + '</span>' +
       '<span class="chevron">' + I.chevron + '</span></a>';
     sectionOrder('guide-cats').forEach(function (r) {
       var count = speciesInCat(r.def.id).length;
       body += '<a class="cell tap" href="#/explore/' + esc(r.def.id) + '">' +
-        '<span class="cell-emoji">' + r.def.emoji + '</span>' +
+        '<span class="cell-emoji" aria-hidden="true">' + r.def.emoji + '</span>' +
         '<span class="cell-body"><span class="cell-title">' + esc(Lx(r.def.label)) + '</span></span>' +
         '<span class="cell-value">' + count + '</span>' +
         '<span class="chevron">' + I.chevron + '</span></a>';
@@ -1270,7 +1272,7 @@
     if (COMING_SOON.length) {
       body += sectionTitle(Lx('Coming Soon')) + '<div class="group"><div class="list">';
       COMING_SOON.forEach(function (c) {
-        body += '<div class="cell"><span class="cell-emoji">' + c.emoji + '</span>' +
+        body += '<div class="cell"><span class="cell-emoji" aria-hidden="true">' + c.emoji + '</span>' +
           '<span class="cell-body"><span class="cell-title">' + esc(c.name) + '</span>' +
           '<span class="cell-sub">' + Lx('In a future update') + '</span></span></div>';
       });
@@ -1297,7 +1299,7 @@
     if (catHits.length) {
       html += '<div class="group"><div class="group-header">Categories</div><div class="list">';
       catHits.forEach(function (c) {
-        html += '<a class="cell tap" href="#/explore/' + esc(c.id) + '"><span class="cell-emoji">' + c.emoji + '</span>' +
+        html += '<a class="cell tap" href="#/explore/' + esc(c.id) + '"><span class="cell-emoji" aria-hidden="true">' + c.emoji + '</span>' +
           '<span class="cell-body"><span class="cell-title">' + esc(c.name) + '</span>' +
           '<span class="cell-sub">' + speciesInCat(c.id).length + ' species</span></span>' +
           '<span class="chevron">' + I.chevron + '</span></a>';
@@ -1310,7 +1312,7 @@
       html += '<div class="group"><div class="group-header">Parks</div><div class="list">';
       parkHits.forEach(function (p) {
         var loc = (p.region || '').split(' · ').slice(1).join(' · ') || p.region;
-        html += '<a class="cell tap" href="#/park/' + esc(p.id) + '"><span class="cell-emoji">\u{1F3DE}️</span>' +
+        html += '<a class="cell tap" href="#/park/' + esc(p.id) + '"><span class="cell-emoji" aria-hidden="true">\u{1F3DE}️</span>' +
           '<span class="cell-body"><span class="cell-title">' + esc(p.name) + '</span>' +
           '<span class="cell-sub">' + esc(loc) + '</span></span>' +
           '<span class="chevron">' + I.chevron + '</span></a>';
@@ -1384,7 +1386,7 @@
         var f = ECO.fish[fk]; if (!f) return;
         var wl = f.wl && byId[f.wl] ? byId[f.wl] : null;
         if (wl) body += speciesCell(wl, { loggedIds: logged, sub: '<i>' + esc(wl.sci) + '</i>' });
-        else body += '<div class="cell"><span class="cell-emoji">\u{1F41F}</span><span class="cell-body"><span class="cell-title">' + esc(f.name) + '</span></span></div>';
+        else body += '<div class="cell"><span class="cell-emoji" aria-hidden="true">\u{1F41F}</span><span class="cell-body"><span class="cell-title">' + esc(f.name) + '</span></span></div>';
       });
       body += '</div></div>';
     }
@@ -1497,12 +1499,12 @@
       '<span class="cell-body"><span class="cell-title">' + Lx('Log this sighting') + '</span></span></button>';
     if (!onPage) {
       rows += '<a class="cell tap" href="#/species/' + esc(s.id) + '" data-action="close-sheet-nav">' +
-        '<span class="cell-emoji">' + s.emoji + '</span>' +
+        '<span class="cell-emoji" aria-hidden="true">' + s.emoji + '</span>' +
         '<span class="cell-body"><span class="cell-title">' + Lx('Open guide entry') + '</span></span></a>';
     }
     if (logged) {
       rows += '<a class="cell tap" href="#/journal/species/' + esc(s.id) + '" data-action="close-sheet-nav">' +
-        '<span class="cell-emoji">' + spriteIcon('notebook') + '</span>' +
+        '<span class="cell-emoji" aria-hidden="true">' + spriteIcon('notebook') + '</span>' +
         '<span class="cell-body"><span class="cell-title">' + Lx('Open in your journal') + '</span></span></a>';
     }
     var html = '<div class="scrim" data-action="close-sheet"></div>' +
@@ -1527,7 +1529,7 @@
     // Fish carry regulations now, so the category leads with the zones door.
     if (catId === 'fish' && REG_ZONES.length) {
       body += '<div class="group" style="margin-top:2px"><div class="list">' +
-        '<a class="cell tap" href="#/zones"><span class="cell-emoji">\u{1F3A3}</span>' +
+        '<a class="cell tap" href="#/zones"><span class="cell-emoji" aria-hidden="true">\u{1F3A3}</span>' +
         '<span class="cell-body"><span class="cell-title">Fishing zones and seasons</span>' +
         '<span class="cell-sub">What is open right now, in all 20 zones</span></span>' +
         '<span class="chevron">' + I.chevron + '</span></a></div></div>';
@@ -1618,7 +1620,7 @@
     if (noteText) {
       var paras = noteText.split(/\n\n+/).map(function (pp) { return '<p>' + esc(pp) + '</p>'; }).join('');
       body += '<details class="notes"><summary>' +
-        '<span class="cell-emoji">\u{1F4D6}</span>' +
+        '<span class="cell-emoji" aria-hidden="true">\u{1F4D6}</span>' +
         '<span class="cell-body"><span class="cell-title">In depth</span><span class="cell-sub">A longer read, if you want it</span></span>' +
         '<span class="chevron">' + I.chevron + '</span></summary>' +
         '<div class="notes-body">' + paras + '</div></details>';
@@ -1692,7 +1694,7 @@
       if (/ combined$| and /i.test(fi.regNames[i])) { combined = fi.regNames[i]; break; }
     }
     return '<div class="group"><div class="group-header">Fishing</div><div class="list">' +
-      '<div class="cell"><span class="cell-emoji">\u{1F3A3}</span>' +
+      '<div class="cell"><span class="cell-emoji" aria-hidden="true">\u{1F3A3}</span>' +
       '<span class="cell-body"><span class="cell-title">' + esc(status) + '</span>' +
       '<span class="cell-sub">Computed for today from the Ontario regulations</span></span>' +
       regStatusBadge(openN ? 'open' : 'closed') + '</div>' +
@@ -2078,8 +2080,13 @@
     catches.forEach(function (e) { spSet[e.speciesId || e.speciesName] = 1; });
     var y = new Date().getFullYear();
     var thisYear = catches.filter(function (e) { var d = new Date(e.when); return !isNaN(d) && d.getFullYear() === y; }).length;
-    var big = null;
-    catches.forEach(function (e) { if (e.fish && e.fish.length != null && (!big || e.fish.length > big.fish.length)) big = e; });
+    // Biggest is compared in one unit: a 20 in fish must beat a 45 cm one
+    var big = null, bigCm = -1;
+    catches.forEach(function (e) {
+      if (!(e.fish && e.fish.length != null)) return;
+      var cm = e.fish.units === 'imperial' ? e.fish.length * 2.54 : e.fish.length;
+      if (cm > bigCm) { bigCm = cm; big = e; }
+    });
     var bigLabel = big ? (big.fish.length + '&nbsp;' + (big.fish.units === 'imperial' ? 'in' : 'cm')) : '–';
 
     var body = '<div class="stat-grid" style="margin-top:8px">' +
@@ -2087,7 +2094,7 @@
       stat(thisYear, Lx('This year')) +
       stat(bigLabel, Lx('Biggest')) + '</div>';
     body += '<div class="group"><div class="list">' +
-      '<a class="cell tap" href="#/zones"><span class="cell-emoji">\u{1F3A3}</span>' +
+      '<a class="cell tap" href="#/zones"><span class="cell-emoji" aria-hidden="true">\u{1F3A3}</span>' +
       '<span class="cell-body"><span class="cell-title">' + Lx('What is open now') + '</span>' +
       '<span class="cell-sub">' + Lx('All 20 zones') + '</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></a></div></div>';
@@ -2118,7 +2125,7 @@
       '<div class="stat"><div class="n stat-name">' + (latest ? esc(latest.name) : '–') + '</div><div class="l">' + Lx('Latest lifer') + '</div></div>' +
       '</div>';
     body += '<div class="group"><div class="list">' +
-      '<a class="cell tap" href="#/explore/birds"><span class="cell-emoji">\u{1F426}</span>' +
+      '<a class="cell tap" href="#/explore/birds"><span class="cell-emoji" aria-hidden="true">\u{1F426}</span>' +
       '<span class="cell-body"><span class="cell-title">' + Lx('Birds in the guide') + '</span>' +
       '<span class="cell-sub">' + speciesInCat('birds').length + ' ' + Lx('species') + '</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></a></div></div>';
@@ -2188,7 +2195,7 @@
       '<p>I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.</p>' +
       '</div><div class="ios-group" style="margin-top:16px">' +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.10', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.11', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca' }) +
       '</div>';
 
@@ -2263,7 +2270,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.10', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.11', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: cameFromLabel(), body: body });
@@ -2293,7 +2300,7 @@
     var attrs = 'data-action="' + action + '"';
     if (data) { if (data.cat) attrs += ' data-cat="' + data.cat + '"'; if (data.sub) attrs += ' data-sub="' + data.sub + '"'; }
     return '<button class="cell tap" ' + attrs + '>' +
-      (emoji ? '<span class="cell-emoji">' + emoji + '</span>' : '') +
+      (emoji ? '<span class="cell-emoji" aria-hidden="true">' + emoji + '</span>' : '') +
       '<span class="cell-body"><span class="cell-title">' + esc(title) + '</span>' +
       '<span class="cell-sub">' + esc(sub) + '</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></button>';
@@ -2386,7 +2393,9 @@
     });
     // Degrade gracefully offline: show a note instead of a blank grey grid.
     tiles.on('tileerror', function () { var n = $('#map-offline'); if (n) n.hidden = false; });
-    tiles.on('load', function () { var n = $('#map-offline'); if (n) n.hidden = true; });
+    // hide the offline notice only when a tile actually loads: 'load' fires
+    // even when every tile errored, which flashed the notice back off offline
+    tiles.on('tileload', function () { var n = $('#map-offline'); if (n) n.hidden = true; });
     tiles.addTo(map);
     renderMapMarkers();
     applyMapLayers();
@@ -2722,7 +2731,7 @@
     body += '<div class="wrap-note danger" style="margin:8px 16px"><span class="i">🐻</span><span>Saving here adds it to <b>your own log</b>. It does <b>not</b> alert authorities. For an immediate threat call <b>911</b>. For non-emergency bear problems call Bear Wise <b>1-866-514-2327</b> (Apr to Nov). <a href="#/learn/bears" data-action="close-sheet-nav">Bear safety ›</a></span></div>';
     body += '<div class="group" style="margin-top:6px"><div class="group-header">The bear</div><div class="list">';
     body += '<div class="field"><span class="field-label">Type</span><div style="flex:1"></div><div style="width:220px">' + segHtml('bear-species', d.species, [['american-black-bear', 'Black bear'], ['polar-bear', 'Polar bear']]) + '</div></div>';
-    body += '<div class="field"><span class="field-label">How many</span><div style="flex:1"></div><div class="stepper"><button data-action="bcount" data-d="-1">−</button><div class="sep"></div><div class="val" id="bcount-val">' + d.count + '</div><div class="sep"></div><button data-action="bcount" data-d="1">+</button></div></div>';
+    body += '<div class="field"><span class="field-label">How many</span><div style="flex:1"></div><div class="stepper" role="group"><button data-action="bcount" data-d="-1" aria-label="Fewer">−</button><div class="sep"></div><div class="val" id="bcount-val" aria-live="polite">' + d.count + '</div><div class="sep"></div><button data-action="bcount" data-d="1" aria-label="More">+</button></div></div>';
     body += '<div class="field"><span class="field-label">Cubs present</span><div style="flex:1"></div><label class="switch"><input type="checkbox" id="b-cubs" aria-label="Cubs present"' + (d.cubs ? ' checked' : '') + '><span class="track"></span><span class="knob"></span></label></div>';
     body += '</div></div>';
     body += '<div class="group"><div class="group-header">Behaviour</div><div class="list"><div style="padding:12px 16px">' + segHtml('bear-behaviour', d.behaviour, [['calm', 'Calm / moved off'], ['curious', 'Curious'], ['aggressive', 'Aggressive']]) + '</div></div></div>';
@@ -2852,10 +2861,10 @@
       body += '<div class="list">';
       reports.slice(0, 12).forEach(function (r) {
         if (r.kind === 'bear') {
-          body += '<button type="button" class="cell tap" data-action="open-entry" data-id="' + esc(r.e.id) + '"><span class="cell-emoji">\u{1F43B}</span><span class="cell-body"><span class="cell-title">Bear sighting' + (r.e.bearReport && r.e.bearReport.cubs ? ' · cubs' : '') + '</span><span class="cell-sub">' + esc(fmtDay(r.when) + ' · ' + fmtTime(r.when)) + '</span></span><span class="chevron">' + I.chevron + '</span></button>';
+          body += '<button type="button" class="cell tap" data-action="open-entry" data-id="' + esc(r.e.id) + '"><span class="cell-emoji" aria-hidden="true">\u{1F43B}</span><span class="cell-body"><span class="cell-title">Bear sighting' + (r.e.bearReport && r.e.bearReport.cubs ? ' · cubs' : '') + '</span><span class="cell-sub">' + esc(fmtDay(r.when) + ' · ' + fmtTime(r.when)) + '</span></span><span class="chevron">' + I.chevron + '</span></button>';
         } else {
           var ht = hazardType(r.h.type);
-          body += '<a class="cell tap" href="#/map"><span class="cell-emoji">' + ht.emoji + '</span><span class="cell-body"><span class="cell-title">' + esc(ht.name) + '</span><span class="cell-sub">' + esc(fmtDay(r.when) + ' · ' + fmtTime(r.when) + (r.h.notes ? ' · ' + r.h.notes : '')) + '</span></span><span class="chevron">' + I.chevron + '</span></a>';
+          body += '<a class="cell tap" href="#/map"><span class="cell-emoji" aria-hidden="true">' + ht.emoji + '</span><span class="cell-body"><span class="cell-title">' + esc(ht.name) + '</span><span class="cell-sub">' + esc(fmtDay(r.when) + ' · ' + fmtTime(r.when) + (r.h.notes ? ' · ' + r.h.notes : '')) + '</span></span><span class="chevron">' + I.chevron + '</span></a>';
         }
       });
       body += '</div>';
@@ -2886,7 +2895,7 @@
     var html = '<div class="group"><div class="group-header">Dangerous wildlife & plants (' + flagged.length + ')</div><div class="list">';
     flagged.forEach(function (s) {
       html += '<a class="cell tap" href="#/species/' + esc(s.id) + '">' +
-        '<span class="cell-emoji">' + s.emoji + '</span>' +
+        '<span class="cell-emoji" aria-hidden="true">' + s.emoji + '</span>' +
         '<span class="cell-body"><span class="cell-title">' + esc(s.name) + '</span>' +
         '<span class="cell-sub">' + esc(s.caution) + '</span></span>' +
         '<span class="badge badge-danger" style="flex-shrink:0">⚠</span></a>';
@@ -2945,7 +2954,7 @@
     });
     body += '</div><div class="group-footer">You’ve recorded ' + speciesN + ' of Ontario’s ' + SPECIES.length + ' guide species, ON Fishing catches included. A live community comparison arrives with the shared layer.</div></div>';
     body += '<div class="group"><div class="list">' +
-      '<a class="cell tap" href="#/badges"><span class="cell-emoji">\u{1F3C5}</span><span class="cell-body"><span class="cell-title">Badges</span><span class="cell-sub">' + earned + ' earned</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      '<a class="cell tap" href="#/badges"><span class="cell-emoji" aria-hidden="true">\u{1F3C5}</span><span class="cell-body"><span class="cell-title">Badges</span><span class="cell-sub">' + earned + ' earned</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       '</div></div>';
     screen({ title: 'Stats', large: true, subtitle: 'Your field record', backAction: true, backText: cameFromLabel(), body: body });
   }
@@ -2967,14 +2976,14 @@
       if (!groups[cid]) return; var cm = catMeta(cid);
       body += '<div class="group"><div class="group-header">' + esc(cm.name) + '</div><div class="list">';
       groups[cid].sort(function (a, b) { return a.name.localeCompare(b.name); }).forEach(function (s) {
-        body += '<a class="cell tap" href="#/species/' + esc(s.id) + '"><span class="cell-emoji">' + s.emoji + '</span>' +
+        body += '<a class="cell tap" href="#/species/' + esc(s.id) + '"><span class="cell-emoji" aria-hidden="true">' + s.emoji + '</span>' +
           '<span class="cell-body"><span class="cell-title">' + esc(s.name) + '</span><span class="cell-sub">' + esc(s.caution || s.habitat) + '</span></span>' +
           '<span class="badge badge-risk" style="flex-shrink:0">invasive</span></a>';
       });
       body += '</div></div>';
     });
     body += '<div class="group"><div class="group-header">Report & learn</div><div class="list">' +
-      '<div class="cell"><span class="cell-emoji">\u{1F4DE}</span><span class="cell-body"><span class="cell-title">Invading Species Hotline</span><span class="cell-sub">1-800-563-7711</span></span></div>' +
+      '<div class="cell"><span class="cell-emoji" aria-hidden="true">\u{1F4DE}</span><span class="cell-body"><span class="cell-title">Invading Species Hotline</span><span class="cell-sub">1-800-563-7711</span></span></div>' +
       linkCell('EDDMapS Ontario, report online', 'https://www.eddmaps.org/ontario/', '') +
       linkCell('Ontario: Invasive species', 'https://www.ontario.ca/page/invasive-species-ontario', '') +
       '</div></div>';
@@ -2995,17 +3004,17 @@
       '<label class="switch"><input type="checkbox" id="photos-toggle" aria-label="Load species reference photos from iNaturalist"' + (app.settings.photos ? ' checked' : '') + '><span class="track"></span><span class="knob"></span></label></div>' +
       '</div><div class="group-footer">On by default. When on, species pages fetch one openly-licensed (Creative Commons) photo from <b>iNaturalist</b>, which means your device contacts iNaturalist. Off keeps everything to the built-in illustrations.</div></div>';
     body += '<div class="group"><div class="group-header">Community sharing</div><div class="list">' +
-      '<a class="cell tap" href="#/community"><span class="cell-emoji">\u{1F30D}</span><span class="cell-body"><span class="cell-title">' + (Community.on() ? 'Sharing is ON' : app.settings.communityUrl ? 'Connected · sharing off' : 'Not connected') + '</span><span class="cell-sub" style="white-space:normal">Set up or change sharing</span></span><span class="chevron">' + I.chevron + '</span></a>' +
+      '<a class="cell tap" href="#/community"><span class="cell-emoji" aria-hidden="true">\u{1F30D}</span><span class="cell-body"><span class="cell-title">' + (Community.on() ? 'Sharing is ON' : app.settings.communityUrl ? 'Connected · sharing off' : 'Not connected') + '</span><span class="cell-sub" style="white-space:normal">Set up or change sharing</span></span><span class="chevron">' + I.chevron + '</span></a>' +
       '</div><div class="group-footer">Sharing is off unless you connect a server you choose and switch it on. What gets sent is <b>pseudonymous</b>, a random device id and not your name, with coordinates <b>coarsened to about a 5&nbsp;km grid</b> (about 22&nbsp;km for Species at Risk) and times blurred to the hour, before anything leaves your phone. You can delete everything you have shared below.</div></div>';
     body += '<div class="group"><div class="list">' +
-      '<button class="cell tap" data-action="export-data"><span class="cell-emoji">\u{1F4E4}</span><span class="cell-body"><span class="cell-title">Export my data</span></span><span class="chevron">' + I.chevron + '</span></button>' +
-      (app.settings.communityUrl ? '<button class="cell tap" data-action="delete-shared"><span class="cell-emoji">\u{1F310}</span><span class="cell-body"><span class="cell-title" style="color:var(--red)">Delete my shared data</span><span class="cell-sub">Remove everything from the community server</span></span></button>' : '') +
-      '<button class="cell tap" data-action="clear-data"><span class="cell-emoji">\u{1F5D1}️</span><span class="cell-body"><span class="cell-title" style="color:var(--red)">Delete all my data on this device</span></span></button>' +
+      '<button class="cell tap" data-action="export-data"><span class="cell-emoji" aria-hidden="true">\u{1F4E4}</span><span class="cell-body"><span class="cell-title">Export my data</span></span><span class="chevron">' + I.chevron + '</span></button>' +
+      (app.settings.communityUrl ? '<button class="cell tap" data-action="delete-shared"><span class="cell-emoji" aria-hidden="true">\u{1F310}</span><span class="cell-body"><span class="cell-title" style="color:var(--red)">Delete my shared data</span><span class="cell-sub">Remove everything from the community server</span></span></button>' : '') +
+      '<button class="cell tap" data-action="clear-data"><span class="cell-emoji" aria-hidden="true">\u{1F5D1}️</span><span class="cell-body"><span class="cell-title" style="color:var(--red)">Delete all my data on this device</span></span></button>' +
       '</div></div>';
     screen({ title: 'Privacy', backAction: true, backText: 'More', body: body });
   }
   function infoRow2(emoji, title, sub) {
-    return '<div class="cell"><span class="cell-emoji">' + emoji + '</span>' +
+    return '<div class="cell"><span class="cell-emoji" aria-hidden="true">' + emoji + '</span>' +
       '<span class="cell-body"><span class="cell-title" style="font-size:15px">' + esc(title) + '</span>' +
       '<span class="cell-sub" style="white-space:normal">' + esc(sub) + '</span></span></div>';
   }
@@ -3024,11 +3033,11 @@
       return;
     }
     body += '<div class="group"><div class="group-header">Connection</div><div class="list">' +
-      '<div class="cell"><span class="cell-emoji">\u{1F517}</span><span class="cell-body"><span class="cell-title">Server</span><span class="cell-sub" style="white-space:normal">' + esc(url) + '</span></span></div>' +
+      '<div class="cell"><span class="cell-emoji" aria-hidden="true">\u{1F517}</span><span class="cell-body"><span class="cell-title">Server</span><span class="cell-sub" style="white-space:normal">' + esc(url) + '</span></span></div>' +
       '<div class="field"><span class="field-label" style="flex:1">Share my sightings</span><label class="switch"><input type="checkbox" id="community-share" aria-label="Share my sightings with the community"' + (app.settings.community ? ' checked' : '') + '><span class="track"></span><span class="knob"></span></label></div>' +
-      '<button class="cell tap" data-action="enable-push"><span class="cell-emoji">\u{1F514}</span><span class="cell-body"><span class="cell-title">Enable nearby alerts</span><span class="cell-sub" style="white-space:normal">Push me when bears or hazards are reported near me (needs the server set up for push)</span></span><span class="chevron">' + I.chevron + '</span></button>' +
-      '<button class="cell tap" data-action="reset-cid"><span class="cell-emoji">\u{1F504}</span><span class="cell-body"><span class="cell-title">Reset my device id</span><span class="cell-sub" style="white-space:normal">Breaks the link between your past and future shared reports</span></span></button>' +
-      '<button class="cell tap" data-action="community-disconnect"><span class="cell-emoji">\u{1F50C}</span><span class="cell-body"><span class="cell-title" style="color:var(--red)">Disconnect</span></span></button>' +
+      '<button class="cell tap" data-action="enable-push"><span class="cell-emoji" aria-hidden="true">\u{1F514}</span><span class="cell-body"><span class="cell-title">Enable nearby alerts</span><span class="cell-sub" style="white-space:normal">Push me when bears or hazards are reported near me (needs the server set up for push)</span></span><span class="chevron">' + I.chevron + '</span></button>' +
+      '<button class="cell tap" data-action="reset-cid"><span class="cell-emoji" aria-hidden="true">\u{1F504}</span><span class="cell-body"><span class="cell-title">Reset my device id</span><span class="cell-sub" style="white-space:normal">Breaks the link between your past and future shared reports</span></span></button>' +
+      '<button class="cell tap" data-action="community-disconnect"><span class="cell-emoji" aria-hidden="true">\u{1F50C}</span><span class="cell-body"><span class="cell-title" style="color:var(--red)">Disconnect</span></span></button>' +
       '</div><div class="group-footer">' + (app.settings.community ? 'Your sightings are shared <b>pseudonymously</b>, with a random device id and no name. A server operator could group your reports by that id, so you can reset it anytime above. At-risk locations are coarsened before they leave your phone.' : 'Sharing is off. You can still see the community feed below.') + '</div></div>';
     body += '<div id="community-feed"><div class="empty"><div class="e">\u{1F4E1}</div><p>Loading community activity…</p></div></div>';
     screen({ title: 'Community', backAction: true, backText: 'More', body: body });
@@ -3078,7 +3087,7 @@
         var h = '<div class="stat-grid" style="margin-top:4px">' + stat(d.stats.sightings, 'This week') + stat(d.stats.contributors, 'People') + stat(d.stats.species, 'Species') + '</div>';
         if (d.topSpecies && d.topSpecies.length) {
           h += '<div class="group"><div class="group-header">Seen near you this week</div><div class="list">';
-          d.topSpecies.forEach(function (t) { var s = byId[t.id]; h += '<a class="cell tap" href="#/species/' + esc(t.id) + '"><span class="cell-emoji">' + ((s && s.emoji) || '\u{1F43E}') + '</span><span class="cell-body"><span class="cell-title">' + esc(s ? s.name : t.id) + '</span></span><span class="cell-value">×' + t.count + '</span></a>'; });
+          d.topSpecies.forEach(function (t) { var s = byId[t.id]; h += '<a class="cell tap" href="#/species/' + esc(t.id) + '"><span class="cell-emoji" aria-hidden="true">' + ((s && s.emoji) || '\u{1F43E}') + '</span><span class="cell-body"><span class="cell-title">' + esc(s ? s.name : t.id) + '</span></span><span class="cell-value">×' + t.count + '</span></a>'; });
           h += '</div></div>';
         }
         var events = (d.bears || []).map(function (b) { return { e: '\u{1F43B} Bear', when: b.when }; }).concat((d.hazards || []).map(function (z) { return { e: '⚠️ ' + (hazardType(z.type).name), when: z.when }; }));
@@ -3170,19 +3179,19 @@
     var speciesRow;
     if (sp) {
       speciesRow = '<button class="cell tap" data-action="pick-species">' +
-        '<span class="cell-emoji">' + sp.emoji + '</span>' +
+        '<span class="cell-emoji" aria-hidden="true">' + sp.emoji + '</span>' +
         '<span class="cell-body" style="text-align:left"><span class="cell-title">' + esc(sp.name) + '</span>' +
         '<span class="cell-sub"><i>' + esc(sp.sci) + '</i></span></span>' +
         '<span class="cell-value" style="color:var(--tint)">' + Lx('Change') + '</span></button>';
     } else if (d.customName) {
       speciesRow = '<button class="cell tap" data-action="pick-species">' +
-        '<span class="cell-emoji">❓</span>' +
+        '<span class="cell-emoji" aria-hidden="true">❓</span>' +
         '<span class="cell-body" style="text-align:left"><span class="cell-title">' + esc(d.customName) + '</span>' +
         '<span class="cell-sub">' + Lx('Not in the guide') + '</span></span>' +
         '<span class="cell-value" style="color:var(--tint)">' + Lx('Change') + '</span></button>';
     } else {
       speciesRow = '<button class="cell tap" data-action="pick-species">' +
-        '<span class="cell-emoji">\u{1F50D}</span>' +
+        '<span class="cell-emoji" aria-hidden="true">\u{1F50D}</span>' +
         '<span class="cell-body" style="text-align:left"><span class="cell-title" style="color:var(--tint)">' + Lx('Choose a species') + '</span>' +
         '<span class="cell-sub">' + Lx('Search the guide or add your own') + '</span></span>' +
         '<span class="chevron">' + I.chevron + '</span></button>';
@@ -3209,9 +3218,9 @@
     body += '<div class="field"><span class="field-label">' + Lx('Observation') + '</span><div style="flex:1"></div>' +
       '<div style="width:' + (isFish ? '150' : '210') + 'px">' + evHtml + '</div></div>';
     body += '<div class="field"><span class="field-label">' + Lx('How many') + '</span><div style="flex:1"></div>' +
-      '<div class="stepper"><button data-action="count" data-d="-1">−</button><div class="sep"></div>' +
-      '<div class="val" id="count-val">' + d.count + '</div>' +
-      '<div class="sep"></div><button data-action="count" data-d="1">+</button></div></div>';
+      '<div class="stepper" role="group"><button data-action="count" data-d="-1" aria-label="Fewer">−</button><div class="sep"></div>' +
+      '<div class="val" id="count-val" aria-live="polite">' + d.count + '</div>' +
+      '<div class="sep"></div><button data-action="count" data-d="1" aria-label="More">+</button></div></div>';
     body += '</div></div>';
 
     // Where and when
@@ -3353,7 +3362,7 @@
   function pickerChips(active) {
     var html = '<button class="chip' + (active === 'all' ? ' on' : '') + '" aria-pressed="' + (active === 'all' ? 'true' : 'false') + '" data-action="picker-cat" data-cat="all">All</button>';
     CATEGORIES.forEach(function (c) {
-      html += '<button class="chip' + (active === c.id ? ' on' : '') + '" aria-pressed="' + (active === c.id ? 'true' : 'false') + '" data-action="picker-cat" data-cat="' + c.id + '">' + c.emoji + ' ' + esc(c.name) + '</button>';
+      html += '<button class="chip' + (active === c.id ? ' on' : '') + '" aria-pressed="' + (active === c.id ? 'true' : 'false') + '" data-action="picker-cat" data-cat="' + c.id + '"><span aria-hidden="true">' + c.emoji + '</span> ' + esc(c.name) + '</button>';
     });
     return html;
   }
@@ -3374,14 +3383,14 @@
       var rec = recentSpeciesList(6).filter(function (s) { return catId === 'all' || s.cat === catId; });
       if (rec.length) {
         html += '<div class="group" style="margin-top:6px"><div class="group-header">Recently logged</div><div class="chip-row" style="padding:2px 16px 6px">';
-        rec.forEach(function (s) { html += '<button class="chip" data-action="select-species" data-id="' + esc(s.id) + '">' + s.emoji + ' ' + esc(s.name) + '</button>'; });
+        rec.forEach(function (s) { html += '<button class="chip" data-action="select-species" data-id="' + esc(s.id) + '"><span aria-hidden="true">' + s.emoji + '</span> ' + esc(s.name) + '</button>'; });
         html += '</div></div>';
       }
     }
     // "Not sure" escape hatch, never let anyone get stuck on a name
     html += '<div class="group"' + (q ? ' style="margin-top:6px"' : '') + '><div class="list">' +
       '<button class="cell tap" data-action="custom-species">' +
-      '<span class="cell-emoji">✏️</span>' +
+      '<span class="cell-emoji" aria-hidden="true">✏️</span>' +
       '<span class="cell-body" style="text-align:left"><span class="cell-title" style="color:var(--tint)">I’m not sure yet, name it later</span>' +
       '<span class="cell-sub">Log it now and identify it whenever</span></span>' +
       '<span class="chevron">' + I.chevron + '</span></button></div></div>';
@@ -3392,7 +3401,7 @@
     html += '<div class="group"><div class="list">';
     list.forEach(function (s) {
       html += '<button class="cell tap" data-action="select-species" data-id="' + esc(s.id) + '">' +
-        '<span class="cell-emoji">' + s.emoji + '</span>' +
+        '<span class="cell-emoji" aria-hidden="true">' + s.emoji + '</span>' +
         '<span class="cell-body" style="text-align:left"><span class="cell-title">' + esc(s.name) + '</span>' +
         '<span class="cell-sub"><i>' + esc(s.sci) + '</i></span></span>' +
         '</button>';
@@ -3445,7 +3454,9 @@
         released: d.evidence === 'caught' ? !!d.released : false,
         length: num(d._length), weight: num(d._weight),
         bait: (d._bait || '').trim(), water: (d._water || '').trim(),
-        units: app.settings.units
+        // keep the units this entry was logged in: editing under a different
+        // app-wide setting must not silently reinterpret 20 in as 20 cm
+        units: d._fishUnits || app.settings.units
       };
     }
     if (d.cat === 'birds') entry.bird = { behavior: (d._behavior || '').trim() };
@@ -3559,6 +3570,7 @@
       _behavior: e.bird ? (e.bird.behavior || '') : '',
       _length: e.fish && e.fish.length != null ? String(e.fish.length) : '',
       _weight: e.fish && e.fish.weight != null ? String(e.fish.weight) : '',
+      _fishUnits: e.fish ? e.fish.units : null,
       _bait: e.fish ? (e.fish.bait || '') : '',
       _water: e.fish ? (e.fish.water || '') : '',
       _editId: e.id,
@@ -3578,7 +3590,7 @@
     /* recompute sensitivity at share time, exactly as export does: a stale
        or missing saved flag must never leak an at-risk or den location at
        street precision into a share link */
-    if (e.lat != null && !(e.sensitiveLoc || isSensitive(e.speciesId))) { it.lat = +e.lat.toFixed(3); it.lng = +e.lng.toFixed(3); }
+    if (e.lat != null && !(e.sensitiveLoc || isSensitive(e.speciesId) || isBearEntry(e))) { it.lat = +e.lat.toFixed(3); it.lng = +e.lng.toFixed(3); }
     else if (e.lat != null) it.prot = 1;
     if (e.fish) { it.fish = 1; if (e.fish.length != null) { it.len = e.fish.length; it.unit = e.fish.units === 'imperial' ? 'in' : 'cm'; } if (e.fish.caught) it.rel = e.fish.released ? 1 : 0; }
     return it;
@@ -3679,7 +3691,7 @@
     var exEntries = app.entries.map(function (e) {
       // Recompute sensitivity at export time so a stale/missing flag can't leak an
       // at-risk or turtle location at full GPS precision into a shared backup file.
-      if ((e.sensitiveLoc || isSensitive(e.speciesId)) && typeof e.lat === 'number') {
+      if ((e.sensitiveLoc || isSensitive(e.speciesId) || isBearEntry(e)) && typeof e.lat === "number") {
         var c = {}; for (var k in e) if (e.hasOwnProperty(k)) c[k] = e[k];
         c.lat = coarse(e.lat); c.lng = coarse(e.lng); c.locationObscured = true;
         return c;
@@ -3981,7 +3993,10 @@
         ev.preventDefault();
         var s = byId[t.getAttribute('data-id')];
         if (s) { app.draft.speciesId = s.id; app.draft.customName = ''; app.draft.cat = s.cat; app.draft.sub = s.sub; app.draft.emoji = s.emoji;
-          if (s.cat === 'fish' && app.draft.evidence !== 'caught' && app.draft.evidence !== 'saw') app.draft.evidence = 'caught'; }
+          if (s.cat === 'fish' && app.draft.evidence !== 'caught' && app.draft.evidence !== 'saw') app.draft.evidence = 'caught';
+          // 'caught' is a fish-only value; switching to a non-fish species must
+          // not leave a bird or mammal logged as Caught
+          else if (s.cat !== 'fish' && app.draft.evidence === 'caught') app.draft.evidence = 'saw'; }
         closePicker(); renderSheet();
         break;
       }
@@ -4090,9 +4105,11 @@
         break;
       case 'clear-data':
         ev.preventDefault();
-        if ((app.entries.length || app.hazards.length) && confirm('Delete ALL ' + app.entries.length + ' encounters and ' + app.hazards.length + ' hazards? This cannot be undone.')) {
-          app.entries = []; app.hazards = []; Store.clear('entries'); Store.clear('hazards'); toast('All data cleared'); route();
-        } else if (!app.entries.length && !app.hazards.length) { toast('Nothing to clear'); }
+        // "all my data" means all of it: encounters, hazards, favourites,
+        // name and settings, the same wipe as More -> Reset all data
+        if (confirm('Delete ALL your data on this device — every encounter, hazard, favourite and setting? This cannot be undone.')) {
+          resetAllData();
+        }
         break;
     }
   });
