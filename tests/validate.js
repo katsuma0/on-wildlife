@@ -79,6 +79,35 @@ try {
     var badZone = zoneIds.filter(function (z) { return !Array.isArray(REGx[z].species_regulations); });
     if (badZone.length) bad('zones missing species_regulations', badZone.join(', '));
     else ok('every zone carries species_regulations');
+
+    // every season string in the data must parse into date ranges: an
+    // unparsed half once turned an open season into a red "Closed"
+    var appSrc = fs.readFileSync(rel('app.js'), 'utf8');
+    function lift(name, end) { var i = appSrc.indexOf(name); return appSrc.slice(i, appSrc.indexOf(end, i)); }
+    var parser = 'var REG_MONTHS = ' + appSrc.match(/var REG_MONTHS = ({[^}]+})/)[1] + ';' +
+      'var REG_WD = ' + appSrc.match(/var REG_WD = ({[^}]+})/)[1] + ';' +
+      'var REG_ORD = ' + appSrc.match(/var REG_ORD = ({[^}]+})/)[1] + ';' +
+      lift('function regNthWeekday', 'function regParseToken') +
+      lift('function regParseToken', 'function regRangesOf') +
+      lift('function regRangesOf', 'function seasonStatus') +
+      ';return regRangesOf;';
+    var rangesOf = new Function(parser)();
+    var unparsed = [];
+    var seenSeason = {};
+    zoneIds.forEach(function (z) {
+      (REGx[z].species_regulations || []).forEach(function (r) {
+        var s = r.season;
+        if (!s || seenSeason[s] || /not specified/i.test(s)) return;
+        seenSeason[s] = 1;
+        var rr = rangesOf(s, 2026);
+        if (!rr.allyear && (rr.unknown || !rr.ranges.length)) unparsed.push(s);
+      });
+    });
+    if (unparsed.length) bad('season strings the parser cannot read', unparsed.slice(0, 3).join(' | '));
+    else ok('all ' + Object.keys(seenSeason).length + ' unique season strings parse into ranges');
+    var council = rangesOf('January 1 to March 31 and Friday before third Saturday in May to December 31', 2026);
+    if (!council.unknown && council.ranges.length === 2) ok('"Friday before" openers parse (the false-Closed regression)');
+    else bad('"Friday before" opener regressed', JSON.stringify(council));
   }
 } catch (e) { bad('regulations load', e.message); }
 

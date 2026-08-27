@@ -17,7 +17,7 @@
 
   /* text */
   --label: #000000;
-  --label-2: rgba(60, 60, 67, .60);
+  --label-2: rgba(60, 60, 67, .75);
   --label-3: rgba(60, 60, 67, .30);
   --sep: rgba(60, 60, 67, .29);
 
@@ -123,7 +123,7 @@
   --card: #FFFFFF;
   --card-pressed: #D1D1D6;
   --label: #000000;
-  --label-2: rgba(60, 60, 67, .60);
+  --label-2: rgba(60, 60, 67, .75);
   --label-3: rgba(60, 60, 67, .30);
   --sep: rgba(60, 60, 67, .29);
   --tint: #007AFF;
@@ -2195,7 +2195,7 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
 :root:not([data-glass="off"]) .fab,
 :root:not([data-glass="off"]) .ios-avatar,
 :root:not([data-glass="off"]) .segmented,
-:root:not([data-glass="off"]) .chip,
+:root:not([data-glass="off"]) .chip:not(.on),
 :root:not([data-glass="off"]) .fchip:not(.on) {
   background: var(--glass-wash);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -2595,9 +2595,9 @@ h1, h2, h3, h4, .btn { font-family: var(--font-display); }
   box-shadow: none;
 }
 /* chips, segments and the fab sit flat too */
-.segmented, .chip, .fchip:not(.on), .fab,
+.segmented, .chip:not(.on), .fchip:not(.on), .fab,
 :root:not([data-glass="off"]) .segmented,
-:root:not([data-glass="off"]) .chip,
+:root:not([data-glass="off"]) .chip:not(.on),
 :root:not([data-glass="off"]) .fchip:not(.on),
 :root:not([data-glass="off"]) .fab {
   background: var(--fill);
