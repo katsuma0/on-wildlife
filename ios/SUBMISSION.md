@@ -99,8 +99,9 @@ data, then Reset all data.
 
 ## Third-party material to declare
 
-- Map images: CARTO, rendering OpenStreetMap data, © OpenStreetMap
-  contributors. Attribution is shown on the map and in More.
+- Map images: Esri Light and Dark Gray Canvas, rendering OpenStreetMap and
+  other data, © Esri, HERE, Garmin, © OpenStreetMap contributors. Attribution
+  is shown on the map and in More.
 - Reference photos: iNaturalist, under each contributor's licence, credited on
   the photo. Off by default in the sense that they can be switched off in More.
 - Fishing zone boundaries and regulation summaries: Government of Ontario open

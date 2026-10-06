@@ -202,7 +202,7 @@
     'Terms of use': 'Conditions d’utilisation',
     'Including what this app is not safe for': 'Y compris ce pour quoi cette appli n’est pas sûre',
     'Support': 'Assistance', 'Help, and how to reach me': 'Aide, et comment me joindre',
-    'Not affiliated with Ontario Parks, the Government of Ontario, Parks Canada or Apple. Map images come from CARTO using OpenStreetMap data. Reference photos come from iNaturalist under their contributors\u2019 licences.': 'Sans lien avec Parcs Ontario, le gouvernement de l\u2019Ontario, Parcs Canada ou Apple. Les images de carte viennent de CARTO à partir des données OpenStreetMap. Les photos de référence viennent d\u2019iNaturalist sous les licences de leurs auteurs.',
+    'Not affiliated with Ontario Parks, the Government of Ontario, Parks Canada or Apple. Map images come from Esri, using OpenStreetMap and other data. Reference photos come from iNaturalist under their contributors\u2019 licences.': 'Sans lien avec Parcs Ontario, le gouvernement de l\u2019Ontario, Parcs Canada ou Apple. Les images de carte viennent d\u2019Esri, à partir des données OpenStreetMap et d\u2019autres sources. Les photos de référence viennent d\u2019iNaturalist sous les licences de leurs auteurs.',
     'Rate Ontario Parks campsites': 'Évaluez les emplacements des parcs de l’Ontario',
     'Zones, seasons and catch limits': 'Zones, saisons et limites de prise',
     'Three field guides for Ontario, built to match.': 'Trois guides de terrain pour l’Ontario, conçus pour s’accorder.',
@@ -2594,7 +2594,7 @@
       '<p>' + Lx('I built it because I wanted one place to name what I run into outside and keep a record of it. The app has no ads, no accounts and no tracking. Everything you log stays on this device; there is no server. Sensitive locations, like bear sightings, are blurred to a coarser grid before they can reach the optional community layer.') + '</p>' +
       '</div><div class="ios-group" style="margin-top:16px">' +
       iosRow({ title: Lx('Species in guide'), value: SPECIES.length, chevron: false }) +
-      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.24', chevron: false }) +
+      iosRow({ action: 'version-tap', title: Lx('Version'), value: '4.25', chevron: false }) +
       iosRow({ href: 'https://katsuma.ca/', ext: true, title: 'katsuma.ca' }) +
       '</div>';
 
@@ -2640,7 +2640,7 @@
       iosRow({ href: 'https://katsuma.ca/privacy.html', ext: true, title: Lx('Privacy policy'), sub: Lx('What stays on this phone, and what does not') }) +
       iosRow({ href: 'https://katsuma.ca/terms.html', ext: true, title: Lx('Terms of use'), sub: Lx('Including what this app is not safe for') }) +
       iosRow({ href: 'https://katsuma.ca/support.html', ext: true, title: Lx('Support'), sub: Lx('Help, and how to reach me') }) +
-      '</div><p class="ios-group-foot">' + Lx('Not affiliated with Ontario Parks, the Government of Ontario, Parks Canada or Apple. Map images come from CARTO using OpenStreetMap data. Reference photos come from iNaturalist under their contributors’ licences.') + '</p>';
+      '</div><p class="ios-group-foot">' + Lx('Not affiliated with Ontario Parks, the Government of Ontario, Parks Canada or Apple. Map images come from Esri, using OpenStreetMap and other data. Reference photos come from iNaturalist under their contributors’ licences.') + '</p>';
     // The bottom search pill, as Settings carries it; it opens the
     // existing universal search.
     body += '<a class="bottom-search" href="#/search">' + I.search + '<span>' + Lx('Search') + '</span></a><div class="spacer-pill"></div>';
@@ -2669,7 +2669,7 @@
       iosRow({ href: '#/community', tile: ['graphite', 'lock'], title: Lx('Visibility'), value: (Community.on() ? Lx('Sharing on') : Lx('Sharing off')) }) +
       iosRow({ href: '#/stats', tile: ['purple', 'chart'], title: Lx('Stats') }) +
       iosRow({ action: 'export-data', tile: ['grey', 'download'], title: Lx('Export my log') }) +
-      iosRow({ title: Lx('Version'), value: '4.24', chevron: false }) +
+      iosRow({ title: Lx('Version'), value: '4.25', chevron: false }) +
       '</nav>';
 
     screen({ title: Lx('Account'), backAction: true, backText: cameFromLabel(), body: body });
@@ -2783,19 +2783,25 @@
     // scroll wheel zoom already cover both touch and desktop.
     var map = L.map(el, { zoomControl: false, attributionControl: true }).setView([50.0, -85.0], 5);
     app.map = map;
-    // carto's muted basemaps read like apple maps; pick by the scheme in
-    // effect and keep osm's data attribution
+    // esri's light and dark gray canvas read like apple maps and need no key
+    // (carto began watermarking keyless tiles with "API KEY REQUIRED"); pick
+    // by the scheme in effect. The canvas stops at zoom 16, so the last three
+    // zoom steps scale those tiles up instead of going blank. Place names come
+    // from the matching reference layer, drawn over the base and under the pins.
     var darkMap = document.documentElement.getAttribute('data-theme') === 'dark' ||
       (document.documentElement.getAttribute('data-theme') !== 'light' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
-    var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/' + (darkMap ? 'dark_all' : 'light_all') + '/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19, subdomains: 'abcd', attribution: '&copy; OpenStreetMap &copy; CARTO'
+    var ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/' + (darkMap ? 'World_Dark_Gray' : 'World_Light_Gray');
+    var tiles = L.tileLayer(ESRI + '_Base/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19, maxNativeZoom: 16, attribution: 'Tiles &copy; Esri, HERE, Garmin, &copy; OpenStreetMap contributors'
     });
+    var labels = L.tileLayer(ESRI + '_Reference/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, maxNativeZoom: 16 });
     // Degrade gracefully offline: show a note instead of a blank grey grid.
     tiles.on('tileerror', function () { var n = $('#map-offline'); if (n) n.hidden = false; });
     // hide the offline notice only when a tile actually loads: 'load' fires
     // even when every tile errored, which flashed the notice back off offline
     tiles.on('tileload', function () { var n = $('#map-offline'); if (n) n.hidden = true; });
     tiles.addTo(map);
+    labels.addTo(map);
     renderMapMarkers();
     applyMapLayers();
     var located = locatedRecords();
